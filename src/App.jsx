@@ -18,7 +18,6 @@ import AdminPanel from './components/AdminPanel';
 import { PIKAM_DATA } from './data/pikamData';
 
 export default function App() {
-  const [currentUrl, setCurrentUrl] = useState(window.location.href);
   const [activeCategory, setActiveCategory] = useState('TÜMÜ');
   
   // Modals state
@@ -38,15 +37,28 @@ export default function App() {
     return saved ? JSON.parse(saved) : PIKAM_DATA.articles;
   });
 
+  const [isAdmin, setIsAdmin] = useState(false);
+
   useEffect(() => {
-    const handleUrlChange = () => {
-      setCurrentUrl(window.location.href);
+    const checkAdminRoute = () => {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      const search = window.location.search.toLowerCase();
+      
+      if (path.includes('admin') || hash.includes('admin') || search.includes('admin')) {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
     };
-    window.addEventListener('popstate', handleUrlChange);
-    window.addEventListener('hashchange', handleUrlChange);
+
+    checkAdminRoute();
+    window.addEventListener('popstate', checkAdminRoute);
+    window.addEventListener('hashchange', checkAdminRoute);
+
     return () => {
-      window.removeEventListener('popstate', handleUrlChange);
-      window.removeEventListener('hashchange', handleUrlChange);
+      window.removeEventListener('popstate', checkAdminRoute);
+      window.removeEventListener('hashchange', checkAdminRoute);
     };
   }, []);
 
@@ -79,13 +91,8 @@ export default function App() {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // CHECK ALL ADMIN ROUTE VARIATIONS (/admin, #admin, ?admin)
-  const isAdminRoute = 
-    window.location.pathname.toLowerCase().includes('/admin') ||
-    window.location.hash.toLowerCase().includes('admin') ||
-    window.location.search.toLowerCase().includes('admin');
-
-  if (isAdminRoute) {
+  // RENDER ADMIN PANEL IF ADMIN ROUTE DETECTED
+  if (isAdmin) {
     return (
       <AdminPanel 
         eDergiList={eDergiList}
