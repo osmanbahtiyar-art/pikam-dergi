@@ -1,8 +1,10 @@
 import React from 'react';
 import { PIKAM_DATA } from '../data/pikamData';
-import { BookOpen, Eye, Download, Calendar } from 'lucide-react';
+import { BookOpen, Eye } from 'lucide-react';
 
-export default function EDergiSection({ id, onOpenEDergiModal }) {
+export default function EDergiSection({ id, eDergiList, onOpenEDergiModal }) {
+  const issuesToDisplay = eDergiList || PIKAM_DATA.eDergiIssues;
+
   return (
     <section className="e-dergi-section" id={id}>
       <div className="container">
@@ -12,7 +14,7 @@ export default function EDergiSection({ id, onOpenEDergiModal }) {
             <span>PİKAM DİJİTAL E-DERGİ ARŞİVİ</span>
           </div>
           <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
-            Aylık İktisat ve Politika Dergisi Sayıları
+            Aylık İktisat ve Politika Dergisi Sayıları ({issuesToDisplay.length} Sayı)
           </span>
         </div>
 
@@ -21,7 +23,7 @@ export default function EDergiSection({ id, onOpenEDergiModal }) {
         </p>
 
         <div className="e-dergi-carousel">
-          {PIKAM_DATA.eDergiIssues.map((issue) => (
+          {issuesToDisplay.map((issue) => (
             <div 
               key={issue.id} 
               className="e-dergi-card"
