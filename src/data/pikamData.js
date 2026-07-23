@@ -4,6 +4,7 @@ export const PIKAM_DATA = {
     fullTitle: "Politik ve İktisadi Araştırmalar Merkezi",
     tagline: "Küresel Jeopolitik, İktisadi Stratejiler ve Politika Analizleri",
     issn: "ISSN 2717-9842 | Yıl: 7 | Sayı: 74 | Temmuz 2026",
+    mainWebsite: "https://www.pikamtr.com/",
     socialLinks: {
       linkedin: "https://linkedin.com",
       twitter: "https://x.com",
@@ -241,8 +242,7 @@ export const PIKAM_DATA = {
       coverImage: "/pikam_kapak_haziran_1784839793314.jpg",
       pageCount: 64,
       pages: [
-        { page: 1, title: "Kapak", subtitle: "Haziran 2026 Özel Sayısı" },
-        { page: 2, title: "Editörden", content: "Yapay zekanın kamu hizmetlerinde ve savunma sanayiinde kullanımı üzerine özel dosya..." }
+        { page: 1, title: "Kapak", subtitle: "Haziran 2026 Özel Sayısı" }
       ]
     },
     {
@@ -285,7 +285,7 @@ export const PIKAM_DATA = {
       adres: "Çankaya Akademik Araştırmalar Yerleşkesi No: 42, Ankara",
       telefon: "+90 (312) 440 20 26",
       eposta: "iletisim@pikamdergi.org.tr",
-      web: "www.pikamdergi.org.tr"
+      web: "www.pikamtr.com"
     }
   }
 };

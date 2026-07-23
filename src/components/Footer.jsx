@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PIKAM_DATA } from '../data/pikamData';
-import { Mail, CheckCircle2 } from 'lucide-react';
+import { Mail, CheckCircle2, ExternalLink } from 'lucide-react';
 
 export default function Footer({ onSelectCategory, onOpenKunye, onScrollToEDergi }) {
   const [email, setEmail] = useState('');
@@ -19,13 +19,21 @@ export default function Footer({ onSelectCategory, onOpenKunye, onScrollToEDergi
           {/* BRAND */}
           <div className="footer-brand">
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-              <img src="/pikam_logo.png" alt="PİKAM Amblem" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+              <a href="https://www.pikamtr.com/" target="_blank" rel="noreferrer">
+                <img src="/pikam_logo.png" alt="PİKAM Amblem" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+              </a>
               <h2 style={{ margin: 0 }}>PİKAM DERGİ</h2>
             </div>
             <p style={{ fontSize: '0.85rem', color: '#94a3b8', lineHeight: 1.6, maxWidth: '360px' }}>
-              Politik ve İktisadi Araştırmalar Merkezi (PİKAM) bağımsız, akademik ve stratejik düşünce kuruluşu dijital yayın organıdır. Küresel jeopolitik ve makroekonomi alanlarında ampirik analizler sunar.
+              Politik ve İktisadi Araştırmalar Merkezi (PİKAM) bağımsız, akademik ve stratejik düşünce kuruluşu dijital yayın organıdır.
             </p>
-            <div style={{ marginTop: '12px', fontSize: '0.78rem', color: '#38bdf8' }}>
+            <div style={{ marginTop: '10px', fontSize: '0.82rem', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <ExternalLink size={14} />
+              <a href="https://www.pikamtr.com/" target="_blank" rel="noreferrer" style={{ textDecoration: 'underline', color: '#38bdf8', fontWeight: '700' }}>
+                Merkez Portalı: www.pikamtr.com
+              </a>
+            </div>
+            <div style={{ marginTop: '6px', fontSize: '0.78rem', color: '#64748b' }}>
               ISSN: 2717-9842 | Ankara, Türkiye
             </div>
           </div>
@@ -46,10 +54,10 @@ export default function Footer({ onSelectCategory, onOpenKunye, onScrollToEDergi
           <div className="footer-links">
             <h4>KURUMSAL</h4>
             <ul>
+              <li><a href="https://www.pikamtr.com/" target="_blank" rel="noreferrer" style={{ color: '#38bdf8', fontWeight: '700' }}>PİKAM ANA WEB SİTESİ ↗</a></li>
               <li><button onClick={onOpenKunye}>KÜNYE VE YAYIN KURULU</button></li>
               <li><button onClick={onScrollToEDergi}>E-DERGİ ARŞİVİ</button></li>
               <li><button onClick={onOpenKunye}>AKADEMİK HAKEM SÜRECİ</button></li>
-              <li><button onClick={onOpenKunye}>GİZLİLİK VE TELİF HAKLARI</button></li>
               <li><button onClick={onOpenKunye}>İLETİŞİM & YERLEŞKE</button></li>
             </ul>
           </div>
@@ -86,10 +94,7 @@ export default function Footer({ onSelectCategory, onOpenKunye, onScrollToEDergi
 
         {/* BOTTOM COPYRIGHT */}
         <div className="footer-bottom">
-          <p>© 2026 PİKAM - Politik ve İktisadi Araştırmalar Merkezi. Tüm Hakları Saklıdır.</p>
-          <p style={{ marginTop: '4px', opacity: 0.7 }}>
-            ByProtokol ve prestijli dijital gazetecilik tasarımı standartlarında geliştirilmiştir.
-          </p>
+          <p>© 2026 PİKAM - Politik ve İktisadi Araştırmalar Merkezi (<a href="https://www.pikamtr.com/" target="_blank" rel="noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>pikamtr.com</a>). Tüm Hakları Saklıdır.</p>
         </div>
       </div>
     </footer>

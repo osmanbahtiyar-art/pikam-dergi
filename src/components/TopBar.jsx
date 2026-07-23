@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, User, FileText } from 'lucide-react';
+import { Search, User, FileText, ExternalLink } from 'lucide-react';
 
 export default function TopBar({ onOpenSearch, onOpenKunye }) {
   return (
@@ -39,6 +39,19 @@ export default function TopBar({ onOpenSearch, onOpenKunye }) {
         </div>
 
         <div className="top-right">
+          {/* PİKAM ANA WEB SİTESİ LİNKİ */}
+          <a 
+            href="https://www.pikamtr.com/" 
+            target="_blank" 
+            rel="noreferrer" 
+            className="top-auth-btn" 
+            style={{ background: '#0284c7', padding: '4px 10px', borderRadius: '4px', color: '#ffffff', fontWeight: '700', fontSize: '0.8rem' }}
+            title="Politik ve İktisadi Araştırmalar Merkezi Ana Portalı"
+          >
+            <ExternalLink size={13} />
+            <span>PİKAM Ana Portal (pikamtr.com)</span>
+          </a>
+
           <button className="top-search-btn" onClick={onOpenSearch}>
             <Search size={13} />
             <span>Sitede Ara...</span>
