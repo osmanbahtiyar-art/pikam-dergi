@@ -12,13 +12,16 @@ export default function KunyeModal({ onClose }) {
           <X size={20} />
         </button>
 
-        <div style={{ background: '#0b132b', color: 'white', padding: '32px' }}>
-          <h2 style={{ fontFamily: 'Playfair Display', fontSize: '1.8rem', letterSpacing: '1px' }}>
-            PİKAM DERGİ KÜNYESİ VE YAYIN İLKELERİ
-          </h2>
-          <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '4px' }}>
-            Politik ve İktisadi Araştırmalar Merkezi Akademik Hakemli Yayın Standartları
-          </p>
+        <div style={{ background: '#0b132b', color: 'white', padding: '32px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <img src="/pikam_logo.png" alt="PİKAM Amblem" style={{ width: '70px', height: '70px', objectFit: 'contain' }} />
+          <div>
+            <h2 style={{ fontFamily: 'Playfair Display', fontSize: '1.8rem', letterSpacing: '1px' }}>
+              PİKAM DERGİ KÜNYESİ VE YAYIN İLKELERİ
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '4px' }}>
+              Politik ve İktisadi Araştırmalar Merkezi Akademik Hakemli Yayın Standartları
+            </p>
+          </div>
         </div>
 
         <div className="kunye-body">

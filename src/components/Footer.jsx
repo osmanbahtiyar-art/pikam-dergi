@@ -18,7 +18,10 @@ export default function Footer({ onSelectCategory, onOpenKunye, onScrollToEDergi
         <div className="footer-grid">
           {/* BRAND */}
           <div className="footer-brand">
-            <h2>PİKAM DERGİ</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+              <img src="/pikam_logo.png" alt="PİKAM Amblem" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+              <h2 style={{ margin: 0 }}>PİKAM DERGİ</h2>
+            </div>
             <p style={{ fontSize: '0.85rem', color: '#94a3b8', lineHeight: 1.6, maxWidth: '360px' }}>
               Politik ve İktisadi Araştırmalar Merkezi (PİKAM) bağımsız, akademik ve stratejik düşünce kuruluşu dijital yayın organıdır. Küresel jeopolitik ve makroekonomi alanlarında ampirik analizler sunar.
             </p>

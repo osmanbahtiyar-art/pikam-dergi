@@ -5,8 +5,9 @@ export default function TopBar({ onOpenSearch, onOpenKunye }) {
   return (
     <div className="top-bar">
       <div className="container top-bar-inner">
-        <div className="top-socials">
-          <span style={{ fontSize: '0.78rem', color: '#64748b', marginRight: '6px', fontWeight: '600' }}>TAKİP EDİN:</span>
+        <div className="top-socials" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <img src="/pikam_logo.png" alt="PİKAM İkon" style={{ width: '22px', height: '22px', objectFit: 'contain', filter: 'brightness(1.2)' }} />
+          <span style={{ fontSize: '0.78rem', color: '#94a3b8', marginRight: '2px', fontWeight: '600' }}>TAKİP EDİN:</span>
           
           {/* LINKEDIN SVG */}
           <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="top-social-icon" title="LinkedIn">
