@@ -18,7 +18,7 @@ import AdminPanel from './components/AdminPanel';
 import { PIKAM_DATA } from './data/pikamData';
 
 export default function App() {
-  const [pathname, setPathname] = useState(window.location.pathname);
+  const [currentUrl, setCurrentUrl] = useState(window.location.href);
   const [activeCategory, setActiveCategory] = useState('TÜMÜ');
   
   // Modals state
@@ -39,11 +39,15 @@ export default function App() {
   });
 
   useEffect(() => {
-    const handlePopState = () => {
-      setPathname(window.location.pathname);
+    const handleUrlChange = () => {
+      setCurrentUrl(window.location.href);
     };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
   }, []);
 
   // Save to localStorage whenever eDergiList changes
@@ -75,8 +79,13 @@ export default function App() {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // SECRET /ADMIN ROUTE (NO PUBLIC NAVIGATION LINKS ON MAIN SITE)
-  if (pathname === '/admin' || window.location.hash === '#admin') {
+  // CHECK ALL ADMIN ROUTE VARIATIONS (/admin, #admin, ?admin)
+  const isAdminRoute = 
+    window.location.pathname.toLowerCase().includes('/admin') ||
+    window.location.hash.toLowerCase().includes('admin') ||
+    window.location.search.toLowerCase().includes('admin');
+
+  if (isAdminRoute) {
     return (
       <AdminPanel 
         eDergiList={eDergiList}
