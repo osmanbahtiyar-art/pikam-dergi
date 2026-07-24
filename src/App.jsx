@@ -35,7 +35,7 @@ export default function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
-  // Registered Users List State (Persisted in Supabase & localStorage)
+  // Registered Users List State
   const [registeredUsersList, setRegisteredUsersList] = useState(() => {
     const saved = localStorage.getItem('pikam_registered_users');
     return saved ? JSON.parse(saved) : [
@@ -138,7 +138,6 @@ export default function App() {
 
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
-    // Reload registered users list from localStorage
     const saved = localStorage.getItem('pikam_registered_users');
     if (saved) {
       setRegisteredUsersList(JSON.parse(saved));
@@ -179,6 +178,17 @@ export default function App() {
     localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
   };
 
+  const handleDeleteArticle = async (id) => {
+    const updated = articlesList.filter(a => a.id !== id);
+    setArticlesList(updated);
+    localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
+    try {
+      await supabase.from('articles').delete().eq('id', id);
+    } catch (err) {
+      console.log('Supabase article delete notice:', err);
+    }
+  };
+
   const scrollToEDergi = () => {
     const el = document.getElementById('e-dergi-section');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -198,6 +208,7 @@ export default function App() {
         onDeleteEDergi={handleDeleteEDergi}
         onAddArticle={handleAddArticle}
         articlesList={articlesList}
+        onDeleteArticle={handleDeleteArticle}
         registeredUsersList={registeredUsersList}
         onDeleteUser={handleDeleteUser}
       />

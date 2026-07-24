@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download } from 'lucide-react';
+import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download, Image as ImageIcon, Newspaper } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
-export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, onAddArticle, articlesList, registeredUsersList, onDeleteUser }) {
+export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, onAddArticle, articlesList, onDeleteArticle, registeredUsersList, onDeleteUser }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -277,7 +277,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
             <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.25rem', letterSpacing: '1px', margin: 0 }}>
               PİKAM DERGİ YÖNETİM & EDİTÖR PANELİ
             </h1>
-            <span style={{ fontSize: '0.78rem', color: '#38bdf8' }}>Canlı Yayın & Üye Takip Portalı (pikamdergi.com/admin)</span>
+            <span style={{ fontSize: '0.78rem', color: '#38bdf8' }}>Canlı Yayın & İçerik Yönetimi (pikamdergi.com/admin)</span>
           </div>
         </div>
 
@@ -308,7 +308,15 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
             style={{ background: activeTab === 'uyeler' ? '#0b132b' : '#ffffff', color: activeTab === 'uyeler' ? '#ffffff' : '#475569', padding: '10px 20px', borderRadius: '6px', fontWeight: '700', fontSize: '0.9rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
           >
             <Users size={16} color={activeTab === 'uyeler' ? '#38bdf8' : '#0284c7'} />
-            <span>Kayıtlı Okuyucu & Üye Listesi ({registeredUsersList.length})</span>
+            <span>Kayıtlı Okuyucu Listesi ({registeredUsersList.length})</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('makale_listesi')} 
+            style={{ background: activeTab === 'makale_listesi' ? '#0b132b' : '#ffffff', color: activeTab === 'makale_listesi' ? '#ffffff' : '#475569', padding: '10px 20px', borderRadius: '6px', fontWeight: '700', fontSize: '0.9rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <Newspaper size={16} color={activeTab === 'makale_listesi' ? '#38bdf8' : '#eab308'} />
+            <span>Yayınlanmış Makale & Yazılar ({articlesList.length})</span>
           </button>
 
           <button 
@@ -336,7 +344,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
           </button>
         </div>
 
-        {/* TAB 0: KAYITLI ÜYELER LİSTESİ VE DATA BİRİKTİRME */}
+        {/* TAB 0: KAYITLI ÜYELER LİSTESİ */}
         {activeTab === 'uyeler' && (
           <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -359,7 +367,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
             </div>
 
             {registeredUsersList.length === 0 ? (
-              <div style={{ padding: '40px', textAlignment: 'center', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <div style={{ padding: '40px', textAlign: 'center', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <p style={{ fontSize: '1rem', color: '#64748b' }}>Henüz kayıtlı okuyucu bulunmamaktadır. Kullanıcılar üye oldukça verileri buraya eklenecektir.</p>
               </div>
             ) : (
@@ -403,6 +411,60 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 0.5: YAYINLANMIŞ MAKALELER LİSTESİ VE SİLME ALANI */}
+        {activeTab === 'makale_listesi' && (
+          <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0b132b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Newspaper size={22} color="#eab308" />
+              <span>SİTEDE YAYINLANAN MAKALE VE YAZILARI YÖNET (SİL / KALDIR)</span>
+            </h2>
+            <p style={{ color: '#64748b', fontSize: '0.88rem', marginBottom: '24px' }}>
+              Web sitenizde yayında olan tüm makaleler aşağıda listelenmiştir. Dilediğiniz makalenin yanındaki **"Siteden Sil"** butonuna basarak tek tıkla canlı siteden kaldırabilirsiniz.
+            </p>
+
+            {articlesList.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <p style={{ fontSize: '1rem', color: '#64748b' }}>Henüz yayınlanmış makale bulunmamaktadır.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+                {articlesList.map((art) => (
+                  <div key={art.id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#ffffff', boxShadow: '0 2px 6px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ position: 'relative', height: '140px' }}>
+                        <img src={art.image} alt={art.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <span style={{ position: 'absolute', top: '8px', left: '8px', background: art.categoryColor || '#10b981', color: 'white', fontSize: '0.7rem', fontWeight: '800', padding: '2px 8px', borderRadius: '4px' }}>
+                          {art.category}
+                        </span>
+                      </div>
+                      <div style={{ padding: '16px' }}>
+                        <h4 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.05rem', color: '#0f172a', margin: '0 0 6px 0', lineHeight: '1.3' }}>{art.title}</h4>
+                        <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '0 0 10px 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{art.excerpt}</p>
+                        <div style={{ fontSize: '0.75rem', color: '#475569', fontWeight: '600' }}>
+                          Yazar: {typeof art.author === 'string' ? art.author : art.author?.name} | {art.date || 'Bugün'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '12px 16px', background: '#f8fafc', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end' }}>
+                      <button 
+                        onClick={() => {
+                          if (confirm(`"${art.title}" makalesini siteden tamamen silmek istediğinize emin misiniz?`)) {
+                            onDeleteArticle(art.id);
+                          }
+                        }}
+                        style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <Trash2 size={14} /> Siteden Sil
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
