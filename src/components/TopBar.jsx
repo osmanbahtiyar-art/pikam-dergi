@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, User, FileText, ExternalLink } from 'lucide-react';
+import { Search, FileText, ExternalLink } from 'lucide-react';
 
 export default function TopBar({ onOpenSearch, onOpenKunye }) {
   return (
@@ -60,11 +60,6 @@ export default function TopBar({ onOpenSearch, onOpenKunye }) {
           <button className="top-auth-btn" onClick={onOpenKunye} title="PİKAM Yayın Kurulu & Künye">
             <FileText size={14} />
             <span>Künye & Kurumsal</span>
-          </button>
-
-          <button className="top-auth-btn" onClick={() => alert('PİKAM Abone ve Yazar Portalı Giriş Ekranı')}>
-            <User size={14} />
-            <span>Giriş Yap</span>
           </button>
         </div>
       </div>
