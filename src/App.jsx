@@ -41,12 +41,11 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // 1. Fetch Cloud Issues from Supabase if available
+    // 1. Fetch Cloud Issues and Articles from Supabase if available
     const fetchCloudData = async () => {
       try {
         const { data: cloudIssues, error: issueErr } = await supabase.from('e_dergi_issues').select('*');
         if (!issueErr && cloudIssues && cloudIssues.length > 0) {
-          // Merge cloud issues with default issues without duplicates
           const cloudIds = new Set(cloudIssues.map(i => i.id));
           const filteredDefaults = PIKAM_DATA.eDergiIssues.filter(i => !cloudIds.has(i.id));
           const merged = [...cloudIssues, ...filteredDefaults];
@@ -170,6 +169,7 @@ export default function App() {
 
         <EditorialFeed 
           activeCategory={activeCategory}
+          articlesList={articlesList}
           onSelectArticle={(art) => setSelectedArticle(art)}
         />
 

@@ -2,10 +2,12 @@ import React from 'react';
 import { PIKAM_DATA } from '../data/pikamData';
 import { Calendar, Clock, ArrowUpRight } from 'lucide-react';
 
-export default function EditorialFeed({ activeCategory, onSelectArticle }) {
+export default function EditorialFeed({ activeCategory, articlesList, onSelectArticle }) {
+  const sourceArticles = articlesList && articlesList.length > 0 ? articlesList : PIKAM_DATA.articles;
+
   const filteredArticles = activeCategory === 'TÜMÜ' 
-    ? PIKAM_DATA.articles 
-    : PIKAM_DATA.articles.filter(a => a.category === activeCategory);
+    ? sourceArticles 
+    : sourceArticles.filter(a => a.category === activeCategory);
 
   return (
     <section className="editorial-section">
@@ -38,7 +40,7 @@ export default function EditorialFeed({ activeCategory, onSelectArticle }) {
                       position: 'absolute', 
                       top: '12px', 
                       left: '12px', 
-                      backgroundColor: article.categoryColor 
+                      backgroundColor: article.categoryColor || '#10b981'
                     }}
                   >
                     {article.category}
@@ -51,11 +53,11 @@ export default function EditorialFeed({ activeCategory, onSelectArticle }) {
 
                   <div className="article-footer">
                     <div style={{ fontWeight: '600', color: '#1e293b' }}>
-                      {article.author}
+                      {typeof article.author === 'string' ? article.author : article.author?.name}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <Calendar size={11} /> {article.date}
+                        <Calendar size={11} /> {article.date || 'Bugün'}
                       </span>
                       <ArrowUpRight size={14} color="#64748b" />
                     </div>
