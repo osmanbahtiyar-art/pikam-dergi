@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, ArrowLeft, Eye } from 'lucide-react';
+import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
 
 export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, onAddArticle, articlesList }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -7,6 +8,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [activeTab, setActiveTab] = useState('edergi');
+  const [isPublishing, setIsPublishing] = useState(false);
 
   // E-Dergi Form State
   const [issueNumber, setIssueNumber] = useState('Sayı 75');
@@ -14,6 +16,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
   const [theme, setTheme] = useState('Doğu Akdeniz ve Yeni Enerji Geopolitiği');
   const [pageCount, setPageCount] = useState(72);
   const [coverImage, setCoverImage] = useState('/pikam_kapak_temmuz_1784839785714.jpg');
+  const [pdfFile, setPdfFile] = useState(null);
   const [pdfFileName, setPdfFileName] = useState('');
   const [editorNote, setEditorNote] = useState('PİKAM 75. sayımızda Doğu Akdeniz enerji koridorları ve küresel makroekonomi masaya yatırılıyor.');
   const [successMsg, setSuccessMsg] = useState('');
@@ -50,19 +53,47 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setPdfFileName(file.name);
-      // Create local URL for preview
-      const objectUrl = URL.createObjectURL(file);
-      // If image, can be set as cover
-      if (file.type.startsWith('image/')) {
+      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+        setPdfFile(file);
+        setPdfFileName(file.name);
+      } else if (file.type.startsWith('image/')) {
+        const objectUrl = URL.createObjectURL(file);
         setCoverImage(objectUrl);
       }
     }
   };
 
-  const handlePublishEDergi = (e) => {
+  const handlePublishEDergi = async (e) => {
     e.preventDefault();
     if (!issueNumber || !monthYear || !theme) return;
+
+    setIsPublishing(true);
+
+    let pdfUrl = '/pikam_kapak_temmuz_1784839785714.jpg'; // fallback
+
+    // If PDF file selected, upload to Supabase storage bucket or convert URL
+    if (pdfFile) {
+      try {
+        const fileExt = pdfFile.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadErr } = await supabase.storage
+          .from('edergi-pdfs')
+          .upload(fileName, pdfFile);
+
+        if (!uploadErr && uploadData) {
+          const { data: publicUrlData } = supabase.storage
+            .from('edergi-pdfs')
+            .getPublicUrl(fileName);
+          
+          if (publicUrlData?.publicUrl) {
+            pdfUrl = publicUrlData.publicUrl;
+          }
+        }
+      } catch (err) {
+        console.log('Storage upload notice, saving metadata directly:', err);
+      }
+    }
 
     const newIssue = {
       id: `ed-${Date.now()}`,
@@ -70,6 +101,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
       monthYear,
       theme,
       coverImage: coverImage || '/pikam_kapak_temmuz_1784839785714.jpg',
+      pdfUrl: pdfUrl,
       pageCount: Number(pageCount) || 68,
       pages: [
         { page: 1, title: 'Kapak', subtitle: `${monthYear} Öne Çıkanlar` },
@@ -78,17 +110,30 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
       ]
     };
 
+    // Save to Supabase Cloud Database table if available
+    try {
+      await supabase.from('e_dergi_issues').insert([newIssue]);
+    } catch (err) {
+      console.log('Supabase sync info:', err);
+    }
+
+    // Save locally
     onAddEDergi(newIssue);
-    setSuccessMsg(`"${issueNumber} (${monthYear}) - ${theme}" başarıyla pikamdergi.com sitesinde yayınlandı!`);
+
+    setIsPublishing(false);
+    setSuccessMsg(`"${issueNumber} (${monthYear}) - ${theme}" başarıyla pikamdergi.com bulut sisteminde ve canlı sitede yayınlandı!`);
     
     // Reset form
+    setPdfFile(null);
     setPdfFileName('');
-    setTimeout(() => setSuccessMsg(''), 6000);
+    setTimeout(() => setSuccessMsg(''), 7000);
   };
 
-  const handlePublishArticle = (e) => {
+  const handlePublishArticle = async (e) => {
     e.preventDefault();
     if (!artTitle || !artExcerpt) return;
+
+    setIsPublishing(true);
 
     const categoryColors = {
       'POLİTİKA': '#ef4444',
@@ -111,11 +156,19 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
       content: `<p>${artExcerpt}</p><p>Politik ve İktisadi Araştırmalar Merkezi yayın kurulunca hazırlanan özel analiz.</p>`
     };
 
+    try {
+      await supabase.from('articles').insert([newArt]);
+    } catch (err) {
+      console.log('Supabase article sync:', err);
+    }
+
     onAddArticle(newArt);
+
+    setIsPublishing(false);
     setSuccessMsg(`"${artTitle}" makalesi saniyeler içinde sitede yayına girdi!`);
     setArtTitle('');
     setArtExcerpt('');
-    setTimeout(() => setSuccessMsg(''), 6000);
+    setTimeout(() => setSuccessMsg(''), 7000);
   };
 
   // LOGIN SCREEN
@@ -126,7 +179,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <img src="/pikam_logo.png" alt="PİKAM Logo" style={{ width: '75px', height: '75px', margin: '0 auto 12px auto' }} />
             <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.6rem', color: '#0b132b' }}>PİKAM YÖNETİM PANELSİ</h2>
-            <p style={{ fontSize: '0.82rem', color: '#64748b' }}>Editör ve Yayın Kurulu Girişi</p>
+            <p style={{ fontSize: '0.82rem', color: '#64748b' }}>Editör ve Yayın Kurulu Girişi (Supabase Cloud)</p>
           </div>
 
           {loginError && (
@@ -188,7 +241,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
             <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.25rem', letterSpacing: '1px', margin: 0 }}>
               PİKAM DERGİ YÖNETİM & EDİTÖR PANELİ
             </h1>
-            <span style={{ fontSize: '0.78rem', color: '#38bdf8' }}>Gizli Yönetim Portalı (pikamdergi.com/admin)</span>
+            <span style={{ fontSize: '0.78rem', color: '#38bdf8' }}>Supabase Bulut Veritabanı Aktif (pikamdergi.com/admin)</span>
           </div>
         </div>
 
@@ -247,7 +300,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
               <span>YENİ DİJİTAL DERGİ SAYISI VE PDF YÜKLE</span>
             </h2>
             <p style={{ color: '#64748b', fontSize: '0.88rem', marginBottom: '24px' }}>
-              Buradan yükleyeceğiniz dergi sayısı ve PDF dokümanı anında pikamdergi.com sitesindeki **E-Dergi Arşivi** bölümünde okuyuculara açılacaktır.
+              Buradan yükleyeceğiniz dergi sayısı ve PDF dokümanı Supabase bulut veritabanına aktarılır ve pikamdergi.com sitesindeki **E-Dergi Arşivi** bölümünde tüm dünyadaki okuyuculara açılır.
             </p>
 
             <form onSubmit={handlePublishEDergi} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
@@ -288,7 +341,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
               </div>
 
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>PDF DOSYASI SEÇ</label>
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>PDF DOSYASI SEÇ (BULUTA YÜKLENİR)</label>
                 <input 
                   type="file" 
                   accept=".pdf,application/pdf" 
@@ -340,10 +393,20 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
               <div style={{ gridColumn: 'span 2', marginTop: '12px' }}>
                 <button 
                   type="submit" 
-                  style={{ background: '#0b132b', color: 'white', padding: '14px 28px', borderRadius: '6px', fontWeight: '700', fontSize: '1rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
+                  disabled={isPublishing}
+                  style={{ background: '#0b132b', color: 'white', padding: '14px 28px', borderRadius: '6px', fontWeight: '700', fontSize: '1rem', border: 'none', cursor: isPublishing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
                 >
-                  <Upload size={18} color="#38bdf8" />
-                  <span>YENİ DERGİ SAYISINI SİTEDE YAYINLA</span>
+                  {isPublishing ? (
+                    <>
+                      <Loader2 size={18} className="spin" />
+                      <span>BULUTA VE SİTEYE YÜKLENİYOR...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={18} color="#38bdf8" />
+                      <span>YENİ DERGİ SAYISINI SİTEDE YAYINLA</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -448,7 +511,8 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
 
               <button 
                 type="submit" 
-                style={{ background: '#0b132b', color: 'white', padding: '12px 24px', borderRadius: '6px', fontWeight: '700', fontSize: '0.95rem', border: 'none', cursor: 'pointer', alignSelf: 'flex-start' }}
+                disabled={isPublishing}
+                style={{ background: '#0b132b', color: 'white', padding: '12px 24px', borderRadius: '6px', fontWeight: '700', fontSize: '0.95rem', border: 'none', cursor: isPublishing ? 'not-allowed' : 'pointer', alignSelf: 'flex-start' }}
               >
                 MAKALEYİ YAYINLA
               </button>

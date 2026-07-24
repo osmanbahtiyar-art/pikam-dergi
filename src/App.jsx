@@ -16,6 +16,7 @@ import KunyeModal from './components/KunyeModal';
 import AdminPanel from './components/AdminPanel';
 
 import { PIKAM_DATA } from './data/pikamData';
+import { supabase } from './lib/supabaseClient';
 
 export default function App() {
   const [activeCategory, setActiveCategory] = useState('TÜMÜ');
@@ -26,7 +27,7 @@ export default function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isKunyeOpen, setIsKunyeOpen] = useState(false);
 
-  // Dynamic E-Dergi & Articles state with localStorage persistence
+  // Dynamic E-Dergi & Articles state with Supabase & localStorage persistence
   const [eDergiList, setEDergiList] = useState(() => {
     const saved = localStorage.getItem('pikam_edergi_list');
     return saved ? JSON.parse(saved) : PIKAM_DATA.eDergiIssues;
@@ -40,6 +41,35 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    // 1. Fetch Cloud Issues from Supabase if available
+    const fetchCloudData = async () => {
+      try {
+        const { data: cloudIssues, error: issueErr } = await supabase.from('e_dergi_issues').select('*');
+        if (!issueErr && cloudIssues && cloudIssues.length > 0) {
+          // Merge cloud issues with default issues without duplicates
+          const cloudIds = new Set(cloudIssues.map(i => i.id));
+          const filteredDefaults = PIKAM_DATA.eDergiIssues.filter(i => !cloudIds.has(i.id));
+          const merged = [...cloudIssues, ...filteredDefaults];
+          setEDergiList(merged);
+          localStorage.setItem('pikam_edergi_list', JSON.stringify(merged));
+        }
+
+        const { data: cloudArticles, error: artErr } = await supabase.from('articles').select('*');
+        if (!artErr && cloudArticles && cloudArticles.length > 0) {
+          const cloudArtIds = new Set(cloudArticles.map(a => a.id));
+          const filteredArtDefaults = PIKAM_DATA.articles.filter(a => !cloudArtIds.has(a.id));
+          const mergedArts = [...cloudArticles, ...filteredArtDefaults];
+          setArticlesList(mergedArts);
+          localStorage.setItem('pikam_articles_list', JSON.stringify(mergedArts));
+        }
+      } catch (err) {
+        console.log('Supabase cloud fetch notice:', err);
+      }
+    };
+
+    fetchCloudData();
+
+    // 2. Check Admin Route
     const checkAdminRoute = () => {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
@@ -62,17 +92,22 @@ export default function App() {
     };
   }, []);
 
-  // Save to localStorage whenever eDergiList changes
+  // Save to localStorage and state
   const handleAddEDergi = (newIssue) => {
     const updated = [newIssue, ...eDergiList];
     setEDergiList(updated);
     localStorage.setItem('pikam_edergi_list', JSON.stringify(updated));
   };
 
-  const handleDeleteEDergi = (id) => {
+  const handleDeleteEDergi = async (id) => {
     const updated = eDergiList.filter(i => i.id !== id);
     setEDergiList(updated);
     localStorage.setItem('pikam_edergi_list', JSON.stringify(updated));
+    try {
+      await supabase.from('e_dergi_issues').delete().eq('id', id);
+    } catch (err) {
+      console.log('Supabase delete sync:', err);
+    }
   };
 
   const handleAddArticle = (newArticle) => {
