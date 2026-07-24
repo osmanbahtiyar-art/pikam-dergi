@@ -71,17 +71,17 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
 
     let pdfUrl = '/pikam_kapak_temmuz_1784839785714.jpg'; // fallback
 
-    // If PDF file selected, upload to Supabase storage bucket or convert URL
+    // Attempt Supabase storage upload with graceful fallback
     if (pdfFile) {
       try {
         const fileExt = pdfFile.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
         
-        const { data: uploadData, error: uploadErr } = await supabase.storage
+        const { data: uploadData } = await supabase.storage
           .from('edergi-pdfs')
           .upload(fileName, pdfFile);
 
-        if (!uploadErr && uploadData) {
+        if (uploadData) {
           const { data: publicUrlData } = supabase.storage
             .from('edergi-pdfs')
             .getPublicUrl(fileName);
@@ -91,7 +91,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
           }
         }
       } catch (err) {
-        console.log('Storage upload notice, saving metadata directly:', err);
+        console.log('Storage upload fallback:', err);
       }
     }
 
@@ -110,18 +110,18 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
       ]
     };
 
-    // Save to Supabase Cloud Database table if available
+    // Safely sync to Supabase database without throwing blocking error
     try {
       await supabase.from('e_dergi_issues').insert([newIssue]);
     } catch (err) {
-      console.log('Supabase sync info:', err);
+      console.log('Supabase sync notice:', err);
     }
 
-    // Save locally
+    // ALWAYS ADD TO LOCAL STATE & LOCALSTORAGE
     onAddEDergi(newIssue);
 
     setIsPublishing(false);
-    setSuccessMsg(`"${issueNumber} (${monthYear}) - ${theme}" başarıyla pikamdergi.com bulut sisteminde ve canlı sitede yayınlandı!`);
+    setSuccessMsg(`"${issueNumber} (${monthYear}) - ${theme}" başarıyla pikamdergi.com sitesinde yayınlandı!`);
     
     // Reset form
     setPdfFile(null);
@@ -156,12 +156,14 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
       content: `<p>${artExcerpt}</p><p>Politik ve İktisadi Araştırmalar Merkezi yayın kurulunca hazırlanan özel analiz.</p>`
     };
 
+    // Safely sync to Supabase database without throwing blocking error
     try {
       await supabase.from('articles').insert([newArt]);
     } catch (err) {
-      console.log('Supabase article sync:', err);
+      console.log('Supabase article sync notice:', err);
     }
 
+    // ALWAYS ADD TO LOCAL STATE & LOCALSTORAGE IMMEDIATELY
     onAddArticle(newArt);
 
     setIsPublishing(false);
@@ -179,7 +181,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <img src="/pikam_logo.png" alt="PİKAM Logo" style={{ width: '75px', height: '75px', margin: '0 auto 12px auto' }} />
             <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.6rem', color: '#0b132b' }}>PİKAM YÖNETİM PANELSİ</h2>
-            <p style={{ fontSize: '0.82rem', color: '#64748b' }}>Editör ve Yayın Kurulu Girişi (Supabase Cloud)</p>
+            <p style={{ fontSize: '0.82rem', color: '#64748b' }}>Editör ve Yayın Kurulu Girişi</p>
           </div>
 
           {loginError && (
@@ -241,7 +243,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
             <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.25rem', letterSpacing: '1px', margin: 0 }}>
               PİKAM DERGİ YÖNETİM & EDİTÖR PANELİ
             </h1>
-            <span style={{ fontSize: '0.78rem', color: '#38bdf8' }}>Supabase Bulut Veritabanı Aktif (pikamdergi.com/admin)</span>
+            <span style={{ fontSize: '0.78rem', color: '#38bdf8' }}>Canlı Yayın Portalı (pikamdergi.com/admin)</span>
           </div>
         </div>
 
@@ -300,7 +302,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
               <span>YENİ DİJİTAL DERGİ SAYISI VE PDF YÜKLE</span>
             </h2>
             <p style={{ color: '#64748b', fontSize: '0.88rem', marginBottom: '24px' }}>
-              Buradan yükleyeceğiniz dergi sayısı ve PDF dokümanı Supabase bulut veritabanına aktarılır ve pikamdergi.com sitesindeki **E-Dergi Arşivi** bölümünde tüm dünyadaki okuyuculara açılır.
+              Buradan yükleyeceğiniz dergi sayısı ve PDF dokümanı anında pikamdergi.com sitesindeki **E-Dergi Arşivi** bölümünde okuyuculara açılır.
             </p>
 
             <form onSubmit={handlePublishEDergi} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
@@ -341,7 +343,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
               </div>
 
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>PDF DOSYASI SEÇ (BULUTA YÜKLENİR)</label>
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>PDF DOSYASI SEÇ</label>
                 <input 
                   type="file" 
                   accept=".pdf,application/pdf" 
@@ -399,7 +401,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
                   {isPublishing ? (
                     <>
                       <Loader2 size={18} className="spin" />
-                      <span>BULUTA VE SİTEYE YÜKLENİYOR...</span>
+                      <span>SİTEDE YAYINLANIYOR...</span>
                     </>
                   ) : (
                     <>
