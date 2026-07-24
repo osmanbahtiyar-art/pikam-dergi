@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2 } from 'lucide-react';
+import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, onAddArticle, articlesList }) {
@@ -26,6 +26,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
   const [artCategory, setArtCategory] = useState('EKONOMİ');
   const [artAuthor, setArtAuthor] = useState('Prof. Dr. Ahmet Yılmaz');
   const [artExcerpt, setArtExcerpt] = useState('');
+  const [artImage, setArtImage] = useState('');
 
   useEffect(() => {
     const savedAuth = localStorage.getItem('pikam_admin_auth');
@@ -60,6 +61,14 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
         const objectUrl = URL.createObjectURL(file);
         setCoverImage(objectUrl);
       }
+    }
+  };
+
+  const handleArticleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const objectUrl = URL.createObjectURL(file);
+      setArtImage(objectUrl);
     }
   };
 
@@ -143,6 +152,16 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
       'DÜNYA': '#f59e0b'
     };
 
+    const categoryDefaultImages = {
+      'POLİTİKA': 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80',
+      'EKONOMİ': 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=600&q=80',
+      'STRATEJİ': 'https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=600&q=80',
+      'TEKNOLOJİ': 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80',
+      'DÜNYA': 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=600&q=80'
+    };
+
+    const finalImage = artImage || categoryDefaultImages[artCategory] || 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80';
+
     const newArt = {
       id: `art-${Date.now()}`,
       category: artCategory,
@@ -152,7 +171,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
       author: artAuthor,
       date: 'Bugün',
       readTime: '6 Dakika',
-      image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80',
+      image: finalImage,
       content: `<p>${artExcerpt}</p><p>Politik ve İktisadi Araştırmalar Merkezi yayın kurulunca hazırlanan özel analiz.</p>`
     };
 
@@ -167,9 +186,10 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
     onAddArticle(newArt);
 
     setIsPublishing(false);
-    setSuccessMsg(`"${artTitle}" makalesi saniyeler içinde sitede yayına girdi!`);
+    setSuccessMsg(`"${artTitle}" makalesi kapak görseliyle birlikte saniyeler içinde sitede yayına girdi!`);
     setArtTitle('');
     setArtExcerpt('');
+    setArtImage('');
     setTimeout(() => setSuccessMsg(''), 7000);
   };
 
@@ -496,6 +516,39 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
                     required
                     style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                   />
+                </div>
+              </div>
+
+              {/* MAKALE KAPAK FOTOĞRAFI YÜKLEME ALANI */}
+              <div>
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>
+                  MAKALE KAPAK FOTOĞRAFI (DOSYADAN SEÇ VEYA WEB BAĞLANTISI YAPIŞTIR)
+                </label>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  {artImage ? (
+                    <img src={artImage} alt="Makale Kapak Önizleme" style={{ width: '120px', height: '75px', objectFit: 'cover', borderRadius: '6px', border: '2px solid #0284c7' }} />
+                  ) : (
+                    <div style={{ width: '120px', height: '75px', background: '#f1f5f9', borderRadius: '6px', border: '1px dashed #cbd5e1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '0.75rem' }}>
+                      <ImageIcon size={20} />
+                      <span>Varsayılan</span>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexGrow: 1 }}>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleArticleImageUpload} 
+                      style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#ffffff' }}
+                    />
+                    <input 
+                      type="url" 
+                      placeholder="veya Görsel Web Bağlantısı (https://...)" 
+                      value={artImage} 
+                      onChange={(e) => setArtImage(e.target.value)} 
+                      style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                    />
+                  </div>
                 </div>
               </div>
 
