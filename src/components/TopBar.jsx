@@ -1,7 +1,7 @@
 import React from 'react';
-import { Search, FileText, ExternalLink } from 'lucide-react';
+import { Search, FileText, ExternalLink, User, LogOut } from 'lucide-react';
 
-export default function TopBar({ onOpenSearch, onOpenKunye }) {
+export default function TopBar({ currentUser, onOpenAuthModal, onLogoutUser, onOpenSearch, onOpenKunye }) {
   return (
     <div className="top-bar">
       <div className="container top-bar-inner">
@@ -61,6 +61,27 @@ export default function TopBar({ onOpenSearch, onOpenKunye }) {
             <FileText size={14} />
             <span>Künye & Kurumsal</span>
           </button>
+
+          {/* USER AUTH BUTTON / PROFILE BADGE */}
+          {currentUser ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '20px' }}>
+              <span style={{ fontSize: '0.78rem', color: '#38bdf8', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <User size={13} /> {currentUser.fullName}
+              </span>
+              <button 
+                onClick={onLogoutUser}
+                style={{ color: '#f87171', fontSize: '0.75rem', border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                title="Çıkış Yap"
+              >
+                <LogOut size={12} />
+              </button>
+            </div>
+          ) : (
+            <button className="top-auth-btn" onClick={onOpenAuthModal} style={{ color: '#38bdf8', fontWeight: '700' }}>
+              <User size={14} />
+              <span>Giriş Yap / Üye Ol</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

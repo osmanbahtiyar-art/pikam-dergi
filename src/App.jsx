@@ -13,6 +13,7 @@ import ArticleModal from './components/ArticleModal';
 import EDergiModal from './components/EDergiModal';
 import SearchModal from './components/SearchModal';
 import KunyeModal from './components/KunyeModal';
+import UserAuthModal from './components/UserAuthModal';
 import AdminPanel from './components/AdminPanel';
 
 import { PIKAM_DATA } from './data/pikamData';
@@ -26,6 +27,36 @@ export default function App() {
   const [selectedEDergi, setSelectedEDergi] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isKunyeOpen, setIsKunyeOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Current Logged In User State
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('pikam_current_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  // Registered Users List State (Persisted in Supabase & localStorage)
+  const [registeredUsersList, setRegisteredUsersList] = useState(() => {
+    const saved = localStorage.getItem('pikam_registered_users');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 'usr-demo-1',
+        fullName: 'Prof. Dr. Ahmet Yılmaz',
+        email: 'ahmet.yilmaz@pikam.org',
+        phone: '0532 111 22 33',
+        interests: 'EKONOMİ, STRATEJİ',
+        registeredAt: '24.07.2026 14:15:20'
+      },
+      {
+        id: 'usr-demo-2',
+        fullName: 'Sera Erdağı',
+        email: 'sera.erdagi@pikamtr.com',
+        phone: '0555 444 55 66',
+        interests: 'POLİTİKA, DÜNYA',
+        registeredAt: '24.07.2026 16:40:12'
+      }
+    ];
+  });
 
   // Dynamic E-Dergi & Articles state with Supabase & localStorage persistence
   const [eDergiList, setEDergiList] = useState(() => {
@@ -41,11 +72,25 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // 1. Fetch Cloud Issues and Articles from Supabase if available
+    // Fetch Cloud Users, Issues and Articles from Supabase if available
     const fetchCloudData = async () => {
       try {
-        const { data: cloudIssues, error: issueErr } = await supabase.from('e_dergi_issues').select('*');
-        if (!issueErr && cloudIssues && cloudIssues.length > 0) {
+        const { data: cloudProfiles } = await supabase.from('profiles').select('*');
+        if (cloudProfiles && cloudProfiles.length > 0) {
+          const mapped = cloudProfiles.map(p => ({
+            id: p.id,
+            fullName: p.full_name,
+            email: p.email,
+            phone: p.phone,
+            interests: p.interests,
+            registeredAt: p.registered_at
+          }));
+          setRegisteredUsersList(mapped);
+          localStorage.setItem('pikam_registered_users', JSON.stringify(mapped));
+        }
+
+        const { data: cloudIssues } = await supabase.from('e_dergi_issues').select('*');
+        if (cloudIssues && cloudIssues.length > 0) {
           const cloudIds = new Set(cloudIssues.map(i => i.id));
           const filteredDefaults = PIKAM_DATA.eDergiIssues.filter(i => !cloudIds.has(i.id));
           const merged = [...cloudIssues, ...filteredDefaults];
@@ -53,8 +98,8 @@ export default function App() {
           localStorage.setItem('pikam_edergi_list', JSON.stringify(merged));
         }
 
-        const { data: cloudArticles, error: artErr } = await supabase.from('articles').select('*');
-        if (!artErr && cloudArticles && cloudArticles.length > 0) {
+        const { data: cloudArticles } = await supabase.from('articles').select('*');
+        if (cloudArticles && cloudArticles.length > 0) {
           const cloudArtIds = new Set(cloudArticles.map(a => a.id));
           const filteredArtDefaults = PIKAM_DATA.articles.filter(a => !cloudArtIds.has(a.id));
           const mergedArts = [...cloudArticles, ...filteredArtDefaults];
@@ -68,7 +113,7 @@ export default function App() {
 
     fetchCloudData();
 
-    // 2. Check Admin Route
+    // Check Admin Route
     const checkAdminRoute = () => {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
@@ -91,7 +136,26 @@ export default function App() {
     };
   }, []);
 
-  // Save to localStorage and state
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user);
+    // Reload registered users list from localStorage
+    const saved = localStorage.getItem('pikam_registered_users');
+    if (saved) {
+      setRegisteredUsersList(JSON.parse(saved));
+    }
+  };
+
+  const handleLogoutUser = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('pikam_current_user');
+  };
+
+  const handleDeleteUser = (userId) => {
+    const updated = registeredUsersList.filter(u => u.id !== userId);
+    setRegisteredUsersList(updated);
+    localStorage.setItem('pikam_registered_users', JSON.stringify(updated));
+  };
+
   const handleAddEDergi = (newIssue) => {
     const updated = [newIssue, ...eDergiList];
     setEDergiList(updated);
@@ -134,6 +198,8 @@ export default function App() {
         onDeleteEDergi={handleDeleteEDergi}
         onAddArticle={handleAddArticle}
         articlesList={articlesList}
+        registeredUsersList={registeredUsersList}
+        onDeleteUser={handleDeleteUser}
       />
     );
   }
@@ -142,6 +208,9 @@ export default function App() {
   return (
     <div className="app-root">
       <TopBar 
+        currentUser={currentUser}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onLogoutUser={handleLogoutUser}
         onOpenSearch={() => setIsSearchOpen(true)}
         onOpenKunye={() => setIsKunyeOpen(true)}
       />
@@ -194,6 +263,11 @@ export default function App() {
       {selectedArticle && (
         <ArticleModal 
           article={selectedArticle}
+          currentUser={currentUser}
+          onOpenAuthModal={() => {
+            setSelectedArticle(null);
+            setIsAuthModalOpen(true);
+          }}
           onClose={() => setSelectedArticle(null)}
         />
       )}
@@ -215,6 +289,13 @@ export default function App() {
       {isKunyeOpen && (
         <KunyeModal 
           onClose={() => setIsKunyeOpen(false)}
+        />
+      )}
+
+      {isAuthModalOpen && (
+        <UserAuthModal 
+          onClose={() => setIsAuthModalOpen(false)}
+          onLoginSuccess={handleLoginSuccess}
         />
       )}
     </div>

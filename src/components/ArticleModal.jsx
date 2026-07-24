@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { X, Calendar, Clock, Share2, Volume2, Bookmark, MessageSquare, ThumbsUp } from 'lucide-react';
+import { X, Calendar, Clock, Share2, Volume2, Bookmark, MessageSquare, ThumbsUp, Lock, UserCheck } from 'lucide-react';
 
-export default function ArticleModal({ article, onClose }) {
+export default function ArticleModal({ article, currentUser, onOpenAuthModal, onClose }) {
   const [fontSize, setFontSize] = useState(1.05); // rem
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(48);
@@ -10,7 +10,6 @@ export default function ArticleModal({ article, onClose }) {
     { id: 2, name: "Oğuzhan Kaya", date: "23 Temmuz 2026", text: "Özellikle yeşil hidrojen ve sanayi dönüşümü vurgusu dikkat çekici." }
   ]);
   const [newComment, setNewComment] = useState("");
-  const [commenterName, setCommenterName] = useState("");
 
   if (!article) return null;
 
@@ -26,18 +25,17 @@ export default function ArticleModal({ article, onClose }) {
 
   const handleAddComment = (e) => {
     e.preventDefault();
-    if (!newComment.trim() || !commenterName.trim()) return;
+    if (!newComment.trim() || !currentUser) return;
     setComments([
       ...comments,
       {
         id: Date.now(),
-        name: commenterName,
+        name: currentUser.fullName,
         date: "Şimdi",
         text: newComment
       }
     ]);
     setNewComment("");
-    setCommenterName("");
   };
 
   return (
@@ -180,7 +178,7 @@ export default function ArticleModal({ article, onClose }) {
             </div>
           </div>
 
-          {/* COMMENTS SECTION */}
+          {/* COMMENTS SECTION - GATED REQUIRING USER LOGIN */}
           <div style={{ marginTop: '40px', background: '#f8fafc', padding: '24px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
             <h3 style={{ fontFamily: 'Playfair Display', fontSize: '1.25rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <MessageSquare size={18} />
@@ -199,32 +197,47 @@ export default function ArticleModal({ article, onClose }) {
               ))}
             </div>
 
-            {/* ADD COMMENT FORM */}
-            <form onSubmit={handleAddComment} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <h4 style={{ fontSize: '0.9rem', color: '#0f172a', fontWeight: '700' }}>Değerlendirme Ekle:</h4>
-              <input 
-                type="text" 
-                placeholder="Adınız ve Unvanınız..." 
-                value={commenterName} 
-                onChange={(e) => setCommenterName(e.target.value)} 
-                required
-                style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
-              />
-              <textarea 
-                placeholder="Yorumunuz veya akademik katkınız..." 
-                rows="3" 
-                value={newComment} 
-                onChange={(e) => setNewComment(e.target.value)} 
-                required
-                style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.88rem', fontFamily: 'inherit' }}
-              ></textarea>
-              <button 
-                type="submit" 
-                style={{ background: '#0b132b', color: 'white', padding: '8px 18px', borderRadius: '4px', fontWeight: '600', fontSize: '0.85rem', alignSelf: 'flex-start' }}
-              >
-                Yorumu Gönder
-              </button>
-            </form>
+            {/* ADD COMMENT FORM - GATED REQUIREMENT */}
+            {currentUser ? (
+              <form onSubmit={handleAddComment} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#15803d', background: '#dcfce7', padding: '8px 12px', borderRadius: '6px', fontSize: '0.82rem', fontWeight: '600' }}>
+                  <UserCheck size={16} />
+                  <span>Kayıtlı Okuyucu Girişi Yapıldı: <strong>{currentUser.fullName}</strong></span>
+                </div>
+
+                <textarea 
+                  placeholder="Akademik değerlendirme veya görüşünüzü yazın..." 
+                  rows="3" 
+                  value={newComment} 
+                  onChange={(e) => setNewComment(e.target.value)} 
+                  required
+                  style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem', fontFamily: 'inherit' }}
+                ></textarea>
+
+                <button 
+                  type="submit" 
+                  style={{ background: '#0b132b', color: 'white', padding: '8px 18px', borderRadius: '4px', fontWeight: '600', fontSize: '0.85rem', alignSelf: 'flex-start' }}
+                >
+                  Değerlendirmeyi Yayınla
+                </button>
+              </form>
+            ) : (
+              <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#92400e', fontWeight: '700', fontSize: '0.95rem', marginBottom: '6px' }}>
+                  <Lock size={18} />
+                  <span>YORUM YAPABİLMEK İÇİN GİRİŞ YAPMANIZ GEREKMEKTEDİR</span>
+                </div>
+                <p style={{ fontSize: '0.82rem', color: '#78350f', marginBottom: '14px' }}>
+                  Makalelere akademik değerlendirme ve yorum yazabilmek için PİKAM okuyucu üyeliği gerekmektedir.
+                </p>
+                <button 
+                  onClick={onOpenAuthModal}
+                  style={{ background: '#0b132b', color: 'white', padding: '8px 20px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: 'none', cursor: 'pointer' }}
+                >
+                  Giriş Yap / Hemen Üye Ol
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

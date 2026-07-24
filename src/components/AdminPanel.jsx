@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
-export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, onAddArticle, articlesList }) {
+export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, onAddArticle, articlesList, registeredUsersList, onDeleteUser }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [activeTab, setActiveTab] = useState('edergi');
+  const [activeTab, setActiveTab] = useState('uyeler');
   const [isPublishing, setIsPublishing] = useState(false);
 
   // E-Dergi Form State
@@ -72,6 +72,26 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
     }
   };
 
+  const handleExportUsersCSV = () => {
+    if (!registeredUsersList || registeredUsersList.length === 0) {
+      alert('Henüz kayıtlı üye bulunmamaktadır.');
+      return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,Ad Soyad,E-Posta,Telefon,İlgi Alanları,Kayıt Tarihi ve Saati\n";
+    registeredUsersList.forEach(u => {
+      csvContent += `"${u.fullName}","${u.email}","${u.phone}","${u.interests}","${u.registeredAt}"\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `PIKAM_Dergi_Kayıtlı_Üyeler_${new Date().toLocaleDateString('tr-TR')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handlePublishEDergi = async (e) => {
     e.preventDefault();
     if (!issueNumber || !monthYear || !theme) return;
@@ -80,7 +100,6 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
 
     let pdfUrl = '/pikam_kapak_temmuz_1784839785714.jpg'; // fallback
 
-    // Attempt Supabase storage upload with graceful fallback
     if (pdfFile) {
       try {
         const fileExt = pdfFile.name.split('.').pop();
@@ -119,20 +138,17 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
       ]
     };
 
-    // Safely sync to Supabase database without throwing blocking error
     try {
       await supabase.from('e_dergi_issues').insert([newIssue]);
     } catch (err) {
       console.log('Supabase sync notice:', err);
     }
 
-    // ALWAYS ADD TO LOCAL STATE & LOCALSTORAGE
     onAddEDergi(newIssue);
 
     setIsPublishing(false);
     setSuccessMsg(`"${issueNumber} (${monthYear}) - ${theme}" başarıyla pikamdergi.com sitesinde yayınlandı!`);
     
-    // Reset form
     setPdfFile(null);
     setPdfFileName('');
     setTimeout(() => setSuccessMsg(''), 7000);
@@ -175,14 +191,12 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
       content: `<p>${artExcerpt}</p><p>Politik ve İktisadi Araştırmalar Merkezi yayın kurulunca hazırlanan özel analiz.</p>`
     };
 
-    // Safely sync to Supabase database without throwing blocking error
     try {
       await supabase.from('articles').insert([newArt]);
     } catch (err) {
       console.log('Supabase article sync notice:', err);
     }
 
-    // ALWAYS ADD TO LOCAL STATE & LOCALSTORAGE IMMEDIATELY
     onAddArticle(newArt);
 
     setIsPublishing(false);
@@ -263,7 +277,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
             <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.25rem', letterSpacing: '1px', margin: 0 }}>
               PİKAM DERGİ YÖNETİM & EDİTÖR PANELİ
             </h1>
-            <span style={{ fontSize: '0.78rem', color: '#38bdf8' }}>Canlı Yayın Portalı (pikamdergi.com/admin)</span>
+            <span style={{ fontSize: '0.78rem', color: '#38bdf8' }}>Canlı Yayın & Üye Takip Portalı (pikamdergi.com/admin)</span>
           </div>
         </div>
 
@@ -288,7 +302,15 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
         )}
 
         {/* NAVIGATION TABS */}
-        <div style={{ display: 'flex', gap: '12px', borderBottom: '2px solid #e2e8f0', paddingBottom: '12px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', gap: '12px', borderBottom: '2px solid #e2e8f0', paddingBottom: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+          <button 
+            onClick={() => setActiveTab('uyeler')} 
+            style={{ background: activeTab === 'uyeler' ? '#0b132b' : '#ffffff', color: activeTab === 'uyeler' ? '#ffffff' : '#475569', padding: '10px 20px', borderRadius: '6px', fontWeight: '700', fontSize: '0.9rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <Users size={16} color={activeTab === 'uyeler' ? '#38bdf8' : '#0284c7'} />
+            <span>Kayıtlı Okuyucu & Üye Listesi ({registeredUsersList.length})</span>
+          </button>
+
           <button 
             onClick={() => setActiveTab('edergi')} 
             style={{ background: activeTab === 'edergi' ? '#0b132b' : '#ffffff', color: activeTab === 'edergi' ? '#ffffff' : '#475569', padding: '10px 20px', borderRadius: '6px', fontWeight: '700', fontSize: '0.9rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
@@ -313,6 +335,78 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
             <span>Yeni Makale / Rapor Ekle</span>
           </button>
         </div>
+
+        {/* TAB 0: KAYITLI ÜYELER LİSTESİ VE DATA BİRİKTİRME */}
+        {activeTab === 'uyeler' && (
+          <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0b132b', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Users size={22} color="#0284c7" />
+                  <span>SİTEDE KAYITLI OKUYUCULAR VE ÜYE BİLGİLERİ</span>
+                </h2>
+                <p style={{ color: '#64748b', fontSize: '0.88rem', marginTop: '4px' }}>
+                  Sitede hesap oluşturan okuyucuların iletişim verileri ve kayıt tarihleri burada biriktirilir.
+                </p>
+              </div>
+
+              <button 
+                onClick={handleExportUsersCSV}
+                style={{ background: '#16a34a', color: 'white', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <Download size={16} /> Üye Listesini İndir (CSV / Excel)
+              </button>
+            </div>
+
+            {registeredUsersList.length === 0 ? (
+              <div style={{ padding: '40px', textAlignment: 'center', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <p style={{ fontSize: '1rem', color: '#64748b' }}>Henüz kayıtlı okuyucu bulunmamaktadır. Kullanıcılar üye oldukça verileri buraya eklenecektir.</p>
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#0b132b', color: 'white' }}>
+                      <th style={{ padding: '12px 14px', borderRadius: '4px 0 0 0' }}>AD SOYAD</th>
+                      <th style={{ padding: '12px 14px' }}>E-POSTA ADRESİ</th>
+                      <th style={{ padding: '12px 14px' }}>TELEFON NUMARASI</th>
+                      <th style={{ padding: '12px 14px' }}>İLGİ ALANLARI</th>
+                      <th style={{ padding: '12px 14px' }}>KAYIT TARIHI VE SAATI</th>
+                      <th style={{ padding: '12px 14px', borderRadius: '0 4px 0 0', textAlign: 'center' }}>İŞLEM</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {registeredUsersList.map((user, idx) => (
+                      <tr key={user.id || idx} style={{ borderBottom: '1px solid #e2e8f0', background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                        <td style={{ padding: '12px 14px', fontWeight: '700', color: '#0f172a' }}>{user.fullName}</td>
+                        <td style={{ padding: '12px 14px', color: '#0284c7' }}>{user.email}</td>
+                        <td style={{ padding: '12px 14px', color: '#475569' }}>{user.phone}</td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '700' }}>
+                            {user.interests}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 14px', color: '#16a34a', fontWeight: '700' }}>{user.registeredAt}</td>
+                        <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                          <button 
+                            onClick={() => {
+                              if (confirm(`"${user.fullName}" kullanıcısını üye listesinden silmek istediğinize emin misiniz?`)) {
+                                onDeleteUser(user.id);
+                              }
+                            }}
+                            style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
+                          >
+                            <Trash2 size={12} /> Sil
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* TAB 1: E-DERGİ PDF YÜKLEME FORMU */}
         {activeTab === 'edergi' && (
@@ -519,7 +613,6 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
                 </div>
               </div>
 
-              {/* MAKALE KAPAK FOTOĞRAFI YÜKLEME ALANI */}
               <div>
                 <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>
                   MAKALE KAPAK FOTOĞRAFI (DOSYADAN SEÇ VEYA WEB BAĞLANTISI YAPIŞTIR)
@@ -529,7 +622,6 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
                     <img src={artImage} alt="Makale Kapak Önizleme" style={{ width: '120px', height: '75px', objectFit: 'cover', borderRadius: '6px', border: '2px solid #0284c7' }} />
                   ) : (
                     <div style={{ width: '120px', height: '75px', background: '#f1f5f9', borderRadius: '6px', border: '1px dashed #cbd5e1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '0.75rem' }}>
-                      <ImageIcon size={20} />
                       <span>Varsayılan</span>
                     </div>
                   )}
