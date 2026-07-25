@@ -241,43 +241,86 @@ button {
   box-shadow: inset 0 -3px 0 #38bdf8;
 }
 
-/* TICKER */
+/* TICKER BAR - ZERO OVERLAP FIXED STYLING */
 .ticker-bar {
   background-color: #ffffff;
   border-bottom: 1px solid var(--border-color);
   padding: 8px 0;
   font-size: 0.82rem;
+  overflow: hidden;
 }
 .ticker-inner {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 16px;
   overflow: hidden;
+  position: relative;
 }
 .ticker-badge {
   background-color: var(--accent-red);
-  color: white;
-  font-size: 0.7rem;
+  color: #ffffff;
+  font-size: 0.72rem;
   font-weight: 800;
-  padding: 3px 8px;
-  border-radius: 3px;
+  padding: 4px 12px;
+  border-radius: 4px;
   letter-spacing: 1px;
   white-space: nowrap;
   flex-shrink: 0;
+  z-index: 10;
+  box-shadow: 4px 0 12px rgba(255,255,255,0.9);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ticker-scroll-wrapper {
+  overflow: hidden;
+  position: relative;
+  flex-grow: 1;
+  width: 100%;
 }
 .ticker-text {
-  color: var(--slate-dark);
-  font-weight: 500;
-  white-space: nowrap;
-  animation: scrollTicker 28s linear infinite;
   display: flex;
-  gap: 30px;
+  align-items: center;
+  gap: 32px;
+  white-space: nowrap;
+  will-change: transform;
+  animation: scrollTickerLoop 35s linear infinite;
+  padding-left: 10px;
+}
+.ticker-text:hover {
+  animation-play-state: paused;
 }
 .ticker-text span {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  color: var(--slate-dark);
+}
+.ticker-text span:hover .ticker-title-text {
+  color: var(--accent-blue);
+  text-decoration: underline;
+}
+.ticker-cat-tag {
+  color: #0369a1;
+  background-color: #e0f2fe;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.ticker-dot {
+  color: #cbd5e1;
+  margin-left: 12px;
+}
+
+@keyframes scrollTickerLoop {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-33.333%);
+  }
 }
 
 /* HERO GRID */
@@ -738,11 +781,6 @@ button {
   grid-template-columns: 2fr 1fr 1fr 1.5fr;
   gap: 30px;
   margin-bottom: 40px;
-}
-
-@keyframes scrollTicker {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
 }
 
 @keyframes fadeIn {
