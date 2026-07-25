@@ -52,21 +52,23 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
       rawDate: now.toISOString()
     };
 
-    // Try Supabase Auth/Database Sync
+    // Sync to Supabase Cloud Database Table 'profiles'
     try {
       await supabase.from('profiles').insert([{
         id: newUser.id,
         full_name: fullName,
+        fullName: fullName,
         email: email,
         phone: phone,
         interests: interests.join(', '),
-        registered_at: formattedDate
+        registered_at: formattedDate,
+        registeredAt: formattedDate
       }]);
     } catch (err) {
       console.log('Supabase profile sync notice:', err);
     }
 
-    // Save locally
+    // Save locally on visitor browser
     const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
     const updatedUsers = [newUser, ...existing];
     localStorage.setItem('pikam_registered_users', JSON.stringify(updatedUsers));
