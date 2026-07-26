@@ -16,25 +16,23 @@ export const PIKAM_DATA = {
   ticker: [
     { id: 1, category: "POLİTİKA", title: "PİKAM 2026 Raporu Yayımlandı: Doğu Akdeniz Enerji Mimarisi ve Yeni Güç Dengeleri" },
     { id: 2, category: "EKONOMİ", title: "Merkez Bankaları Dijital Para Birimleri (CBDC) ve Küresel Finansal Sistem" },
-    { id: 3, category: "STRATEJİ", title: "Küresel Tedarik Zincirlerinde Yeniden Yapılanma ve Türkiye'nin Jeostratejik Rolü" },
-    { id: 4, category: "TEKNOLOJİ", title: "Yapay Zeka Etik Kurulu Standartları ve Ulusal Güvenlik Doktrinleri" }
+    { id: 3, category: "FİNANS", title: "Küresel Tedarik Zincirlerinde Yeniden Yapılanma ve Türkiye'nin Jeostratejik Rolü" },
+    { id: 4, category: "KÜLTÜR SANAT", title: "Sanat ve Sosyoloji: Dijitalleşen Çağda Yayıncılık ve Kültür Politikaları" }
   ],
 
   categories: [
-    { id: "TÜMÜ", label: "TÜMÜ" },
-    { id: "DÜNYA", label: "DÜNYA", color: "#f59e0b" },
-    { id: "EKONOMİ", label: "EKONOMİ", color: "#10b981" },
-    { id: "POLİTİKA", label: "POLİTİKA", color: "#ef4444" },
-    { id: "STRATEJİ", label: "STRATEJİ", color: "#6366f1" },
-    { id: "TEKNOLOJİ", label: "TEKNOLOJİ", color: "#06b6d4" },
-    { id: "YAZARLAR", label: "YAZARLAR", color: "#8b5cf6" },
     { id: "E-DERGİ", label: "E-DERGİ", color: "#ec4899" },
-    { id: "KÜNYE", label: "KÜNYE", color: "#64748b" }
+    { id: "POLİTİKA", label: "POLİTİKA", color: "#ef4444" },
+    { id: "EKONOMİ", label: "EKONOMİ", color: "#10b981" },
+    { id: "FİNANS", label: "FİNANS", color: "#059669" },
+    { id: "KÜLTÜR SANAT", label: "KÜLTÜR SANAT", color: "#d97706" },
+    { id: "KÜNYE", label: "KÜNYE", color: "#64748b" },
+    { id: "YAZARLAR", label: "YAZARLAR", color: "#8b5cf6" }
   ],
 
   heroFeatured: {
     id: "hero-1",
-    category: "EKONOMİ & STRATEJİ",
+    category: "EKONOMİ & FİNANS",
     categoryColor: "#10b981",
     title: "Küresel Ticaret Savaşları Çağında Makroekonomik Dayanıklılık ve Yeni Jeopolitik Dengeler",
     subtitle: "Doğrudan yabancı yatırımların yön değiştirdiği ve küresel navlun maliyetlerinin yeniden şekillendiği 2026 konjonktüründe Türkiye'nin stratejik konumlanışı.",
@@ -56,7 +54,7 @@ export const PIKAM_DATA = {
         "Yeni küresel iktisadi mimaride sadece en düşük maliyetle üreten değil; kriz anında tedarik zincirini koparmadan sürdürebilen aktörler rekabet avantajı elde edecektir."
       </blockquote>
 
-      <h3>2. Gelişmekte Olan Ekonomiler İçin Fırsat Pencereleri</h3>
+      <h3>2. Gelişmekte Olan Ekonomiler İçin Fırsat Pencerseleri</h3>
       <p>Gelişmekte olan pazarlar açısından bu dönüşüm, doğru sanayi politikaları ile birleştirildiğinde yüksek katma değerli yatırımları çekmek için tarihi bir fırsat sunmaktadır. Türkiye'nin lojistik altyapısı, genç nitelikli iş gücü ve gümrük birliği entegrasyonu, Avrupa ve Kuzey Afrika pazarlarına erişimde kritik bir kaldıraç niteliğindedir.</p>
 
       <h3>3. Politika Önerileri</h3>
@@ -82,9 +80,9 @@ export const PIKAM_DATA = {
     },
     {
       id: "sec-2",
-      category: "TEKNOLOJİ",
-      categoryColor: "#06b6d4",
-      title: "Otonom Sistemler ve Siber Savunma Doktrinlerinde Yapay Zeka Devrimi",
+      category: "FİNANS",
+      categoryColor: "#059669",
+      title: "Otonom Sistemler ve Finans Piyasalarında Yapay Zeka Devrimi",
       excerpt: "Askeri ve sivil teknolojilerde küresel yapay zeka standartlarının rekabet analizi.",
       author: "Dr. Murat Karahan",
       date: "21 Temmuz 2026",
@@ -93,10 +91,10 @@ export const PIKAM_DATA = {
     },
     {
       id: "sec-3",
-      category: "DÜNYA",
-      categoryColor: "#f59e0b",
-      title: "BRICS+ Genişlemesi ve Küresel Para Birimi Tartışmaları",
-      excerpt: "Doların küresel rezerv para rolü üzerindeki potansiyel baskılar ve alternatif ödeme sistemleri.",
+      category: "KÜLTÜR SANAT",
+      categoryColor: "#d97706",
+      title: "Dijitalleşen Dünyada Kültürel Miras ve Yayıncılık Sosyolojisi",
+      excerpt: "Geleneksel yayıncılıktan dijital akademik düşünce kuruluşlarına geçiş analizi.",
       author: "Kaan Arslan",
       date: "20 Temmuz 2026",
       readTime: "7 dk",
@@ -131,9 +129,9 @@ export const PIKAM_DATA = {
     },
     {
       id: "art-3",
-      category: "STRATEJİ",
-      categoryColor: "#6366f1",
-      title: "Yeşil Dönüşüm ve Karbon Sınır Düzenlemesi (SKDM) Uyumu",
+      category: "FİNANS",
+      categoryColor: "#059669",
+      title: "Yeşil Finansman ve Karbon Sınır Düzenlemesi (SKDM) Uyumu",
       excerpt: "Türk ihracatçısının Avrupa Birliği Yeşil Mutabakatı karşısındaki rekabet gücü haritası.",
       author: "Doç. Dr. Selin Aksoy",
       date: "17 Temmuz 2026",
@@ -143,39 +141,15 @@ export const PIKAM_DATA = {
     },
     {
       id: "art-4",
-      category: "TEKNOLOJİ",
-      categoryColor: "#06b6d4",
-      title: "Kuantum Bilgi İşlem ve Finansal Modellemede Yeni Ufuklar",
-      excerpt: "Kuantum algoritma simülasyonlarının risk yönetimi ve veri analitiğindeki yıkıcı gücü.",
+      category: "KÜLTÜR SANAT",
+      categoryColor: "#d97706",
+      title: "Medeniyetlerin Sanat Havzaları ve Düşünce Tarihi Üzerine",
+      excerpt: "Tarihsel süreçte estetik ve felsefi akımların toplumsal yapılara etkisi.",
       author: "Dr. Murat Karahan",
       date: "16 Temmuz 2026",
       readTime: "9 Dakika",
       image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=600&q=80",
-      content: "Kuantum bilgisayarların işlem kapasitesi, mevcut şifreleme ve risk hesaplama paradigmalarını kökten değiştirecektir..."
-    },
-    {
-      id: "art-5",
-      category: "DÜNYA",
-      categoryColor: "#f59e0b",
-      title: "Asya-Pasifik Güvenlik Mimarisi ve Hint-Pasifik Stratejileri",
-      excerpt: "Bölgesel ittifaklar ve küresel deniz ticaret yollarının emniyet analizi.",
-      author: "Kaan Arslan",
-      date: "15 Temmuz 2026",
-      readTime: "8 Dakika",
-      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=600&q=80",
-      content: "Hint-Pasifik havzası, 21. yüzyıl küresel siyasetinin ve deniz ticaret gücünün sıklaşan odağı haline gelmiştir..."
-    },
-    {
-      id: "art-6",
-      category: "EKONOMİ",
-      categoryColor: "#10b981",
-      title: "Demografik Dönüşümün Emek Piyasaları ve Sosyal Güvenliğe Etkisi",
-      excerpt: "Nüfus yaşlanması karşısında yapısal reformlar ve uzun vadeli mali sürdürülebilirlik.",
-      author: "Prof. Dr. Ahmet Yılmaz",
-      date: "14 Temmuz 2026",
-      readTime: "6 Dakika",
-      image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80",
-      content: "Gelişmekte olan ve gelişmiş ekonomilerde nüfusun yaşlanması, emek üretkenliği ve sosyal güvenlik fonları üzerinde doğrudan yük oluşturmaktadır..."
+      content: "Sanat ve felsefe ilişkisi toplumsal hafızanın taşınmasında asli unsur niteliğindedir..."
     }
   ],
 

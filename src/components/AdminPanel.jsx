@@ -23,7 +23,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
 
   // Article Form State
   const [artTitle, setArtTitle] = useState('');
-  const [artCategory, setArtCategory] = useState('EKONOMİ');
+  const [artCategory, setArtCategory] = useState('POLİTİKA');
   const [artAuthor, setArtAuthor] = useState('Prof. Dr. Ahmet Yılmaz');
   const [artExcerpt, setArtExcerpt] = useState('');
   const [artImage, setArtImage] = useState('');
@@ -163,6 +163,8 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
     const categoryColors = {
       'POLİTİKA': '#ef4444',
       'EKONOMİ': '#10b981',
+      'FİNANS': '#059669',
+      'KÜLTÜR SANAT': '#d97706',
       'STRATEJİ': '#6366f1',
       'TEKNOLOJİ': '#06b6d4',
       'DÜNYA': '#f59e0b'
@@ -171,6 +173,8 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
     const categoryDefaultImages = {
       'POLİTİKA': 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80',
       'EKONOMİ': 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=600&q=80',
+      'FİNANS': 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=600&q=80',
+      'KÜLTÜR SANAT': 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80',
       'STRATEJİ': 'https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=600&q=80',
       'TEKNOLOJİ': 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80',
       'DÜNYA': 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=600&q=80'
@@ -181,7 +185,7 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
     const newArt = {
       id: `art-${Date.now()}`,
       category: artCategory,
-      categoryColor: categoryColors[artCategory] || '#10b981',
+      categoryColor: categoryColors[artCategory] || '#ef4444',
       title: artTitle,
       excerpt: artExcerpt,
       author: artAuthor,
@@ -654,8 +658,10 @@ export default function AdminPanel({ eDergiList, onAddEDergi, onDeleteEDergi, on
                     onChange={(e) => setArtCategory(e.target.value)}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                   >
-                    <option value="EKONOMİ">EKONOMİ</option>
                     <option value="POLİTİKA">POLİTİKA</option>
+                    <option value="EKONOMİ">EKONOMİ</option>
+                    <option value="FİNANS">FİNANS</option>
+                    <option value="KÜLTÜR SANAT">KÜLTÜR SANAT</option>
                     <option value="STRATEJİ">STRATEJİ</option>
                     <option value="TEKNOLOJİ">TEKNOLOJİ</option>
                     <option value="DÜNYA">DÜNYA</option>
