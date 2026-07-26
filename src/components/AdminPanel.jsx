@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download, Image as ImageIcon, Newspaper, Feather, EyeOff, Settings, Edit3 } from 'lucide-react';
+import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download, Image as ImageIcon, Newspaper, Feather, EyeOff, Settings, Edit3, Layout, X } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function AdminPanel({ 
   eDergiList, onAddEDergi, onDeleteEDergi, 
   onAddArticle, articlesList, onDeleteArticle, 
   registeredUsersList, onDeleteUser,
-  authorsList, onAddAuthor, onDeleteAuthor,
+  authorsList, onAddAuthor, onDeleteAuthor, onUpdateAuthor,
+  heroFeatured, onUpdateHeroFeatured,
   sectionVisibility, onToggleSection
 }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -15,6 +16,7 @@ export default function AdminPanel({
   const [loginError, setLoginError] = useState('');
   const [activeTab, setActiveTab] = useState('uyeler');
   const [isPublishing, setIsPublishing] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
 
   // E-Dergi Form State
   const [issueNumber, setIssueNumber] = useState('Sayı 75');
@@ -25,7 +27,6 @@ export default function AdminPanel({
   const [pdfFile, setPdfFile] = useState(null);
   const [pdfFileName, setPdfFileName] = useState('');
   const [editorNote, setEditorNote] = useState('PİKAM 75. sayımızda Doğu Akdeniz enerji koridorları ve küresel makroekonomi masaya yatırılıyor.');
-  const [successMsg, setSuccessMsg] = useState('');
 
   // Article Form State
   const [artTitle, setArtTitle] = useState('');
@@ -34,12 +35,22 @@ export default function AdminPanel({
   const [artExcerpt, setArtExcerpt] = useState('');
   const [artImage, setArtImage] = useState('');
 
-  // Author Form State
+  // Author Add/Edit Form State
+  const [editingAuthorId, setEditingAuthorId] = useState(null);
   const [authorName, setAuthorName] = useState('');
-  const [authorRole, setAuthorRole] = useState('PİKAM Ekonomi Araştırmaları Direktörü');
-  const [authorAffiliation, setAuthorAffiliation] = useState('İktisat ve Finans Ana Bilim Dalı');
+  const [authorRole, setAuthorRole] = useState('');
+  const [authorAffiliation, setAuthorAffiliation] = useState('');
   const [authorAvatar, setAuthorAvatar] = useState('');
   const [authorLatest, setAuthorLatest] = useState('');
+
+  // Hero Main Featured CMS Form State
+  const [heroTitle, setHeroTitle] = useState(heroFeatured?.title || '');
+  const [heroSubtitle, setHeroSubtitle] = useState(heroFeatured?.subtitle || '');
+  const [heroCategory, setHeroCategory] = useState(heroFeatured?.category || 'EKONOMİ & STRATEJİ');
+  const [heroImage, setHeroImage] = useState(heroFeatured?.image || '/hero_ekonomi_jeopolitik_1784839785714.jpg');
+  const [heroAuthorName, setHeroAuthorName] = useState(heroFeatured?.author?.name || 'Prof. Dr. Ahmet Yılmaz');
+  const [heroAuthorTitle, setHeroAuthorTitle] = useState(heroFeatured?.author?.title || 'PİKAM Ekonomi Araştırmaları Direktörü');
+  const [heroReadTime, setHeroReadTime] = useState(heroFeatured?.readTime || '8 Dakika Okuma');
 
   useEffect(() => {
     const savedAuth = localStorage.getItem('pikam_admin_auth');
@@ -93,6 +104,32 @@ export default function AdminPanel({
     }
   };
 
+  const handleHeroImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const objectUrl = URL.createObjectURL(file);
+      setHeroImage(objectUrl);
+    }
+  };
+
+  const startEditAuthor = (author) => {
+    setEditingAuthorId(author.id);
+    setAuthorName(author.name || '');
+    setAuthorRole(author.role || '');
+    setAuthorAffiliation(author.affiliation || '');
+    setAuthorAvatar(author.avatar || '');
+    setAuthorLatest(author.latestArticle || '');
+  };
+
+  const cancelEditAuthor = () => {
+    setEditingAuthorId(null);
+    setAuthorName('');
+    setAuthorRole('');
+    setAuthorAffiliation('');
+    setAuthorAvatar('');
+    setAuthorLatest('');
+  };
+
   const handleExportUsersCSV = () => {
     if (!registeredUsersList || registeredUsersList.length === 0) {
       alert('Henüz kayıtlı üye bulunmamaktadır.');
@@ -113,13 +150,71 @@ export default function AdminPanel({
     document.body.removeChild(link);
   };
 
+  const handleSaveHeroFeatured = (e) => {
+    e.preventDefault();
+    if (!heroTitle || !heroSubtitle) return;
+
+    const updatedHero = {
+      ...heroFeatured,
+      title: heroTitle,
+      subtitle: heroSubtitle,
+      category: heroCategory,
+      image: heroImage,
+      readTime: heroReadTime,
+      author: {
+        name: heroAuthorName,
+        title: heroAuthorTitle,
+        avatar: typeof heroFeatured?.author === 'object' ? heroFeatured.author.avatar : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
+      }
+    };
+
+    onUpdateHeroFeatured(updatedHero);
+    setSuccessMsg('Ana Sayfa Manşet haberi başarıyla güncellendi ve sitede yayına alındı!');
+    setTimeout(() => setSuccessMsg(''), 7000);
+  };
+
+  const handleSaveAuthorForm = (e) => {
+    e.preventDefault();
+    if (!authorName) return;
+
+    if (editingAuthorId) {
+      // UPDATE EXISTING AUTHOR
+      const updatedAuthor = {
+        id: editingAuthorId,
+        name: authorName,
+        role: authorRole,
+        affiliation: authorAffiliation,
+        avatar: authorAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+        latestArticle: authorLatest || 'PİKAM Kıdemli Analisti'
+      };
+      onUpdateAuthor(updatedAuthor);
+      setSuccessMsg(`"${authorName}" yazarının bilgileri başarıyla güncellendi!`);
+      cancelEditAuthor();
+    } else {
+      // ADD NEW AUTHOR
+      const newAuthor = {
+        id: `auth-${Date.now()}`,
+        name: authorName,
+        role: authorRole,
+        affiliation: authorAffiliation,
+        avatar: authorAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+        latestArticle: authorLatest || 'PİKAM Kıdemli Analisti'
+      };
+      onAddAuthor(newAuthor);
+      setSuccessMsg(`"${authorName}" yazarı kadroya eklendi ve sitede yayınlandı!`);
+      cancelEditAuthor();
+    }
+
+    setTimeout(() => setSuccessMsg(''), 7000);
+  };
+
   const handlePublishEDergi = async (e) => {
     e.preventDefault();
     if (!issueNumber || !monthYear || !theme) return;
 
     setIsPublishing(true);
 
-    let pdfUrl = '/pikam_kapak_temmuz_1784839785714.jpg'; // fallback
+    let pdfUrl = '/pikam_kapak_temmuz_1784839785714.jpg';
 
     if (pdfFile) {
       try {
@@ -232,29 +327,6 @@ export default function AdminPanel({
     setTimeout(() => setSuccessMsg(''), 7000);
   };
 
-  const handleSaveAuthor = (e) => {
-    e.preventDefault();
-    if (!authorName) return;
-
-    const newAuthor = {
-      id: `auth-${Date.now()}`,
-      name: authorName,
-      role: authorRole,
-      affiliation: authorAffiliation,
-      avatar: authorAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-      latestArticle: authorLatest || 'PİKAM Kıdemli Analisti'
-    };
-
-    onAddAuthor(newAuthor);
-    setSuccessMsg(`"${authorName}" yazarı başarıyla kadroya eklendi ve sitede yayınlandı!`);
-    setAuthorName('');
-    setAuthorRole('');
-    setAuthorAffiliation('');
-    setAuthorAvatar('');
-    setAuthorLatest('');
-    setTimeout(() => setSuccessMsg(''), 7000);
-  };
-
   // LOGIN SCREEN
   if (!isAuthenticated) {
     return (
@@ -325,7 +397,7 @@ export default function AdminPanel({
             <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.25rem', letterSpacing: '1px', margin: 0 }}>
               PİKAM DERGİ GELİŞMİŞ CMS YÖNETİM PANELSİ
             </h1>
-            <span style={{ fontSize: '0.78rem', color: '#38bdf8' }}>Tam Arayüz ve Kadro Yönetim Portalı (pikamdergi.com/admin)</span>
+            <span style={{ fontSize: '0.78rem', color: '#38bdf8' }}>Tam Arayüz, Akış ve Kadro Düzenleme Portalı (pikamdergi.com/admin)</span>
           </div>
         </div>
 
@@ -360,6 +432,14 @@ export default function AdminPanel({
           </button>
 
           <button 
+            onClick={() => setActiveTab('manset_akis')} 
+            style={{ background: activeTab === 'manset_akis' ? '#0b132b' : '#ffffff', color: activeTab === 'manset_akis' ? '#ffffff' : '#475569', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Layout size={15} color={activeTab === 'manset_akis' ? '#38bdf8' : '#10b981'} />
+            <span>Ana Sayfa Akışı & Manşet</span>
+          </button>
+
+          <button 
             onClick={() => setActiveTab('yazarlar_yonetimi')} 
             style={{ background: activeTab === 'yazarlar_yonetimi' ? '#0b132b' : '#ffffff', color: activeTab === 'yazarlar_yonetimi' ? '#ffffff' : '#475569', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
@@ -372,7 +452,7 @@ export default function AdminPanel({
             style={{ background: activeTab === 'site_ayarlari' ? '#0b132b' : '#ffffff', color: activeTab === 'site_ayarlari' ? '#ffffff' : '#475569', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             <Settings size={15} color={activeTab === 'site_ayarlari' ? '#38bdf8' : '#06b6d4'} />
-            <span>Arayüz & Bölüm Ayarları</span>
+            <span>Bölüm Ayarları (Gizle/Göster)</span>
           </button>
 
           <button 
@@ -408,20 +488,131 @@ export default function AdminPanel({
           </button>
         </div>
 
-        {/* TAB: YAZARLAR VE AKADEMİK KADRO YÖNETİMİ */}
+        {/* TAB: ANA SAYFA AKIŞI VE MANŞET HABERİ YÖNETİMİ */}
+        {activeTab === 'manset_akis' && (
+          <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0b132b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Layout size={22} color="#10b981" />
+              <span>ANA SAYFA ANA MANŞET HABERİNİ VE GÖRSELİNİ DÜZENLE</span>
+            </h2>
+            <p style={{ color: '#64748b', fontSize: '0.88rem', marginBottom: '24px' }}>
+              Web sitenizin ana sayfasındaki en üstte büyük boyutta görünen **Ana Manşet** analizinin başlığını, alt başlığını ve manşet görselini buradan anında değiştirebilirsiniz.
+            </p>
+
+            <form onSubmit={handleSaveHeroFeatured} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>MANŞET HABER BAŞLIĞI *</label>
+                <input 
+                  type="text" 
+                  value={heroTitle} 
+                  onChange={(e) => setHeroTitle(e.target.value)} 
+                  placeholder="Ana sayfa büyük manşet başlığı" 
+                  required
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.95rem', fontWeight: '700' }}
+                />
+              </div>
+
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>MANŞET ÖZETİ / ALT BAŞLIĞI *</label>
+                <textarea 
+                  rows="3" 
+                  value={heroSubtitle} 
+                  onChange={(e) => setHeroSubtitle(e.target.value)} 
+                  placeholder="Manşet haberin özet metni..." 
+                  required
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', fontFamily: 'inherit' }}
+                ></textarea>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>KATEGORİ VE ETİKET</label>
+                <input 
+                  type="text" 
+                  value={heroCategory} 
+                  onChange={(e) => setHeroCategory(e.target.value)} 
+                  placeholder="Örn: EKONOMİ & STRATEJİ" 
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>OKUMA SÜRESİ</label>
+                <input 
+                  type="text" 
+                  value={heroReadTime} 
+                  onChange={(e) => setHeroReadTime(e.target.value)} 
+                  placeholder="Örn: 8 Dakika Okuma" 
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>YAZAR ADI VE SOYADI</label>
+                <input 
+                  type="text" 
+                  value={heroAuthorName} 
+                  onChange={(e) => setHeroAuthorName(e.target.value)} 
+                  placeholder="Prof. Dr. Ahmet Yılmaz" 
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>YAZAR UNVANI</label>
+                <input 
+                  type="text" 
+                  value={heroAuthorTitle} 
+                  onChange={(e) => setHeroAuthorTitle(e.target.value)} 
+                  placeholder="PİKAM Ekonomi Araştırmaları Direktörü" 
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                />
+              </div>
+
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>MANŞET KAPAK GÖRSELİ (YÜKLE VEYA URL YAPIŞTIR)</label>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  <img src={heroImage} alt="Manşet Önizleme" style={{ width: '160px', height: '90px', objectFit: 'cover', borderRadius: '6px', border: '2px solid #10b981' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexGrow: 1 }}>
+                    <input type="file" accept="image/*" onChange={handleHeroImageUpload} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                    <input type="url" placeholder="Görsel Web Bağlantısı (https://...)" value={heroImage} onChange={(e) => setHeroImage(e.target.value)} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ gridColumn: 'span 2', marginTop: '12px' }}>
+                <button type="submit" style={{ background: '#0b132b', color: 'white', padding: '14px 28px', borderRadius: '6px', fontWeight: '700', fontSize: '0.95rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <CheckCircle2 size={18} color="#38bdf8" /> MANŞET HABERİNİ SİTEDE GÜNCELLE VE YAYINLA
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* TAB: YAZARLAR VE AKADEMİK KADRO YÖNETİMİ & DÜZENLEME */}
         {activeTab === 'yazarlar_yonetimi' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* FORM: YENİ YAZAR EKLE */}
+            {/* FORM: YAZAR EKLE VEYA DÜZENLE */}
             <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-              <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0b132b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Feather size={22} color="#8b5cf6" />
-                <span>YENİ YAZAR VEYA AKADEMİSYEN EKLE</span>
-              </h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0b132b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Feather size={22} color="#8b5cf6" />
+                  <span>{editingAuthorId ? 'YAZAR BİLGİLERİNİ DÜZENLE' : 'YENİ YAZAR VEYA AKADEMİSYEN EKLE'}</span>
+                </h2>
+
+                {editingAuthorId && (
+                  <button onClick={cancelEditAuthor} style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <X size={14} /> Düzenlemeyi İptal Et
+                  </button>
+                )}
+              </div>
+              
               <p style={{ color: '#64748b', fontSize: '0.88rem', marginBottom: '24px' }}>
-                Buradan ekleyeceğiniz yazarlar doğrudan web sitenizdeki **"PİKAM YAZARLARI & AKADEMİK KADRO"** bölümünde yayınlanır.
+                {editingAuthorId 
+                  ? 'Seçilen yazarın isim, görev, uzmanlık alanı ve profil fotoğrafını buradan güncelleyebilirsiniz.' 
+                  : 'Buradan ekleyeceğiniz yazarlar doğrudan web sitenizdeki "PİKAM YAZARLARI & AKADEMİK KADRO" bölümünde yayınlanır.'}
               </p>
 
-              <form onSubmit={handleSaveAuthor} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <form onSubmit={handleSaveAuthorForm} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <div>
                   <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>YAZAR ADI VE SOYADI *</label>
                   <input 
@@ -486,14 +677,15 @@ export default function AdminPanel({
                 </div>
 
                 <div style={{ gridColumn: 'span 2', marginTop: '8px' }}>
-                  <button type="submit" style={{ background: '#0b132b', color: 'white', padding: '12px 24px', borderRadius: '6px', fontWeight: '700', fontSize: '0.95rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <PlusCircle size={16} /> YAZARI SİTEDE YAYINLA
+                  <button type="submit" style={{ background: editingAuthorId ? '#16a34a' : '#0b132b', color: 'white', padding: '12px 24px', borderRadius: '6px', fontWeight: '700', fontSize: '0.95rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {editingAuthorId ? <Edit3 size={16} /> : <PlusCircle size={16} />}
+                    <span>{editingAuthorId ? 'YAZAR BİLGİLERİNİ GÜNCELLE VE KAYDET' : 'YAZARI SİTEDE YAYINLA'}</span>
                   </button>
                 </div>
               </form>
             </div>
 
-            {/* LIST: MEVCUT YAZARLAR */}
+            {/* LIST: MEVCUT YAZARLAR VE DÜZENLE / SIL BUTONLARI */}
             <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
               <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.25rem', color: '#0b132b', marginBottom: '20px' }}>
                 SİTEDE YAYINDA OLAN YAZARLAR ({authorsList.length})
@@ -502,18 +694,27 @@ export default function AdminPanel({
                 {authorsList.map((author) => (
                   <div key={author.id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', background: '#f8fafc', textAlignment: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'center' }}>
                     <img src={author.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80'} alt={author.name} style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', marginBottom: '10px', border: '2px solid #8b5cf6' }} />
-                    <h4 style={{ fontFamily: 'Playfair Display', fontSize: '1rem', color: '#0f172a', margin: '0 0 4px 0' }}>{author.name}</h4>
-                    <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '0 0 10px 0' }}>{author.role}</p>
-                    <button 
-                      onClick={() => {
-                        if (confirm(`"${author.name}" yazarını siteden kaldırmak istediğinize emin misiniz?`)) {
-                          onDeleteAuthor(author.id);
-                        }
-                      }}
-                      style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '4px 10px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                    >
-                      <Trash2 size={12} /> Kadrodan Sil
-                    </button>
+                    <h4 style={{ fontFamily: 'Playfair Display', fontSize: '1rem', color: '#0f172a', margin: '0 0 4px 0', textAlign: 'center' }}>{author.name}</h4>
+                    <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '0 0 12px 0', textAlign: 'center' }}>{author.role}</p>
+                    
+                    <div style={{ display: 'flex', gap: '8px', width: '100%', justifyContent: 'center' }}>
+                      <button 
+                        onClick={() => startEditAuthor(author)}
+                        style={{ flex: 1, background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', padding: '6px 10px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                      >
+                        <Edit3 size={13} /> Düzenle
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (confirm(`"${author.name}" yazarını siteden kaldırmak istediğinize emin misiniz?`)) {
+                            onDeleteAuthor(author.id);
+                          }
+                        }}
+                        style={{ flex: 1, background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '6px 10px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                      >
+                        <Trash2 size={13} /> Sil
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

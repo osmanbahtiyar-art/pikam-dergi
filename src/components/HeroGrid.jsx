@@ -2,8 +2,9 @@ import React from 'react';
 import { PIKAM_DATA } from '../data/pikamData';
 import { Clock, Calendar, ExternalLink, ShieldCheck } from 'lucide-react';
 
-export default function HeroGrid({ onSelectArticle }) {
-  const hero = PIKAM_DATA.heroFeatured;
+export default function HeroGrid({ heroFeatured, secondaryFeatured, onSelectArticle }) {
+  const hero = heroFeatured || PIKAM_DATA.heroFeatured;
+  const secondary = secondaryFeatured && secondaryFeatured.length > 0 ? secondaryFeatured : PIKAM_DATA.secondaryFeatured;
 
   return (
     <section className="hero-section">
@@ -13,7 +14,7 @@ export default function HeroGrid({ onSelectArticle }) {
           <div className="hero-image-wrapper">
             <img src={hero.image} alt={hero.title} className="hero-image" />
             <div style={{ position: 'absolute', top: '16px', left: '16px' }}>
-              <span className="category-tag" style={{ backgroundColor: hero.categoryColor }}>
+              <span className="category-tag" style={{ backgroundColor: hero.categoryColor || '#10b981' }}>
                 {hero.category}
               </span>
             </div>
@@ -24,25 +25,25 @@ export default function HeroGrid({ onSelectArticle }) {
             <p className="hero-subtitle">{hero.subtitle}</p>
 
             <div className="author-meta">
-              <img src={hero.author.avatar} alt={hero.author.name} className="author-avatar" />
+              <img src={typeof hero.author === 'object' ? hero.author.avatar : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'} alt={typeof hero.author === 'object' ? hero.author.name : hero.author} className="author-avatar" />
               <div className="author-info">
-                <span className="author-name">{hero.author.name}</span>
-                <span className="author-role">{hero.author.title}</span>
+                <span className="author-name">{typeof hero.author === 'object' ? hero.author.name : hero.author}</span>
+                <span className="author-role">{typeof hero.author === 'object' ? hero.author.title : 'PİKAM Araştırmaları Direktörü'}</span>
               </div>
 
               <div className="meta-right">
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Calendar size={12} /> {hero.date}
+                  <Calendar size={12} /> {hero.date || 'Bugün'}
                 </span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px', color: '#10b981', fontWeight: '600' }}>
-                  <Clock size={12} /> {hero.readTime}
+                  <Clock size={12} /> {hero.readTime || '8 Dakika'}
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* SECONDARY FEATURED SIDEBAR & ANA SİTEYE GEÇİŞ BUTONU */}
+        {/* SECONDARY FEATURED SIDEBAR & ANA SİTEYE GEÇİŞ BANNERI */}
         <div className="hero-sidebar">
           {/* PİKAMTR.COM ÖZEL GEÇİŞ BANNERI */}
           <div style={{ background: 'linear-gradient(135deg, #0b132b 0%, #1c2541 100%)', color: 'white', padding: '18px', borderRadius: '8px', border: '1px solid #0284c7', boxShadow: '0 4px 15px rgba(2, 132, 199, 0.15)' }}>
@@ -88,18 +89,18 @@ export default function HeroGrid({ onSelectArticle }) {
             </h3>
           </div>
 
-          {PIKAM_DATA.secondaryFeatured.map((sec) => (
+          {secondary.map((sec) => (
             <div key={sec.id} className="sec-card" onClick={() => onSelectArticle(sec)}>
               <img src={sec.image} alt={sec.title} className="sec-img" />
               <div className="sec-content">
                 <div>
-                  <span className="category-tag" style={{ backgroundColor: sec.categoryColor, fontSize: '0.65rem', padding: '2px 6px', marginBottom: '4px' }}>
+                  <span className="category-tag" style={{ backgroundColor: sec.categoryColor || '#ef4444', fontSize: '0.65rem', padding: '2px 6px', marginBottom: '4px' }}>
                     {sec.category}
                   </span>
                   <h4 className="sec-title">{sec.title}</h4>
                 </div>
                 <div className="sec-meta">
-                  <span>{sec.author} • {sec.date}</span>
+                  <span>{typeof sec.author === 'string' ? sec.author : sec.author?.name} • {sec.date || 'Bugün'}</span>
                 </div>
               </div>
             </div>

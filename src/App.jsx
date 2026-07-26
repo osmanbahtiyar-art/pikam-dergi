@@ -75,6 +75,12 @@ export default function App() {
     return saved ? JSON.parse(saved) : PIKAM_DATA.authors;
   });
 
+  // Dynamic Homepage Hero Main Story CMS State
+  const [heroFeatured, setHeroFeatured] = useState(() => {
+    const saved = localStorage.getItem('pikam_hero_featured');
+    return saved ? JSON.parse(saved) : PIKAM_DATA.heroFeatured;
+  });
+
   // Dynamic E-Dergi & Articles state with Supabase & localStorage persistence
   const [eDergiList, setEDergiList] = useState(() => {
     const saved = localStorage.getItem('pikam_edergi_list');
@@ -89,7 +95,6 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Fetch Cloud Users, Authors, Issues and Articles from Supabase if available
     const fetchCloudData = async () => {
       try {
         const { data: cloudProfiles } = await supabase.from('profiles').select('*');
@@ -130,7 +135,6 @@ export default function App() {
 
     fetchCloudData();
 
-    // Check Admin Route
     const checkAdminRoute = () => {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
@@ -162,8 +166,19 @@ export default function App() {
     localStorage.setItem('pikam_section_visibility', JSON.stringify(updated));
   };
 
+  const handleUpdateHeroFeatured = (updatedHero) => {
+    setHeroFeatured(updatedHero);
+    localStorage.setItem('pikam_hero_featured', JSON.stringify(updatedHero));
+  };
+
   const handleAddAuthor = (newAuthor) => {
     const updated = [newAuthor, ...authorsList];
+    setAuthorsList(updated);
+    localStorage.setItem('pikam_authors_list', JSON.stringify(updated));
+  };
+
+  const handleUpdateAuthor = (updatedAuthor) => {
+    const updated = authorsList.map(a => a.id === updatedAuthor.id ? updatedAuthor : a);
     setAuthorsList(updated);
     localStorage.setItem('pikam_authors_list', JSON.stringify(updated));
   };
@@ -252,6 +267,9 @@ export default function App() {
         authorsList={authorsList}
         onAddAuthor={handleAddAuthor}
         onDeleteAuthor={handleDeleteAuthor}
+        onUpdateAuthor={handleUpdateAuthor}
+        heroFeatured={heroFeatured}
+        onUpdateHeroFeatured={handleUpdateHeroFeatured}
         sectionVisibility={sectionVisibility}
         onToggleSection={handleToggleSection}
       />
@@ -288,6 +306,7 @@ export default function App() {
       <main>
         {sectionVisibility.showHero && (
           <HeroGrid 
+            heroFeatured={heroFeatured}
             onSelectArticle={(art) => setSelectedArticle(art)}
           />
         )}
