@@ -20,7 +20,7 @@ import { PIKAM_DATA } from './data/pikamData';
 import { supabase } from './lib/supabaseClient';
 
 export default function App() {
-  const [activeCategory, setActiveCategory] = useState('TÜMÜ');
+  const [activeCategory, setActiveCategory] = useState('E-DERGİ');
   
   // Modals state
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -28,6 +28,17 @@ export default function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isKunyeOpen, setIsKunyeOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Section Visibility Toggles (Hide/Show sections from Admin Panel)
+  const [sectionVisibility, setSectionVisibility] = useState(() => {
+    const saved = localStorage.getItem('pikam_section_visibility');
+    return saved ? JSON.parse(saved) : {
+      showHero: true,
+      showYazarlar: true,
+      showEDergi: true,
+      showTicker: true
+    };
+  });
 
   // Current Logged In User State
   const [currentUser, setCurrentUser] = useState(() => {
@@ -58,6 +69,12 @@ export default function App() {
     ];
   });
 
+  // Dynamic Authors List (Manageable via Admin Panel)
+  const [authorsList, setAuthorsList] = useState(() => {
+    const saved = localStorage.getItem('pikam_authors_list');
+    return saved ? JSON.parse(saved) : PIKAM_DATA.authors;
+  });
+
   // Dynamic E-Dergi & Articles state with Supabase & localStorage persistence
   const [eDergiList, setEDergiList] = useState(() => {
     const saved = localStorage.getItem('pikam_edergi_list');
@@ -72,18 +89,18 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Fetch Cloud Users, Issues and Articles from Supabase if available
+    // Fetch Cloud Users, Authors, Issues and Articles from Supabase if available
     const fetchCloudData = async () => {
       try {
         const { data: cloudProfiles } = await supabase.from('profiles').select('*');
         if (cloudProfiles && cloudProfiles.length > 0) {
           const mapped = cloudProfiles.map(p => ({
             id: p.id,
-            fullName: p.full_name,
+            fullName: p.full_name || p.fullName,
             email: p.email,
             phone: p.phone,
             interests: p.interests,
-            registeredAt: p.registered_at
+            registeredAt: p.registered_at || p.registeredAt
           }));
           setRegisteredUsersList(mapped);
           localStorage.setItem('pikam_registered_users', JSON.stringify(mapped));
@@ -135,6 +152,27 @@ export default function App() {
       window.removeEventListener('hashchange', checkAdminRoute);
     };
   }, []);
+
+  const handleToggleSection = (sectionKey) => {
+    const updated = {
+      ...sectionVisibility,
+      [sectionKey]: !sectionVisibility[sectionKey]
+    };
+    setSectionVisibility(updated);
+    localStorage.setItem('pikam_section_visibility', JSON.stringify(updated));
+  };
+
+  const handleAddAuthor = (newAuthor) => {
+    const updated = [newAuthor, ...authorsList];
+    setAuthorsList(updated);
+    localStorage.setItem('pikam_authors_list', JSON.stringify(updated));
+  };
+
+  const handleDeleteAuthor = (authorId) => {
+    const updated = authorsList.filter(a => a.id !== authorId);
+    setAuthorsList(updated);
+    localStorage.setItem('pikam_authors_list', JSON.stringify(updated));
+  };
 
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
@@ -211,6 +249,11 @@ export default function App() {
         onDeleteArticle={handleDeleteArticle}
         registeredUsersList={registeredUsersList}
         onDeleteUser={handleDeleteUser}
+        authorsList={authorsList}
+        onAddAuthor={handleAddAuthor}
+        onDeleteAuthor={handleDeleteAuthor}
+        sectionVisibility={sectionVisibility}
+        onToggleSection={handleToggleSection}
       />
     );
   }
@@ -236,12 +279,14 @@ export default function App() {
         onScrollToYazarlar={scrollToYazarlar}
       />
 
-      <Ticker 
-        onSelectArticle={(art) => setSelectedArticle(art)}
-      />
+      {sectionVisibility.showTicker && (
+        <Ticker 
+          onSelectArticle={(art) => setSelectedArticle(art)}
+        />
+      )}
 
       <main>
-        {activeCategory === 'TÜMÜ' && (
+        {sectionVisibility.showHero && (
           <HeroGrid 
             onSelectArticle={(art) => setSelectedArticle(art)}
           />
@@ -253,15 +298,20 @@ export default function App() {
           onSelectArticle={(art) => setSelectedArticle(art)}
         />
 
-        <YazarlarSection 
-          id="yazarlar-section"
-        />
+        {sectionVisibility.showYazarlar && (
+          <YazarlarSection 
+            id="yazarlar-section"
+            authorsList={authorsList}
+          />
+        )}
 
-        <EDergiSection 
-          id="e-dergi-section"
-          eDergiList={eDergiList}
-          onOpenEDergiModal={(issue) => setSelectedEDergi(issue)}
-        />
+        {sectionVisibility.showEDergi && (
+          <EDergiSection 
+            id="e-dergi-section"
+            eDergiList={eDergiList}
+            onOpenEDergiModal={(issue) => setSelectedEDergi(issue)}
+          />
+        )}
       </main>
 
       <Footer 
