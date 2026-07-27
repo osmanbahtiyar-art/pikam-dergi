@@ -160,9 +160,8 @@ button {
   letter-spacing: 1px;
   margin-top: 4px;
   text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: block;
+  text-align: center;
 }
 .pikam-portal-badge {
   font-size: 0.75rem;

@@ -17,14 +17,17 @@ export default function Header() {
         <div className="header-text-block">
           <h1 className="logo-title">{PIKAM_DATA.header.title}</h1>
           <div className="logo-subtitle">
-            <span>{PIKAM_DATA.header.fullTitle}</span>
+            {PIKAM_DATA.header.fullTitle}
+          </div>
+          <div style={{ marginTop: '6px', marginBottom: '4px', display: 'flex', justifyContent: 'center' }}>
             <a 
               href="https://www.pikamtr.com/" 
               target="_blank" 
               rel="noreferrer" 
               className="pikam-portal-badge"
+              style={{ padding: '3px 12px', fontSize: '0.78rem' }}
             >
-              <ExternalLink size={11} /> pikamtr.com
+              <ExternalLink size={12} /> pikamtr.com
             </a>
           </div>
           <div className="logo-tagline">{PIKAM_DATA.header.tagline}</div>
