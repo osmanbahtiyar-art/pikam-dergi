@@ -21,6 +21,7 @@ export const PIKAM_DATA = {
   ],
 
   categories: [
+    { id: "ANASAYFA", label: "ANASAYFA", color: "#38bdf8" },
     { id: "E-DERGİ", label: "E-DERGİ", color: "#ec4899" },
     { id: "POLİTİKA", label: "POLİTİKA", color: "#ef4444" },
     { id: "EKONOMİ", label: "EKONOMİ", color: "#10b981" },
@@ -54,7 +55,7 @@ export const PIKAM_DATA = {
         "Yeni küresel iktisadi mimaride sadece en düşük maliyetle üreten değil; kriz anında tedarik zincirini koparmadan sürdürebilen aktörler rekabet avantajı elde edecektir."
       </blockquote>
 
-      <h3>2. Gelişmekte Olan Ekonomiler İçin Fırsat Pencerseleri</h3>
+      <h3>2. Gelişmekte Olan Ekonomiler İçin Fırsat Pencereleri</h3>
       <p>Gelişmekte olan pazarlar açısından bu dönüşüm, doğru sanayi politikaları ile birleştirildiğinde yüksek katma değerli yatırımları çekmek için tarihi bir fırsat sunmaktadır. Türkiye'nin lojistik altyapısı, genç nitelikli iş gücü ve gümrük birliği entegrasyonu, Avrupa ve Kuzey Afrika pazarlarına erişimde kritik bir kaldıraç niteliğindedir.</p>
 
       <h3>3. Politika Önerileri</h3>

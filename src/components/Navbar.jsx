@@ -3,7 +3,10 @@ import { PIKAM_DATA } from '../data/pikamData';
 
 export default function Navbar({ activeCategory, onSelectCategory, onOpenKunye, onScrollToEDergi, onScrollToYazarlar }) {
   const handleClick = (catId) => {
-    if (catId === 'KÜNYE') {
+    if (catId === 'ANASAYFA') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      onSelectCategory('ANASAYFA');
+    } else if (catId === 'KÜNYE') {
       onOpenKunye();
     } else if (catId === 'E-DERGİ') {
       onScrollToEDergi();

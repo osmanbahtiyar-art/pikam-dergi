@@ -1,11 +1,13 @@
 import React from 'react';
 import { PIKAM_DATA } from '../data/pikamData';
-import { Calendar, Clock, ArrowUpRight } from 'lucide-react';
+import { Calendar, ArrowUpRight } from 'lucide-react';
 
 export default function EditorialFeed({ activeCategory, articlesList, onSelectArticle }) {
   const sourceArticles = articlesList && articlesList.length > 0 ? articlesList : PIKAM_DATA.articles;
 
-  const filteredArticles = activeCategory === 'TÜMÜ' 
+  const isAllCategory = activeCategory === 'TÜMÜ' || activeCategory === 'ANASAYFA' || activeCategory === 'KÜNYE' || activeCategory === 'E-DERGİ' || activeCategory === 'YAZARLAR';
+
+  const filteredArticles = isAllCategory 
     ? sourceArticles 
     : sourceArticles.filter(a => a.category === activeCategory);
 
@@ -16,7 +18,7 @@ export default function EditorialFeed({ activeCategory, articlesList, onSelectAr
           <div className="section-title">
             <span className="section-title-line"></span>
             <span>
-              {activeCategory === 'TÜMÜ' ? 'SON EKLENEN MAKALE VE ANALİZLER' : `${activeCategory} KATEGORİSİ ANALİZLERİ`}
+              {isAllCategory ? 'SON EKLENEN MAKALE VE ANALİZLER' : `${activeCategory} KATEGORİSİ ANALİZLERİ`}
             </span>
           </div>
           <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '500' }}>
@@ -25,7 +27,7 @@ export default function EditorialFeed({ activeCategory, articlesList, onSelectAr
         </div>
 
         {filteredArticles.length === 0 ? (
-          <div style={{ padding: '40px', textAlignment: 'center', background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+          <div style={{ padding: '40px', textAlign: 'center', background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
             <p style={{ fontSize: '1.1rem', color: '#64748b' }}>Bu kategoride henüz yayınlanmış makale bulunmamaktadır.</p>
           </div>
         ) : (

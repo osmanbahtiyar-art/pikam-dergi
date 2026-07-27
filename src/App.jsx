@@ -20,7 +20,7 @@ import { PIKAM_DATA } from './data/pikamData';
 import { supabase } from './lib/supabaseClient';
 
 export default function App() {
-  const [activeCategory, setActiveCategory] = useState('E-DERGİ');
+  const [activeCategory, setActiveCategory] = useState('ANASAYFA');
   
   // Modals state
   const [selectedArticle, setSelectedArticle] = useState(null);
