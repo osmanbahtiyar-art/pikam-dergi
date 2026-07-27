@@ -95,8 +95,10 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    // FETCH ALL CLOUD DATA FROM SUPABASE FOR 100% PERMANENT GLOBAL REALTIME SYNC
     const fetchCloudData = async () => {
       try {
+        // 1. Fetch Registered Users Profiles
         const { data: cloudProfiles } = await supabase.from('profiles').select('*');
         if (cloudProfiles && cloudProfiles.length > 0) {
           const mapped = cloudProfiles.map(p => ({
@@ -111,6 +113,30 @@ export default function App() {
           localStorage.setItem('pikam_registered_users', JSON.stringify(mapped));
         }
 
+        // 2. Fetch Authors List
+        const { data: cloudAuthors } = await supabase.from('authors').select('*');
+        if (cloudAuthors && cloudAuthors.length > 0) {
+          setAuthorsList(cloudAuthors);
+          localStorage.setItem('pikam_authors_list', JSON.stringify(cloudAuthors));
+        }
+
+        // 3. Fetch Site Settings (Hero Featured & Section Visibility)
+        const { data: cloudSettings } = await supabase.from('site_settings').select('*');
+        if (cloudSettings && cloudSettings.length > 0) {
+          const heroSetting = cloudSettings.find(s => s.id === 'hero_featured');
+          if (heroSetting && heroSetting.data) {
+            setHeroFeatured(heroSetting.data);
+            localStorage.setItem('pikam_hero_featured', JSON.stringify(heroSetting.data));
+          }
+
+          const visibilitySetting = cloudSettings.find(s => s.id === 'section_visibility');
+          if (visibilitySetting && visibilitySetting.data) {
+            setSectionVisibility(visibilitySetting.data);
+            localStorage.setItem('pikam_section_visibility', JSON.stringify(visibilitySetting.data));
+          }
+        }
+
+        // 4. Fetch E-Dergi Issues
         const { data: cloudIssues } = await supabase.from('e_dergi_issues').select('*');
         if (cloudIssues && cloudIssues.length > 0) {
           const cloudIds = new Set(cloudIssues.map(i => i.id));
@@ -120,6 +146,7 @@ export default function App() {
           localStorage.setItem('pikam_edergi_list', JSON.stringify(merged));
         }
 
+        // 5. Fetch Articles List
         const { data: cloudArticles } = await supabase.from('articles').select('*');
         if (cloudArticles && cloudArticles.length > 0) {
           const cloudArtIds = new Set(cloudArticles.map(a => a.id));
@@ -157,36 +184,66 @@ export default function App() {
     };
   }, []);
 
-  const handleToggleSection = (sectionKey) => {
+  const handleToggleSection = async (sectionKey) => {
     const updated = {
       ...sectionVisibility,
       [sectionKey]: !sectionVisibility[sectionKey]
     };
     setSectionVisibility(updated);
     localStorage.setItem('pikam_section_visibility', JSON.stringify(updated));
+
+    try {
+      await supabase.from('site_settings').upsert([{ id: 'section_visibility', data: updated }]);
+    } catch (err) {
+      console.log('Supabase visibility sync notice:', err);
+    }
   };
 
-  const handleUpdateHeroFeatured = (updatedHero) => {
+  const handleUpdateHeroFeatured = async (updatedHero) => {
     setHeroFeatured(updatedHero);
     localStorage.setItem('pikam_hero_featured', JSON.stringify(updatedHero));
+
+    try {
+      await supabase.from('site_settings').upsert([{ id: 'hero_featured', data: updatedHero }]);
+    } catch (err) {
+      console.log('Supabase hero sync notice:', err);
+    }
   };
 
-  const handleAddAuthor = (newAuthor) => {
+  const handleAddAuthor = async (newAuthor) => {
     const updated = [newAuthor, ...authorsList];
     setAuthorsList(updated);
     localStorage.setItem('pikam_authors_list', JSON.stringify(updated));
+
+    try {
+      await supabase.from('authors').upsert([newAuthor]);
+    } catch (err) {
+      console.log('Supabase author add notice:', err);
+    }
   };
 
-  const handleUpdateAuthor = (updatedAuthor) => {
+  const handleUpdateAuthor = async (updatedAuthor) => {
     const updated = authorsList.map(a => a.id === updatedAuthor.id ? updatedAuthor : a);
     setAuthorsList(updated);
     localStorage.setItem('pikam_authors_list', JSON.stringify(updated));
+
+    try {
+      await supabase.from('authors').upsert([updatedAuthor]);
+    } catch (err) {
+      console.log('Supabase author update notice:', err);
+    }
   };
 
-  const handleDeleteAuthor = (authorId) => {
+  const handleDeleteAuthor = async (authorId) => {
     const updated = authorsList.filter(a => a.id !== authorId);
     setAuthorsList(updated);
     localStorage.setItem('pikam_authors_list', JSON.stringify(updated));
+
+    try {
+      await supabase.from('authors').delete().eq('id', authorId);
+    } catch (err) {
+      console.log('Supabase author delete notice:', err);
+    }
   };
 
   const handleLoginSuccess = (user) => {
@@ -202,22 +259,35 @@ export default function App() {
     localStorage.removeItem('pikam_current_user');
   };
 
-  const handleDeleteUser = (userId) => {
+  const handleDeleteUser = async (userId) => {
     const updated = registeredUsersList.filter(u => u.id !== userId);
     setRegisteredUsersList(updated);
     localStorage.setItem('pikam_registered_users', JSON.stringify(updated));
+
+    try {
+      await supabase.from('profiles').delete().eq('id', userId);
+    } catch (err) {
+      console.log('Supabase profile delete notice:', err);
+    }
   };
 
-  const handleAddEDergi = (newIssue) => {
+  const handleAddEDergi = async (newIssue) => {
     const updated = [newIssue, ...eDergiList];
     setEDergiList(updated);
     localStorage.setItem('pikam_edergi_list', JSON.stringify(updated));
+
+    try {
+      await supabase.from('e_dergi_issues').upsert([newIssue]);
+    } catch (err) {
+      console.log('Supabase edergi add notice:', err);
+    }
   };
 
   const handleDeleteEDergi = async (id) => {
     const updated = eDergiList.filter(i => i.id !== id);
     setEDergiList(updated);
     localStorage.setItem('pikam_edergi_list', JSON.stringify(updated));
+
     try {
       await supabase.from('e_dergi_issues').delete().eq('id', id);
     } catch (err) {
@@ -225,16 +295,23 @@ export default function App() {
     }
   };
 
-  const handleAddArticle = (newArticle) => {
+  const handleAddArticle = async (newArticle) => {
     const updated = [newArticle, ...articlesList];
     setArticlesList(updated);
     localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
+
+    try {
+      await supabase.from('articles').upsert([newArticle]);
+    } catch (err) {
+      console.log('Supabase article add notice:', err);
+    }
   };
 
   const handleDeleteArticle = async (id) => {
     const updated = articlesList.filter(a => a.id !== id);
     setArticlesList(updated);
     localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
+
     try {
       await supabase.from('articles').delete().eq('id', id);
     } catch (err) {
