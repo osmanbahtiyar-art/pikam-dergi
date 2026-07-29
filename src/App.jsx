@@ -30,8 +30,7 @@ const mapArticleForCloud = (art) => ({
   date: art.date,
   readtime: art.readTime || art.readtime || '6 dk',
   image: art.image,
-  content: art.content,
-  hidden: !!art.hidden
+  content: art.content
 });
 
 const mapArticleFromCloud = (art) => ({

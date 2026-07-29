@@ -7,7 +7,7 @@ export default function EditorialFeed({ activeCategory, articlesList, onSelectAr
   // Filter out hidden articles for site visitors
   const sourceArticles = rawArticles.filter(a => !a.hidden);
 
-  const isAllCategory = activeCategory === 'TÜMÜ' || activeCategory === 'ANASAYFA' || activeCategory === 'KÜNYE' || activeCategory === 'E-DERGİ' || activeCategory === 'YAZARLAR';
+  const isAllCategory = activeCategory === 'TÜMÜ' || activeCategory === 'ANASAYFA' || activeCategory === 'KÜNYE' || activeCategory === 'E-DERGİ' || activeCategory === 'YAZARLAR' || activeCategory === 'EKİBİMİZ';
 
   const filteredArticles = isAllCategory 
     ? sourceArticles 
