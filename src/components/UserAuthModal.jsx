@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, User, Mail, Lock, Phone, CheckSquare, LogIn, UserPlus, ShieldCheck } from 'lucide-react';
+import { X, User, Mail, Lock, LogIn, UserPlus } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function UserAuthModal({ onClose, onLoginSuccess }) {
@@ -52,9 +52,14 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
       rawDate: now.toISOString()
     };
 
-    // Sync to Supabase Cloud Database Table 'profiles'
+    // Save locally on visitor browser first
+    const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
+    const updatedUsers = [newUser, ...existing.filter(u => u.email.toLowerCase() !== email.toLowerCase())];
+    localStorage.setItem('pikam_registered_users', JSON.stringify(updatedUsers));
+
+    // Fail-safe Sync to Supabase Cloud Database Table 'profiles'
     try {
-      await supabase.from('profiles').insert([{
+      await supabase.from('profiles').upsert([{
         id: newUser.id,
         full_name: fullName,
         fullName: fullName,
@@ -67,11 +72,6 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     } catch (err) {
       console.log('Supabase profile sync notice:', err);
     }
-
-    // Save locally on visitor browser
-    const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-    const updatedUsers = [newUser, ...existing];
-    localStorage.setItem('pikam_registered_users', JSON.stringify(updatedUsers));
 
     // Log in user automatically
     localStorage.setItem('pikam_current_user', JSON.stringify(newUser));

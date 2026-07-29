@@ -95,13 +95,16 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // FETCH ALL CLOUD DATA FROM SUPABASE FOR 100% PERMANENT GLOBAL REALTIME SYNC
+    // FETCH ALL CLOUD DATA FROM SUPABASE WITH FAIL-SAFE MERGING FOR PERMANENT USER ACCUMULATION
     const fetchCloudData = async () => {
       try {
-        // 1. Fetch Registered Users Profiles
+        // 1. Fetch Registered Users Profiles with Cumulative Merging
         const { data: cloudProfiles } = await supabase.from('profiles').select('*');
+        const localSaved = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
+        
+        let mergedUsers = [];
         if (cloudProfiles && cloudProfiles.length > 0) {
-          const mapped = cloudProfiles.map(p => ({
+          mergedUsers = cloudProfiles.map(p => ({
             id: p.id,
             fullName: p.full_name || p.fullName,
             email: p.email,
@@ -109,8 +112,35 @@ export default function App() {
             interests: p.interests,
             registeredAt: p.registered_at || p.registeredAt
           }));
-          setRegisteredUsersList(mapped);
-          localStorage.setItem('pikam_registered_users', JSON.stringify(mapped));
+        }
+
+        // Add any local users not in cloud to merged list and sync them to Supabase!
+        if (localSaved && localSaved.length > 0) {
+          localSaved.forEach(lu => {
+            if (!mergedUsers.some(mu => (mu.email && lu.email && mu.email.toLowerCase() === lu.email.toLowerCase()) || mu.id === lu.id)) {
+              mergedUsers.push(lu);
+              // Push missing user to Supabase!
+              try {
+                supabase.from('profiles').upsert([{
+                  id: lu.id,
+                  full_name: lu.fullName,
+                  fullName: lu.fullName,
+                  email: lu.email,
+                  phone: lu.phone,
+                  interests: lu.interests,
+                  registered_at: lu.registeredAt,
+                  registeredAt: lu.registeredAt
+                }]);
+              } catch (err) {
+                console.log('Local user cloud push notice:', err);
+              }
+            }
+          });
+        }
+
+        if (mergedUsers.length > 0) {
+          setRegisteredUsersList(mergedUsers);
+          localStorage.setItem('pikam_registered_users', JSON.stringify(mergedUsers));
         }
 
         // 2. Fetch Authors List
@@ -246,11 +276,32 @@ export default function App() {
     }
   };
 
-  const handleLoginSuccess = (user) => {
+  const handleLoginSuccess = async (user) => {
     setCurrentUser(user);
-    const saved = localStorage.getItem('pikam_registered_users');
-    if (saved) {
-      setRegisteredUsersList(JSON.parse(saved));
+    // Refresh registered users list immediately
+    try {
+      const { data: cloudProfiles } = await supabase.from('profiles').select('*');
+      const localSaved = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
+      let mergedUsers = [];
+      if (cloudProfiles && cloudProfiles.length > 0) {
+        mergedUsers = cloudProfiles.map(p => ({
+          id: p.id,
+          fullName: p.full_name || p.fullName,
+          email: p.email,
+          phone: p.phone,
+          interests: p.interests,
+          registeredAt: p.registered_at || p.registeredAt
+        }));
+      }
+      localSaved.forEach(lu => {
+        if (!mergedUsers.some(mu => (mu.email && lu.email && mu.email.toLowerCase() === lu.email.toLowerCase()) || mu.id === lu.id)) {
+          mergedUsers.push(lu);
+        }
+      });
+      setRegisteredUsersList(mergedUsers);
+      localStorage.setItem('pikam_registered_users', JSON.stringify(mergedUsers));
+    } catch (err) {
+      console.log('Login success user refresh notice:', err);
     }
   };
 
