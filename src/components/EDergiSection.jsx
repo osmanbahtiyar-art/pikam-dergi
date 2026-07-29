@@ -4,6 +4,7 @@ import { BookOpen, Eye } from 'lucide-react';
 
 export default function EDergiSection({ id, eDergiList, onOpenEDergiModal }) {
   const issuesToDisplay = eDergiList || PIKAM_DATA.eDergiIssues;
+  const fallbackCover = '/pikam_kapak_temmuz_1784839785714.jpg';
 
   return (
     <section className="e-dergi-section" id={id}>
@@ -23,28 +24,39 @@ export default function EDergiSection({ id, eDergiList, onOpenEDergiModal }) {
         </p>
 
         <div className="e-dergi-carousel">
-          {issuesToDisplay.map((issue) => (
-            <div 
-              key={issue.id} 
-              className="e-dergi-card"
-              onClick={() => onOpenEDergiModal(issue)}
-            >
-              <div className="e-dergi-cover-wrap">
-                <img src={issue.coverImage} alt={issue.monthYear} className="e-dergi-cover" />
-                <div className="e-dergi-overlay">
-                  <Eye size={28} />
-                  <span>DİJİTAL SAYIYI OKU</span>
-                  <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>({issue.pageCount} Sayfa PDF)</span>
+          {issuesToDisplay.map((issue) => {
+            const coverUrl = (issue.coverImage && !issue.coverImage.startsWith('blob:')) ? issue.coverImage : fallbackCover;
+            return (
+              <div 
+                key={issue.id} 
+                className="e-dergi-card"
+                onClick={() => onOpenEDergiModal(issue)}
+              >
+                <div className="e-dergi-cover-wrap">
+                  <img 
+                    src={coverUrl} 
+                    alt={issue.monthYear} 
+                    className="e-dergi-cover" 
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = fallbackCover;
+                    }}
+                  />
+                  <div className="e-dergi-overlay">
+                    <Eye size={28} />
+                    <span>DİJİTAL SAYIYI OKU</span>
+                    <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>({issue.pageCount} Sayfa PDF)</span>
+                  </div>
+                </div>
+
+                <div className="e-dergi-info">
+                  <div className="e-dergi-issue">{issue.issueNumber}</div>
+                  <div className="e-dergi-month">{issue.monthYear}</div>
+                  <div className="e-dergi-theme">"{issue.theme}"</div>
                 </div>
               </div>
-
-              <div className="e-dergi-info">
-                <div className="e-dergi-issue">{issue.issueNumber}</div>
-                <div className="e-dergi-month">{issue.monthYear}</div>
-                <div className="e-dergi-theme">"{issue.theme}"</div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

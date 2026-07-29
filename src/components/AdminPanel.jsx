@@ -75,40 +75,71 @@ export default function AdminPanel({
     localStorage.removeItem('pikam_admin_auth');
   };
 
-  const handleFileUpload = (e) => {
+  const processPermanentImage = async (file) => {
+    if (!file) return null;
+
+    // 1. Try uploading to Supabase Storage 'pikam-images' bucket
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `pikam_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const { data, error } = await supabase.storage
+        .from('pikam-images')
+        .upload(fileName, file, { cacheControl: '3600', upsert: true });
+
+      if (data) {
+        const { data: publicUrlData } = supabase.storage
+          .from('pikam-images')
+          .getPublicUrl(fileName);
+        if (publicUrlData?.publicUrl) {
+          return publicUrlData.publicUrl;
+        }
+      }
+    } catch (err) {
+      console.log('Supabase storage upload notice:', err);
+    }
+
+    // 2. Fallback: Convert to permanent Base64 Data URL (stored directly in DB, works forever across all devices and tabs!)
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
       if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
         setPdfFile(file);
         setPdfFileName(file.name);
       } else if (file.type.startsWith('image/')) {
-        const objectUrl = URL.createObjectURL(file);
-        setCoverImage(objectUrl);
+        const permUrl = await processPermanentImage(file);
+        setCoverImage(permUrl);
       }
     }
   };
 
-  const handleArticleImageUpload = (e) => {
+  const handleArticleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
-      const objectUrl = URL.createObjectURL(file);
-      setArtImage(objectUrl);
+      const permUrl = await processPermanentImage(file);
+      setArtImage(permUrl);
     }
   };
 
-  const handleAuthorAvatarUpload = (e) => {
+  const handleAuthorAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
-      const objectUrl = URL.createObjectURL(file);
-      setAuthorAvatar(objectUrl);
+      const permUrl = await processPermanentImage(file);
+      setAuthorAvatar(permUrl);
     }
   };
 
-  const handleHeroImageUpload = (e) => {
+  const handleHeroImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
-      const objectUrl = URL.createObjectURL(file);
-      setHeroImage(objectUrl);
+      const permUrl = await processPermanentImage(file);
+      setHeroImage(permUrl);
     }
   };
 
