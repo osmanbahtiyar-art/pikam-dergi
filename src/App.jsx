@@ -549,18 +549,18 @@ export default function App() {
       )}
 
       <main>
-        {sectionVisibility.showHero && (
-          <HeroGrid 
-            heroFeatured={heroFeatured}
-            onSelectArticle={(art) => setSelectedArticle(art)}
-          />
-        )}
-
         {sectionVisibility.showEDergi && (
           <EDergiSection 
             id="e-dergi-section"
             eDergiList={eDergiList}
             onOpenEDergiModal={(issue) => setSelectedEDergi(issue)}
+          />
+        )}
+
+        {sectionVisibility.showHero && (
+          <HeroGrid 
+            heroFeatured={heroFeatured}
+            onSelectArticle={(art) => setSelectedArticle(art)}
           />
         )}
 
