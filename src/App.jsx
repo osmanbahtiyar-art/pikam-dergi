@@ -19,6 +19,75 @@ import AdminPanel from './components/AdminPanel';
 import { PIKAM_DATA } from './data/pikamData';
 import { supabase } from './lib/supabaseClient';
 
+// CLOUD MAPPERS (Bridges JavaScript camelCase with PostgreSQL lowercased columns)
+const mapArticleForCloud = (art) => ({
+  id: art.id,
+  category: art.category,
+  categorycolor: art.categoryColor || art.categorycolor || '#10b981',
+  title: art.title,
+  excerpt: art.excerpt,
+  author: typeof art.author === 'string' ? art.author : art.author?.name,
+  date: art.date,
+  readtime: art.readTime || art.readtime || '6 dk',
+  image: art.image,
+  content: art.content,
+  hidden: !!art.hidden
+});
+
+const mapArticleFromCloud = (art) => ({
+  id: art.id,
+  category: art.category,
+  categoryColor: art.categorycolor || art.categoryColor || '#10b981',
+  title: art.title,
+  excerpt: art.excerpt,
+  author: art.author,
+  date: art.date,
+  readTime: art.readtime || art.readTime || '6 dk',
+  image: art.image,
+  content: art.content,
+  hidden: !!art.hidden
+});
+
+const mapAuthorForCloud = (auth) => ({
+  id: auth.id,
+  name: auth.name,
+  role: auth.role,
+  affiliation: auth.affiliation,
+  avatar: auth.avatar,
+  latestarticle: auth.latestArticle || auth.latestarticle || ''
+});
+
+const mapAuthorFromCloud = (auth) => ({
+  id: auth.id,
+  name: auth.name,
+  role: auth.role,
+  affiliation: auth.affiliation,
+  avatar: auth.avatar,
+  latestArticle: auth.latestarticle || auth.latestArticle || ''
+});
+
+const mapIssueForCloud = (issue) => ({
+  id: issue.id,
+  issuenumber: issue.issueNumber || issue.issuenumber,
+  monthyear: issue.monthYear || issue.monthyear,
+  theme: issue.theme,
+  coverimage: issue.coverImage || issue.coverimage,
+  pdfurl: issue.pdfUrl || issue.pdfurl,
+  pagecount: issue.pageCount || issue.pagecount,
+  pages: issue.pages
+});
+
+const mapIssueFromCloud = (issue) => ({
+  id: issue.id,
+  issueNumber: issue.issuenumber || issue.issueNumber,
+  monthYear: issue.monthyear || issue.monthYear,
+  theme: issue.theme,
+  coverImage: issue.coverimage || issue.coverImage,
+  pdfUrl: issue.pdfurl || issue.pdfUrl,
+  pageCount: issue.pagecount || issue.pageCount,
+  pages: issue.pages
+});
+
 export default function App() {
   const [activeCategory, setActiveCategory] = useState('ANASAYFA');
   
@@ -84,7 +153,7 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // PURE SUPABASE CLOUD TRUTH FETCH & SYNC FUNCTION ACROSS ALL DEVICES
+    // PURE SUPABASE CLOUD TRUTH FETCH FUNCTION ACROSS ALL DEVICES
     const fetchCloudData = async () => {
       try {
         // 1. Fetch Registered Users Profiles
@@ -121,10 +190,9 @@ export default function App() {
         // 3. Fetch Authors List (Pure Cloud Truth)
         const { data: cloudAuthors } = await supabase.from('authors').select('*');
         if (cloudAuthors && cloudAuthors.length > 0) {
-          setAuthorsList(cloudAuthors);
-          localStorage.setItem('pikam_authors_list', JSON.stringify(cloudAuthors));
-        } else if (authorsList.length > 0) {
-          supabase.from('authors').upsert(authorsList);
+          const mapped = cloudAuthors.map(mapAuthorFromCloud);
+          setAuthorsList(mapped);
+          localStorage.setItem('pikam_authors_list', JSON.stringify(mapped));
         }
 
         // 4. Fetch Site Settings
@@ -146,19 +214,17 @@ export default function App() {
         // 5. Fetch E-Dergi Issues (Pure Cloud Truth)
         const { data: cloudIssues } = await supabase.from('e_dergi_issues').select('*');
         if (cloudIssues && cloudIssues.length > 0) {
-          setEDergiList(cloudIssues);
-          localStorage.setItem('pikam_edergi_list', JSON.stringify(cloudIssues));
-        } else if (eDergiList.length > 0) {
-          supabase.from('e_dergi_issues').upsert(eDergiList);
+          const mappedIssues = cloudIssues.map(mapIssueFromCloud);
+          setEDergiList(mappedIssues);
+          localStorage.setItem('pikam_edergi_list', JSON.stringify(mappedIssues));
         }
 
         // 6. Fetch Articles List (Pure Cloud Truth & Exact Order)
         const { data: cloudArticles } = await supabase.from('articles').select('*');
         if (cloudArticles && cloudArticles.length > 0) {
-          setArticlesList(cloudArticles);
-          localStorage.setItem('pikam_articles_list', JSON.stringify(cloudArticles));
-        } else if (articlesList.length > 0) {
-          supabase.from('articles').upsert(articlesList);
+          const mappedArts = cloudArticles.map(mapArticleFromCloud);
+          setArticlesList(mappedArts);
+          localStorage.setItem('pikam_articles_list', JSON.stringify(mappedArts));
         }
       } catch (err) {
         console.log('Supabase cloud fetch notice:', err);
@@ -166,21 +232,6 @@ export default function App() {
     };
 
     fetchCloudData();
-
-    // Push local data to cloud on load if local data exists
-    const pushLocalToCloud = async () => {
-      try {
-        const localArts = JSON.parse(localStorage.getItem('pikam_articles_list') || '[]');
-        if (localArts.length > 0) await supabase.from('articles').upsert(localArts);
-
-        const localAuths = JSON.parse(localStorage.getItem('pikam_authors_list') || '[]');
-        if (localAuths.length > 0) await supabase.from('authors').upsert(localAuths);
-
-        const localIssues = JSON.parse(localStorage.getItem('pikam_edergi_list') || '[]');
-        if (localIssues.length > 0) await supabase.from('e_dergi_issues').upsert(localIssues);
-      } catch (e) {}
-    };
-    pushLocalToCloud();
 
     // Re-fetch automatically whenever window/tab receives focus
     window.addEventListener('focus', fetchCloudData);
@@ -282,7 +333,7 @@ export default function App() {
     localStorage.setItem('pikam_authors_list', JSON.stringify(updated));
 
     try {
-      await supabase.from('authors').upsert([newAuthor]);
+      await supabase.from('authors').upsert([mapAuthorForCloud(newAuthor)]);
     } catch (err) {
       console.log('Supabase author add notice:', err);
     }
@@ -294,7 +345,7 @@ export default function App() {
     localStorage.setItem('pikam_authors_list', JSON.stringify(updated));
 
     try {
-      await supabase.from('authors').upsert([updatedAuthor]);
+      await supabase.from('authors').upsert([mapAuthorForCloud(updatedAuthor)]);
     } catch (err) {
       console.log('Supabase author update notice:', err);
     }
@@ -356,7 +407,7 @@ export default function App() {
     localStorage.setItem('pikam_edergi_list', JSON.stringify(updated));
 
     try {
-      await supabase.from('e_dergi_issues').upsert([newIssue]);
+      await supabase.from('e_dergi_issues').upsert([mapIssueForCloud(newIssue)]);
     } catch (err) {
       console.log('Supabase edergi add notice:', err);
     }
@@ -380,7 +431,7 @@ export default function App() {
     localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
 
     try {
-      await supabase.from('articles').upsert([newArticle]);
+      await supabase.from('articles').upsert([mapArticleForCloud(newArticle)]);
     } catch (err) {
       console.log('Supabase article add notice:', err);
     }
@@ -392,7 +443,7 @@ export default function App() {
     localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
 
     try {
-      await supabase.from('articles').upsert([updatedArticle]);
+      await supabase.from('articles').upsert([mapArticleForCloud(updatedArticle)]);
     } catch (err) {
       console.log('Supabase article update notice:', err);
     }
@@ -403,7 +454,7 @@ export default function App() {
       if (a.id === articleId) {
         const newArt = { ...a, hidden: !a.hidden };
         try {
-          supabase.from('articles').upsert([newArt]);
+          supabase.from('articles').upsert([mapArticleForCloud(newArt)]);
         } catch (err) {}
         return newArt;
       }
@@ -423,7 +474,7 @@ export default function App() {
     localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
 
     try {
-      await supabase.from('articles').upsert(updated);
+      await supabase.from('articles').upsert(updated.map(mapArticleForCloud));
     } catch (err) {}
   };
 
@@ -437,7 +488,7 @@ export default function App() {
     localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
 
     try {
-      await supabase.from('articles').upsert(updated);
+      await supabase.from('articles').upsert(updated.map(mapArticleForCloud));
     } catch (err) {}
   };
 
