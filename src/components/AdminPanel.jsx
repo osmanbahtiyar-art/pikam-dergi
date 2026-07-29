@@ -34,6 +34,7 @@ export default function AdminPanel({
   const [artTitle, setArtTitle] = useState('');
   const [artCategory, setArtCategory] = useState('POLİTİKA');
   const [artAuthor, setArtAuthor] = useState('Prof. Dr. Ahmet Yılmaz');
+  const [artDate, setArtDate] = useState('29 Temmuz 2026');
   const [artExcerpt, setArtExcerpt] = useState('');
   const [artImage, setArtImage] = useState('');
 
@@ -148,6 +149,7 @@ export default function AdminPanel({
     setArtTitle(article.title || '');
     setArtCategory(article.category || 'POLİTİKA');
     setArtAuthor(typeof article.author === 'string' ? article.author : article.author?.name || 'Prof. Dr. Ahmet Yılmaz');
+    setArtDate((article.date && article.date.replace(' (Düzenlendi)', '')) || '29 Temmuz 2026');
     setArtExcerpt(article.excerpt || '');
     setArtImage(article.image || '');
     setActiveTab('makale');
@@ -158,6 +160,7 @@ export default function AdminPanel({
     setArtTitle('');
     setArtCategory('POLİTİKA');
     setArtAuthor('Prof. Dr. Ahmet Yılmaz');
+    setArtDate('29 Temmuz 2026');
     setArtExcerpt('');
     setArtImage('');
   };
@@ -346,6 +349,8 @@ export default function AdminPanel({
 
     const finalImage = artImage || categoryDefaultImages[artCategory] || 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80';
 
+    const finalDate = artDate.trim() || '29 Temmuz 2026';
+
     if (editingArticleId) {
       // UPDATE EXISTING ARTICLE
       const updatedArt = {
@@ -355,7 +360,7 @@ export default function AdminPanel({
         title: artTitle,
         excerpt: artExcerpt,
         author: artAuthor,
-        date: 'Bugün (Düzenlendi)',
+        date: finalDate,
         readTime: '6 Dakika',
         image: finalImage,
         content: `<p>${artExcerpt}</p><p>Politik ve İktisadi Araştırmalar Merkezi yayın kurulunca hazırlanan özel analiz.</p>`
@@ -372,7 +377,7 @@ export default function AdminPanel({
         title: artTitle,
         excerpt: artExcerpt,
         author: artAuthor,
-        date: 'Bugün',
+        date: finalDate,
         readTime: '6 Dakika',
         image: finalImage,
         content: `<p>${artExcerpt}</p><p>Politik ve İktisadi Araştırmalar Merkezi yayın kurulunca hazırlanan özel analiz.</p>`
@@ -1280,7 +1285,7 @@ export default function AdminPanel({
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                 <div>
                   <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>KATEGORİ</label>
                   <select 
@@ -1305,6 +1310,18 @@ export default function AdminPanel({
                     value={artAuthor} 
                     onChange={(e) => setArtAuthor(e.target.value)} 
                     placeholder="Prof. Dr. Ahmet Yılmaz" 
+                    required
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>YAYIN TARİHİ (MANUEL)</label>
+                  <input 
+                    type="text" 
+                    value={artDate} 
+                    onChange={(e) => setArtDate(e.target.value)} 
+                    placeholder="Örn: 29 Temmuz 2026" 
                     required
                     style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                   />
