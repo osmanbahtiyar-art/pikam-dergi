@@ -181,13 +181,11 @@ export default function App() {
         localStorage.setItem('pikam_registered_users', JSON.stringify(mergedUsers));
         supabase.from('profiles').upsert(mergedUsers.map(u => ({
           id: u.id,
-          full_name: u.fullName,
-          fullName: u.fullName,
+          full_name: u.fullName || u.full_name,
           email: u.email,
           phone: u.phone,
           interests: u.interests,
-          registered_at: u.registeredAt,
-          registeredAt: u.registeredAt
+          registered_at: u.registeredAt || u.registered_at
         })));
       }
 

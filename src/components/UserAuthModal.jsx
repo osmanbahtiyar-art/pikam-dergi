@@ -62,12 +62,10 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
       await supabase.from('profiles').upsert([{
         id: newUser.id,
         full_name: fullName,
-        fullName: fullName,
         email: email,
         phone: phone,
         interests: interests.join(', '),
-        registered_at: formattedDate,
-        registeredAt: formattedDate
+        registered_at: formattedDate
       }]);
     } catch (err) {
       console.log('Supabase profile sync notice:', err);
