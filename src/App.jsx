@@ -556,6 +556,14 @@ export default function App() {
           />
         )}
 
+        {sectionVisibility.showEDergi && (
+          <EDergiSection 
+            id="e-dergi-section"
+            eDergiList={eDergiList}
+            onOpenEDergiModal={(issue) => setSelectedEDergi(issue)}
+          />
+        )}
+
         <EditorialFeed 
           activeCategory={activeCategory}
           articlesList={articlesList}
@@ -566,14 +574,6 @@ export default function App() {
           <YazarlarSection 
             id="yazarlar-section"
             authorsList={authorsList}
-          />
-        )}
-
-        {sectionVisibility.showEDergi && (
-          <EDergiSection 
-            id="e-dergi-section"
-            eDergiList={eDergiList}
-            onOpenEDergiModal={(issue) => setSelectedEDergi(issue)}
           />
         )}
       </main>
