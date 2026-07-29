@@ -109,6 +109,34 @@ export default function App() {
     };
   });
 
+  // Navigation Menu Tabs Visibility State (Admin CMS toggle - categories hidden by default as requested)
+  const [navVisibility, setNavVisibility] = useState(() => {
+    const saved = localStorage.getItem('pikam_nav_visibility');
+    return saved ? JSON.parse(saved) : {
+      ANASAYFA: true,
+      'E-DERGİ': true,
+      POLİTİKA: false, // hidden as requested
+      EKONOMİ: false,  // hidden as requested
+      FİNANS: false,   // hidden as requested
+      'KÜLTÜR SANAT': false, // hidden as requested
+      KÜNYE: true,
+      EKİBİMİZ: true
+    };
+  });
+
+  // Dynamic Künye & Kurumsal Data CMS State
+  const [kunyeData, setKunyeData] = useState(() => {
+    const saved = localStorage.getItem('pikam_kunye_data');
+    return saved ? JSON.parse(saved) : {
+      yayinSahibi: PIKAM_DATA.kunye.yayinSahibi,
+      yayinYonetmeni: PIKAM_DATA.kunye.yayinYonetmeni,
+      sorumluYaziIsleri: PIKAM_DATA.kunye.sorumluYaziIsleri,
+      grafikTasarim: PIKAM_DATA.kunye.grafikTasarim,
+      akademikDanismaKurulu: PIKAM_DATA.kunye.akademikDanismaKurulu,
+      iletisim: PIKAM_DATA.kunye.iletisim
+    };
+  });
+
   // Current Logged In User State
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('pikam_current_user');
@@ -259,6 +287,18 @@ export default function App() {
           setSectionVisibility(visibilitySetting.data);
           localStorage.setItem('pikam_section_visibility', JSON.stringify(visibilitySetting.data));
         }
+
+        const navSetting = cloudSettings.find(s => s.id === 'nav_visibility');
+        if (navSetting && navSetting.data) {
+          setNavVisibility(navSetting.data);
+          localStorage.setItem('pikam_nav_visibility', JSON.stringify(navSetting.data));
+        }
+
+        const kunyeSetting = cloudSettings.find(s => s.id === 'kunye_data');
+        if (kunyeSetting && kunyeSetting.data) {
+          setKunyeData(kunyeSetting.data);
+          localStorage.setItem('pikam_kunye_data', JSON.stringify(kunyeSetting.data));
+        }
       }
 
       // 5. E-Dergi Issues Cumulative Merge
@@ -388,6 +428,32 @@ export default function App() {
       await supabase.from('site_settings').upsert([{ id: 'section_visibility', data: updated }]);
     } catch (err) {
       console.log('Supabase visibility sync notice:', err);
+    }
+  };
+
+  const handleToggleNavTab = async (tabKey) => {
+    const updated = {
+      ...navVisibility,
+      [tabKey]: navVisibility[tabKey] === false ? true : false
+    };
+    setNavVisibility(updated);
+    localStorage.setItem('pikam_nav_visibility', JSON.stringify(updated));
+
+    try {
+      await supabase.from('site_settings').upsert([{ id: 'nav_visibility', data: updated }]);
+    } catch (err) {
+      console.log('Supabase nav visibility notice:', err);
+    }
+  };
+
+  const handleUpdateKunye = async (updatedKunye) => {
+    setKunyeData(updatedKunye);
+    localStorage.setItem('pikam_kunye_data', JSON.stringify(updatedKunye));
+
+    try {
+      await supabase.from('site_settings').upsert([{ id: 'kunye_data', data: updatedKunye }]);
+    } catch (err) {
+      console.log('Supabase kunye sync notice:', err);
     }
   };
 
@@ -613,6 +679,10 @@ export default function App() {
         onUpdateHeroFeatured={handleUpdateHeroFeatured}
         sectionVisibility={sectionVisibility}
         onToggleSection={handleToggleSection}
+        navVisibility={navVisibility}
+        onToggleNavTab={handleToggleNavTab}
+        kunyeData={kunyeData}
+        onUpdateKunye={handleUpdateKunye}
         allCommentsList={allCommentsList}
         onDeleteComment={handleDeleteComment}
         onForceSyncCloud={fetchAndMergeCloudData}
@@ -639,6 +709,7 @@ export default function App() {
         onOpenKunye={() => setIsKunyeOpen(true)}
         onScrollToEDergi={scrollToEDergi}
         onScrollToYazarlar={scrollToYazarlar}
+        navVisibility={navVisibility}
       />
 
       {sectionVisibility.showTicker && (
@@ -715,6 +786,7 @@ export default function App() {
       {isKunyeOpen && (
         <KunyeModal 
           onClose={() => setIsKunyeOpen(false)}
+          kunyeData={kunyeData}
         />
       )}
 

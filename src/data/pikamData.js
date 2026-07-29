@@ -28,7 +28,7 @@ export const PIKAM_DATA = {
     { id: "FİNANS", label: "FİNANS", color: "#059669" },
     { id: "KÜLTÜR SANAT", label: "KÜLTÜR SANAT", color: "#d97706" },
     { id: "KÜNYE", label: "KÜNYE", color: "#64748b" },
-    { id: "YAZARLAR", label: "YAZARLAR", color: "#8b5cf6" }
+    { id: "EKİBİMİZ", label: "EKİBİMİZ", color: "#8b5cf6" }
   ],
 
   heroFeatured: {
