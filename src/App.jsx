@@ -92,6 +92,12 @@ export default function App() {
     return saved ? JSON.parse(saved) : PIKAM_DATA.articles;
   });
 
+  // Article Reader Comments State (Permanent Storage)
+  const [allCommentsList, setAllCommentsList] = useState(() => {
+    const saved = localStorage.getItem('pikam_article_comments');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -140,14 +146,44 @@ export default function App() {
           localStorage.setItem('pikam_registered_users', JSON.stringify(mergedUsers));
         }
 
-        // 2. Fetch Authors List
+        // 2. Fetch Reader Comments
+        const { data: cloudComments } = await supabase.from('article_comments').select('*');
+        const localComments = JSON.parse(localStorage.getItem('pikam_article_comments') || '[]');
+        let mergedComments = [];
+
+        if (cloudComments && cloudComments.length > 0) {
+          mergedComments = cloudComments.map(c => ({
+            id: c.id,
+            articleId: c.article_id || c.articleId,
+            articleTitle: c.article_title || c.articleTitle,
+            authorName: c.author_name || c.authorName,
+            authorEmail: c.author_email || c.authorEmail,
+            commentText: c.comment_text || c.commentText,
+            createdAt: c.created_at || c.createdAt
+          }));
+        }
+
+        if (localComments && localComments.length > 0) {
+          localComments.forEach(lc => {
+            if (!mergedComments.some(mc => mc.id === lc.id)) {
+              mergedComments.push(lc);
+            }
+          });
+        }
+
+        if (mergedComments.length > 0) {
+          setAllCommentsList(mergedComments);
+          localStorage.setItem('pikam_article_comments', JSON.stringify(mergedComments));
+        }
+
+        // 3. Fetch Authors List
         const { data: cloudAuthors } = await supabase.from('authors').select('*');
         if (cloudAuthors && cloudAuthors.length > 0) {
           setAuthorsList(cloudAuthors);
           localStorage.setItem('pikam_authors_list', JSON.stringify(cloudAuthors));
         }
 
-        // 3. Fetch Site Settings (Hero Featured & Section Visibility)
+        // 4. Fetch Site Settings
         const { data: cloudSettings } = await supabase.from('site_settings').select('*');
         if (cloudSettings && cloudSettings.length > 0) {
           const heroSetting = cloudSettings.find(s => s.id === 'hero_featured');
@@ -163,7 +199,7 @@ export default function App() {
           }
         }
 
-        // 4. Fetch E-Dergi Issues
+        // 5. Fetch E-Dergi Issues
         const { data: cloudIssues } = await supabase.from('e_dergi_issues').select('*');
         if (cloudIssues && cloudIssues.length > 0) {
           const cloudIds = new Set(cloudIssues.map(i => i.id));
@@ -173,7 +209,7 @@ export default function App() {
           localStorage.setItem('pikam_edergi_list', JSON.stringify(merged));
         }
 
-        // 5. Fetch Articles List
+        // 6. Fetch Articles List
         const { data: cloudArticles } = await supabase.from('articles').select('*');
         if (cloudArticles && cloudArticles.length > 0) {
           const cloudArtIds = new Set(cloudArticles.map(a => a.id));
@@ -210,6 +246,38 @@ export default function App() {
       window.removeEventListener('hashchange', checkAdminRoute);
     };
   }, []);
+
+  const handleAddComment = async (newComment) => {
+    const updated = [newComment, ...allCommentsList];
+    setAllCommentsList(updated);
+    localStorage.setItem('pikam_article_comments', JSON.stringify(updated));
+
+    try {
+      await supabase.from('article_comments').upsert([{
+        id: newComment.id,
+        article_id: newComment.articleId,
+        article_title: newComment.articleTitle,
+        author_name: newComment.authorName,
+        author_email: newComment.authorEmail,
+        comment_text: newComment.commentText,
+        created_at: newComment.createdAt
+      }]);
+    } catch (err) {
+      console.log('Supabase comment add notice:', err);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    const updated = allCommentsList.filter(c => c.id !== commentId);
+    setAllCommentsList(updated);
+    localStorage.setItem('pikam_article_comments', JSON.stringify(updated));
+
+    try {
+      await supabase.from('article_comments').delete().eq('id', commentId);
+    } catch (err) {
+      console.log('Supabase comment delete notice:', err);
+    }
+  };
 
   const handleToggleSection = async (sectionKey) => {
     const updated = {
@@ -447,6 +515,8 @@ export default function App() {
         onUpdateHeroFeatured={handleUpdateHeroFeatured}
         sectionVisibility={sectionVisibility}
         onToggleSection={handleToggleSection}
+        allCommentsList={allCommentsList}
+        onDeleteComment={handleDeleteComment}
       />
     );
   }
@@ -519,6 +589,8 @@ export default function App() {
         <ArticleModal 
           article={selectedArticle}
           currentUser={currentUser}
+          allCommentsList={allCommentsList}
+          onAddComment={handleAddComment}
           onOpenAuthModal={() => {
             setSelectedArticle(null);
             setIsAuthModalOpen(true);

@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import { X, Calendar, Clock, Share2, Volume2, Bookmark, MessageSquare, ThumbsUp, Lock, UserCheck } from 'lucide-react';
+import { X, Calendar, Clock, Share2, Volume2, MessageSquare, ThumbsUp, Lock, UserCheck, Send } from 'lucide-react';
 
-export default function ArticleModal({ article, currentUser, onOpenAuthModal, onClose }) {
+export default function ArticleModal({ article, currentUser, allCommentsList = [], onAddComment, onOpenAuthModal, onClose }) {
   const [fontSize, setFontSize] = useState(1.05); // rem
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(48);
-  const [comments, setComments] = useState([
-    { id: 1, name: "Dr. Canan Koral", date: "23 Temmuz 2026", text: "Makaledeki tedarik zinciri ve friend-shoring tespiti son derece yerinde. PİKAM ekibini tebrik ederim." },
-    { id: 2, name: "Oğuzhan Kaya", date: "23 Temmuz 2026", text: "Özellikle yeşil hidrojen ve sanayi dönüşümü vurgusu dikkat çekici." }
-  ]);
-  const [newComment, setNewComment] = useState("");
+  const [newCommentText, setNewCommentText] = useState("");
 
   if (!article) return null;
+
+  // Filter comments specifically for this article (No fake comments!)
+  const articleComments = allCommentsList.filter(c => c.articleId === article.id || c.article_id === article.id);
 
   const handleLike = () => {
     if (!liked) {
@@ -23,19 +22,33 @@ export default function ArticleModal({ article, currentUser, onOpenAuthModal, on
     }
   };
 
-  const handleAddComment = (e) => {
+  const handlePublishComment = (e) => {
     e.preventDefault();
-    if (!newComment.trim() || !currentUser) return;
-    setComments([
-      ...comments,
-      {
-        id: Date.now(),
-        name: currentUser.fullName,
-        date: "Şimdi",
-        text: newComment
-      }
-    ]);
-    setNewComment("");
+    if (!newCommentText.trim() || !currentUser) return;
+
+    const now = new Date();
+    const formattedDate = `${now.toLocaleDateString('tr-TR')} ${now.toLocaleTimeString('tr-TR')}`;
+
+    const commentObj = {
+      id: `cmt-${Date.now()}`,
+      articleId: article.id,
+      article_id: article.id,
+      articleTitle: article.title,
+      article_title: article.title,
+      authorName: currentUser.fullName,
+      author_name: currentUser.fullName,
+      authorEmail: currentUser.email,
+      author_email: currentUser.email,
+      commentText: newCommentText.trim(),
+      comment_text: newCommentText.trim(),
+      createdAt: formattedDate,
+      created_at: formattedDate
+    };
+
+    if (onAddComment) {
+      onAddComment(commentObj);
+    }
+    setNewCommentText("");
   };
 
   return (
@@ -77,7 +90,7 @@ export default function ArticleModal({ article, currentUser, onOpenAuthModal, on
               )}
               <div>
                 <div style={{ fontWeight: '700', color: '#0f172a', fontSize: '0.95rem' }}>
-                  {typeof article.author === 'string' ? article.author : article.author.name}
+                  {typeof article.author === 'string' ? article.author : article.author?.name}
                 </div>
                 <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
                   {article.author?.title || 'PİKAM Kıdemli Analisti'}
@@ -178,63 +191,69 @@ export default function ArticleModal({ article, currentUser, onOpenAuthModal, on
             </div>
           </div>
 
-          {/* COMMENTS SECTION - GATED REQUIRING USER LOGIN */}
+          {/* COMMENTS SECTION - GATED ONLY FOR LOGGED IN USERS */}
           <div style={{ marginTop: '40px', background: '#f8fafc', padding: '24px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
             <h3 style={{ fontFamily: 'Playfair Display', fontSize: '1.25rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-              <MessageSquare size={18} />
-              <span>Okuyucu Değerlendirmeleri ({comments.length})</span>
+              <MessageSquare size={18} color="#0284c7" />
+              <span>Gerçek Okuyucu Değerlendirmeleri ({articleComments.length})</span>
             </h3>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
-              {comments.map((c) => (
-                <div key={c.id} style={{ background: 'white', padding: '12px 16px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontWeight: '700', fontSize: '0.88rem', color: '#0f172a' }}>{c.name}</span>
-                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{c.date}</span>
+            {articleComments.length === 0 ? (
+              <div style={{ background: '#ffffff', padding: '20px', borderRadius: '6px', border: '1px solid #e2e8f0', textAlign: 'center', color: '#64748b', fontSize: '0.88rem', marginBottom: '20px' }}>
+                Bu makaleye henüz okuyucu yorumu yapılmamıştır. İlk yorumu siz yazın!
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
+                {articleComments.map((c) => (
+                  <div key={c.id} style={{ background: '#ffffff', padding: '14px 18px', borderRadius: '6px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontWeight: '700', fontSize: '0.88rem', color: '#0f172a' }}>{c.authorName || c.author_name}</span>
+                      <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{c.createdAt || c.created_at}</span>
+                    </div>
+                    <p style={{ fontSize: '0.9rem', color: '#334155', margin: 0, lineHeight: '1.5' }}>{c.commentText || c.comment_text}</p>
                   </div>
-                  <p style={{ fontSize: '0.9rem', color: '#475569' }}>{c.text}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
-            {/* ADD COMMENT FORM - GATED REQUIREMENT */}
+            {/* ADD COMMENT FORM - EXCLUSIVELY GATED FOR LOGGED-IN REGISTERED MEMBERS */}
             {currentUser ? (
-              <form onSubmit={handleAddComment} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#15803d', background: '#dcfce7', padding: '8px 12px', borderRadius: '6px', fontSize: '0.82rem', fontWeight: '600' }}>
+              <form onSubmit={handlePublishComment} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#15803d', background: '#dcfce7', padding: '8px 14px', borderRadius: '6px', fontSize: '0.82rem', fontWeight: '600' }}>
                   <UserCheck size={16} />
-                  <span>Kayıtlı Okuyucu Girişi Yapıldı: <strong>{currentUser.fullName}</strong></span>
+                  <span>Giriş Yapan Üye: <strong>{currentUser.fullName}</strong> ({currentUser.email})</span>
                 </div>
 
                 <textarea 
                   placeholder="Akademik değerlendirme veya görüşünüzü yazın..." 
                   rows="3" 
-                  value={newComment} 
-                  onChange={(e) => setNewComment(e.target.value)} 
+                  value={newCommentText} 
+                  onChange={(e) => setNewCommentText(e.target.value)} 
                   required
-                  style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem', fontFamily: 'inherit' }}
+                  style={{ padding: '12px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', fontFamily: 'inherit' }}
                 ></textarea>
 
                 <button 
                   type="submit" 
-                  style={{ background: '#0b132b', color: 'white', padding: '8px 18px', borderRadius: '4px', fontWeight: '600', fontSize: '0.85rem', alignSelf: 'flex-start' }}
+                  style={{ background: '#0b132b', color: 'white', padding: '10px 20px', borderRadius: '6px', fontWeight: '700', fontSize: '0.88rem', alignSelf: 'flex-start', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  Değerlendirmeyi Yayınla
+                  <Send size={14} color="#38bdf8" /> Değerlendirmeyi Gönder ve Yayınla
                 </button>
               </form>
             ) : (
-              <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
+              <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '8px', padding: '24px', textAlign: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#92400e', fontWeight: '700', fontSize: '0.95rem', marginBottom: '6px' }}>
                   <Lock size={18} />
-                  <span>YORUM YAPABİLMEK İÇİN GİRİŞ YAPMANIZ GEREKMEKTEDİR</span>
+                  <span>YORUM YAPABİLMEK İÇİN ÜYE GİRİŞİ YAPMALISINIZ</span>
                 </div>
-                <p style={{ fontSize: '0.82rem', color: '#78350f', marginBottom: '14px' }}>
-                  Makalelere akademik değerlendirme ve yorum yazabilmek için PİKAM okuyucu üyeliği gerekmektedir.
+                <p style={{ fontSize: '0.85rem', color: '#78350f', marginBottom: '16px' }}>
+                  Makalelere değerlendirme yazabilmek için kayıtlı PİKAM okuyucusu olmanız gerekmektedir. Üyelik tamamen ücretsizdir.
                 </p>
                 <button 
                   onClick={onOpenAuthModal}
-                  style={{ background: '#0b132b', color: 'white', padding: '8px 20px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: 'none', cursor: 'pointer' }}
+                  style={{ background: '#0b132b', color: 'white', padding: '10px 24px', borderRadius: '6px', fontWeight: '700', fontSize: '0.88rem', border: 'none', cursor: 'pointer' }}
                 >
-                  Giriş Yap / Hemen Üye Ol
+                  Giriş Yap / Ücretsiz Üye Ol
                 </button>
               </div>
             )}

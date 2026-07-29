@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download, Image as ImageIcon, Newspaper, Feather, EyeOff, Settings, Edit3, Layout, X, ArrowUp, ArrowDown } from 'lucide-react';
+import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download, Image as ImageIcon, Newspaper, Feather, EyeOff, Settings, Edit3, Layout, X, ArrowUp, ArrowDown, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function AdminPanel({ 
@@ -8,7 +8,8 @@ export default function AdminPanel({
   registeredUsersList, onDeleteUser,
   authorsList, onAddAuthor, onDeleteAuthor, onUpdateAuthor,
   heroFeatured, onUpdateHeroFeatured,
-  sectionVisibility, onToggleSection
+  sectionVisibility, onToggleSection,
+  allCommentsList = [], onDeleteComment
 }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
@@ -392,7 +393,7 @@ export default function AdminPanel({
         <div style={{ background: '#ffffff', width: '100%', maxWidth: '440px', borderRadius: '12px', padding: '36px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <img src="/pikam_logo.png" alt="PİKAM Logo" style={{ width: '75px', height: '75px', margin: '0 auto 12px auto' }} />
-            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.6rem', color: '#0b132b' }}>PİKAM YÖNETİM PANELSİ</h2>
+            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.6rem', color: '#0b132b' }}>PİKAM YÖNETİM PANELİ</h2>
             <p style={{ fontSize: '0.82rem', color: '#64748b' }}>Editör ve Yayın Kurulu Girişi</p>
           </div>
 
@@ -453,9 +454,9 @@ export default function AdminPanel({
           <img src="/pikam_logo.png" alt="PİKAM Logo" style={{ width: '42px', height: '42px' }} />
           <div>
             <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.25rem', letterSpacing: '1px', margin: 0 }}>
-              PİKAM DERGİ GELİŞMİŞ CMS YÖNETİM PANELSİ
+              PİKAM DERGİ GELİŞMİŞ CMS YÖNETİM PANELİ
             </h1>
-            <span style={{ fontSize: '0.78rem', color: '#38bdf8' }}>Tam Arayüz, Akış, Sıralama ve Gizleme Portalı (pikamdergi.com/admin)</span>
+            <span style={{ fontSize: '0.78rem', color: '#38bdf8' }}>Tam Arayüz, Akış, Sıralama, Yorum ve Üye Portalı (pikamdergi.com/admin)</span>
           </div>
         </div>
 
@@ -487,6 +488,14 @@ export default function AdminPanel({
           >
             <Users size={15} color={activeTab === 'uyeler' ? '#38bdf8' : '#0284c7'} />
             <span>Kayıtlı Okuyucular ({registeredUsersList.length})</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('yorumlar')} 
+            style={{ background: activeTab === 'yorumlar' ? '#0b132b' : '#ffffff', color: activeTab === 'yorumlar' ? '#ffffff' : '#475569', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <MessageSquare size={15} color={activeTab === 'yorumlar' ? '#38bdf8' : '#ec4899'} />
+            <span>Okuyucu Yorumları ({allCommentsList.length})</span>
           </button>
 
           <button 
@@ -545,6 +554,70 @@ export default function AdminPanel({
             <span>Yeni Makale Ekle</span>
           </button>
         </div>
+
+        {/* TAB: OKUYUCU YORUMLARI YÖNETİMİ */}
+        {activeTab === 'yorumlar' && (
+          <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0b132b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <MessageSquare size={22} color="#ec4899" />
+              <span>OKUYUCULAR TARAFINDAN YAPILAN GERÇEK YORUM VE DEĞERLENDİRMELER</span>
+            </h2>
+            <p style={{ color: '#64748b', fontSize: '0.88rem', marginBottom: '24px' }}>
+              Sitede kayıtlı üyeler tarafından makalelere yazılan tüm yorumlar aşağıda listelenmiştir. Hangi makaleye yazıldığını görebilir, dilediğiniz yorumu tek tıkla silebilirsiniz.
+            </p>
+
+            {allCommentsList.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <p style={{ fontSize: '1rem', color: '#64748b' }}>Henüz yapılmış bir okuyucu yorumu bulunmamaktadır. Okuyucular yorum yaptıkça burada birikecektir.</p>
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#0b132b', color: 'white' }}>
+                      <th style={{ padding: '12px 14px', borderRadius: '4px 0 0 0' }}>YORUM YAPAN OKUYUCU</th>
+                      <th style={{ padding: '12px 14px' }}>İLGİLİ MAKALE BAŞLIĞI</th>
+                      <th style={{ padding: '12px 14px' }}>YORUM METNİ</th>
+                      <th style={{ padding: '12px 14px' }}>TARIH</th>
+                      <th style={{ padding: '12px 14px', borderRadius: '0 4px 0 0', textAlign: 'center' }}>İŞLEM</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allCommentsList.map((cmt, idx) => (
+                      <tr key={cmt.id || idx} style={{ borderBottom: '1px solid #e2e8f0', background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                        <td style={{ padding: '12px 14px', fontWeight: '700', color: '#0f172a' }}>
+                          {cmt.authorName || cmt.author_name}
+                          <div style={{ fontSize: '0.75rem', color: '#0284c7', fontWeight: 'normal' }}>{cmt.authorEmail || cmt.author_email}</div>
+                        </td>
+                        <td style={{ padding: '12px 14px', fontWeight: '600', color: '#0f172a', maxWidth: '240px' }}>
+                          {cmt.articleTitle || cmt.article_title || 'PİKAM Özel Analiz'}
+                        </td>
+                        <td style={{ padding: '12px 14px', color: '#334155', maxWidth: '320px', lineHeight: '1.4' }}>
+                          "{cmt.commentText || cmt.comment_text}"
+                        </td>
+                        <td style={{ padding: '12px 14px', color: '#16a34a', fontWeight: '700', fontSize: '0.8rem' }}>
+                          {cmt.createdAt || cmt.created_at}
+                        </td>
+                        <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                          <button 
+                            onClick={() => {
+                              if (confirm(`"${cmt.authorName}" adlı üyenin yorumunu silmek istediğinize emin misiniz?`)) {
+                                onDeleteComment(cmt.id);
+                              }
+                            }}
+                            style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '5px 10px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', margin: '0 auto' }}
+                          >
+                            <Trash2 size={13} /> Yorumu Sil
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* TAB: ANA SAYFA AKIŞI VE MANŞET HABERİ YÖNETİMİ */}
         {activeTab === 'manset_akis' && (
