@@ -719,14 +719,6 @@ export default function App() {
       )}
 
       <main>
-        {sectionVisibility.showEDergi && (
-          <EDergiSection 
-            id="e-dergi-section"
-            eDergiList={eDergiList}
-            onOpenEDergiModal={(issue) => setSelectedEDergi(issue)}
-          />
-        )}
-
         {sectionVisibility.showHero && (
           <HeroGrid 
             heroFeatured={heroFeatured}
@@ -739,6 +731,14 @@ export default function App() {
           articlesList={articlesList}
           onSelectArticle={(art) => setSelectedArticle(art)}
         />
+
+        {sectionVisibility.showEDergi && (
+          <EDergiSection 
+            id="e-dergi-section"
+            eDergiList={eDergiList}
+            onOpenEDergiModal={(issue) => setSelectedEDergi(issue)}
+          />
+        )}
 
         {sectionVisibility.showYazarlar && (
           <YazarlarSection 

@@ -928,6 +928,22 @@ button {
     line-height: 1.65;
   }
 
+  /* SECTION HEADER MOBILE FIX - PREVENT TEXT WRAP & BROKEN WORDS */
+  .section-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+  }
+  .section-title {
+    font-size: 1.15rem !important;
+    word-break: keep-all !important;
+    white-space: normal !important;
+  }
+  .section-title span {
+    word-break: keep-all !important;
+    hyphens: none !important;
+  }
+
   /* FOOTER MOBILE */
   .footer-grid {
     grid-template-columns: 1fr;

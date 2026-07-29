@@ -9,17 +9,17 @@ export default function EDergiSection({ id, eDergiList, onOpenEDergiModal }) {
   return (
     <section className="e-dergi-section" id={id}>
       <div className="container">
-        <div className="section-header">
+        <div className="section-header" style={{ flexWrap: 'wrap', gap: '8px' }}>
           <div className="section-title">
             <BookOpen size={22} color="#0b132b" />
-            <span>PİKAM DİJİTAL E-DERGİ ARŞİVİ</span>
+            <span style={{ wordBreak: 'keep-all', hyphens: 'none', whiteSpace: 'normal' }}>PİKAM DİJİTAL E-DERGİ ARŞİVİ</span>
           </div>
-          <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+          <span style={{ fontSize: '0.85rem', color: '#64748b', wordBreak: 'keep-all' }}>
             Aylık İktisat ve Politika Dergisi Sayıları ({issuesToDisplay.length} Sayı)
           </span>
         </div>
 
-        <p style={{ color: '#475569', fontSize: '0.95rem', marginBottom: '20px' }}>
+        <p style={{ color: '#475569', fontSize: '0.95rem', marginBottom: '20px', lineHeight: '1.5' }}>
           PİKAM Dergi'nin yayınlanan tüm dijital sayılarına interaktif flipbook formatında erişebilir, inceleyebilir veya PDF olarak indirebilirsiniz.
         </p>
 
