@@ -179,15 +179,13 @@ export default function App() {
 
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // CUMULATIVE MERGE & CLOUD PUSH FUNCTION
+  // REAL-TIME INSTANT SYNCHRONIZATION FUNCTION (SUPABASE CLOUD AS SINGLE SOURCE OF TRUTH)
   const fetchAndMergeCloudData = async () => {
     try {
-      // 1. Registered Users Profiles Cumulative Merge
+      // 1. Registered Users / Profiles
       const { data: cloudProfiles } = await supabase.from('profiles').select('*');
-      const localUsers = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-      let mergedUsers = [];
-      if (cloudProfiles && cloudProfiles.length > 0) {
-        mergedUsers = cloudProfiles.map(p => ({
+      if (cloudProfiles) {
+        const mappedUsers = cloudProfiles.map(p => ({
           id: p.id,
           fullName: p.full_name || p.fullName,
           email: p.email,
@@ -195,33 +193,14 @@ export default function App() {
           interests: p.interests,
           registeredAt: p.registered_at || p.registeredAt
         }));
-      }
-      if (localUsers && localUsers.length > 0) {
-        localUsers.forEach(lu => {
-          if (!mergedUsers.some(mu => (mu.email && lu.email && mu.email.toLowerCase() === lu.email.toLowerCase()) || mu.id === lu.id)) {
-            mergedUsers.push(lu);
-          }
-        });
-      }
-      if (mergedUsers.length > 0) {
-        setRegisteredUsersList(mergedUsers);
-        localStorage.setItem('pikam_registered_users', JSON.stringify(mergedUsers));
-        supabase.from('profiles').upsert(mergedUsers.map(u => ({
-          id: u.id,
-          full_name: u.fullName || u.full_name,
-          email: u.email,
-          phone: u.phone,
-          interests: u.interests,
-          registered_at: u.registeredAt || u.registered_at
-        })));
+        setRegisteredUsersList(mappedUsers);
+        localStorage.setItem('pikam_registered_users', JSON.stringify(mappedUsers));
       }
 
-      // 2. Reader Comments Cumulative Merge
+      // 2. Reader Comments (Deletions in Admin Panel reflect instantly on all devices)
       const { data: cloudComments } = await supabase.from('article_comments').select('*');
-      const localComments = JSON.parse(localStorage.getItem('pikam_article_comments') || '[]');
-      let mergedComments = [];
-      if (cloudComments && cloudComments.length > 0) {
-        mergedComments = cloudComments.map(c => ({
+      if (cloudComments) {
+        const mappedComments = cloudComments.map(c => ({
           id: c.id,
           articleId: c.article_id || c.articleId,
           articleTitle: c.article_title || c.articleTitle,
@@ -230,49 +209,19 @@ export default function App() {
           commentText: c.comment_text || c.commentText,
           createdAt: c.created_at || c.createdAt
         }));
-      }
-      if (localComments && localComments.length > 0) {
-        localComments.forEach(lc => {
-          if (!mergedComments.some(mc => mc.id === lc.id)) {
-            mergedComments.push(lc);
-          }
-        });
-      }
-      if (mergedComments.length > 0) {
-        setAllCommentsList(mergedComments);
-        localStorage.setItem('pikam_article_comments', JSON.stringify(mergedComments));
-        supabase.from('article_comments').upsert(mergedComments.map(c => ({
-          id: c.id,
-          article_id: c.articleId,
-          article_title: c.articleTitle,
-          author_name: c.authorName,
-          author_email: c.authorEmail,
-          comment_text: c.commentText,
-          created_at: c.createdAt
-        })));
+        setAllCommentsList(mappedComments);
+        localStorage.setItem('pikam_article_comments', JSON.stringify(mappedComments));
       }
 
-      // 3. Authors List Cumulative Merge
+      // 3. Authors List
       const { data: cloudAuthors } = await supabase.from('authors').select('*');
-      const localAuthors = JSON.parse(localStorage.getItem('pikam_authors_list') || '[]');
-      let mergedAuthors = [];
       if (cloudAuthors && cloudAuthors.length > 0) {
-        mergedAuthors = cloudAuthors.map(mapAuthorFromCloud);
-      }
-      if (localAuthors && localAuthors.length > 0) {
-        localAuthors.forEach(la => {
-          if (!mergedAuthors.some(ma => ma.id === la.id)) {
-            mergedAuthors.push(la);
-          }
-        });
-      }
-      if (mergedAuthors.length > 0) {
-        setAuthorsList(mergedAuthors);
-        localStorage.setItem('pikam_authors_list', JSON.stringify(mergedAuthors));
-        supabase.from('authors').upsert(mergedAuthors.map(mapAuthorForCloud));
+        const mappedAuthors = cloudAuthors.map(mapAuthorFromCloud);
+        setAuthorsList(mappedAuthors);
+        localStorage.setItem('pikam_authors_list', JSON.stringify(mappedAuthors));
       }
 
-      // 4. Site Settings
+      // 4. Site Settings (Hero, Visibility, Nav, Künye)
       const { data: cloudSettings } = await supabase.from('site_settings').select('*');
       if (cloudSettings && cloudSettings.length > 0) {
         const heroSetting = cloudSettings.find(s => s.id === 'hero_featured');
@@ -300,47 +249,23 @@ export default function App() {
         }
       }
 
-      // 5. E-Dergi Issues Cumulative Merge
+      // 5. E-Dergi Issues
       const { data: cloudIssues } = await supabase.from('e_dergi_issues').select('*');
-      const localIssues = JSON.parse(localStorage.getItem('pikam_edergi_list') || '[]');
-      let mergedIssues = [];
       if (cloudIssues && cloudIssues.length > 0) {
-        mergedIssues = cloudIssues.map(mapIssueFromCloud);
-      }
-      if (localIssues && localIssues.length > 0) {
-        localIssues.forEach(li => {
-          if (!mergedIssues.some(mi => mi.id === li.id)) {
-            mergedIssues.push(li);
-          }
-        });
-      }
-      if (mergedIssues.length > 0) {
-        setEDergiList(mergedIssues);
-        localStorage.setItem('pikam_edergi_list', JSON.stringify(mergedIssues));
-        supabase.from('e_dergi_issues').upsert(mergedIssues.map(mapIssueForCloud));
+        const mappedIssues = cloudIssues.map(mapIssueFromCloud);
+        setEDergiList(mappedIssues);
+        localStorage.setItem('pikam_edergi_list', JSON.stringify(mappedIssues));
       }
 
-      // 6. Articles List Cumulative Merge & Push
+      // 6. Articles List
       const { data: cloudArticles } = await supabase.from('articles').select('*');
-      const localArts = JSON.parse(localStorage.getItem('pikam_articles_list') || '[]');
-      let mergedArts = [];
       if (cloudArticles && cloudArticles.length > 0) {
-        mergedArts = cloudArticles.map(mapArticleFromCloud);
-      }
-      if (localArts && localArts.length > 0) {
-        localArts.forEach(la => {
-          if (!mergedArts.some(ma => ma.id === la.id)) {
-            mergedArts.push(la);
-          }
-        });
-      }
-      if (mergedArts.length > 0) {
-        setArticlesList(mergedArts);
-        localStorage.setItem('pikam_articles_list', JSON.stringify(mergedArts));
-        supabase.from('articles').upsert(mergedArts.map(mapArticleForCloud));
+        const mappedArts = cloudArticles.map(mapArticleFromCloud);
+        setArticlesList(mappedArts);
+        localStorage.setItem('pikam_articles_list', JSON.stringify(mappedArts));
       }
     } catch (err) {
-      console.log('Supabase cumulative merge notice:', err);
+      console.log('Supabase real-time sync notice:', err);
     }
   };
 
