@@ -49,24 +49,7 @@ export default function App() {
   // Registered Users List State
   const [registeredUsersList, setRegisteredUsersList] = useState(() => {
     const saved = localStorage.getItem('pikam_registered_users');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'usr-demo-1',
-        fullName: 'Prof. Dr. Ahmet Yılmaz',
-        email: 'ahmet.yilmaz@pikam.org',
-        phone: '0532 111 22 33',
-        interests: 'EKONOMİ, STRATEJİ',
-        registeredAt: '24.07.2026 14:15:20'
-      },
-      {
-        id: 'usr-demo-2',
-        fullName: 'Sera Erdağı',
-        email: 'sera.erdagi@pikamtr.com',
-        phone: '0555 444 55 66',
-        interests: 'POLİTİKA, DÜNYA',
-        registeredAt: '24.07.2026 16:40:12'
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   // Dynamic Authors List (Manageable via Admin Panel)
@@ -101,15 +84,13 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    // PURE SUPABASE CLOUD TRUTH FETCH FUNCTION ACROSS ALL DEVICES
     const fetchCloudData = async () => {
       try {
-        // 1. Fetch Registered Users Profiles with Cumulative Merging
+        // 1. Fetch Registered Users Profiles
         const { data: cloudProfiles } = await supabase.from('profiles').select('*');
-        const localSaved = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-        
-        let mergedUsers = [];
         if (cloudProfiles && cloudProfiles.length > 0) {
-          mergedUsers = cloudProfiles.map(p => ({
+          const mappedUsers = cloudProfiles.map(p => ({
             id: p.id,
             fullName: p.full_name || p.fullName,
             email: p.email,
@@ -117,42 +98,14 @@ export default function App() {
             interests: p.interests,
             registeredAt: p.registered_at || p.registeredAt
           }));
-        }
-
-        if (localSaved && localSaved.length > 0) {
-          localSaved.forEach(lu => {
-            if (!mergedUsers.some(mu => (mu.email && lu.email && mu.email.toLowerCase() === lu.email.toLowerCase()) || mu.id === lu.id)) {
-              mergedUsers.push(lu);
-              try {
-                supabase.from('profiles').upsert([{
-                  id: lu.id,
-                  full_name: lu.fullName,
-                  fullName: lu.fullName,
-                  email: lu.email,
-                  phone: lu.phone,
-                  interests: lu.interests,
-                  registered_at: lu.registeredAt,
-                  registeredAt: lu.registeredAt
-                }]);
-              } catch (err) {
-                console.log('Local user cloud push notice:', err);
-              }
-            }
-          });
-        }
-
-        if (mergedUsers.length > 0) {
-          setRegisteredUsersList(mergedUsers);
-          localStorage.setItem('pikam_registered_users', JSON.stringify(mergedUsers));
+          setRegisteredUsersList(mappedUsers);
+          localStorage.setItem('pikam_registered_users', JSON.stringify(mappedUsers));
         }
 
         // 2. Fetch Reader Comments
         const { data: cloudComments } = await supabase.from('article_comments').select('*');
-        const localComments = JSON.parse(localStorage.getItem('pikam_article_comments') || '[]');
-        let mergedComments = [];
-
         if (cloudComments && cloudComments.length > 0) {
-          mergedComments = cloudComments.map(c => ({
+          const mappedComments = cloudComments.map(c => ({
             id: c.id,
             articleId: c.article_id || c.articleId,
             articleTitle: c.article_title || c.articleTitle,
@@ -161,26 +114,18 @@ export default function App() {
             commentText: c.comment_text || c.commentText,
             createdAt: c.created_at || c.createdAt
           }));
+          setAllCommentsList(mappedComments);
+          localStorage.setItem('pikam_article_comments', JSON.stringify(mappedComments));
         }
 
-        if (localComments && localComments.length > 0) {
-          localComments.forEach(lc => {
-            if (!mergedComments.some(mc => mc.id === lc.id)) {
-              mergedComments.push(lc);
-            }
-          });
-        }
-
-        if (mergedComments.length > 0) {
-          setAllCommentsList(mergedComments);
-          localStorage.setItem('pikam_article_comments', JSON.stringify(mergedComments));
-        }
-
-        // 3. Fetch Authors List
+        // 3. Fetch Authors List (Pure Cloud Truth)
         const { data: cloudAuthors } = await supabase.from('authors').select('*');
         if (cloudAuthors && cloudAuthors.length > 0) {
           setAuthorsList(cloudAuthors);
           localStorage.setItem('pikam_authors_list', JSON.stringify(cloudAuthors));
+        } else if (authorsList.length > 0) {
+          // Push initial defaults to cloud if cloud table is empty
+          supabase.from('authors').upsert(authorsList);
         }
 
         // 4. Fetch Site Settings
@@ -199,24 +144,22 @@ export default function App() {
           }
         }
 
-        // 5. Fetch E-Dergi Issues
+        // 5. Fetch E-Dergi Issues (Pure Cloud Truth)
         const { data: cloudIssues } = await supabase.from('e_dergi_issues').select('*');
         if (cloudIssues && cloudIssues.length > 0) {
-          const cloudIds = new Set(cloudIssues.map(i => i.id));
-          const filteredDefaults = PIKAM_DATA.eDergiIssues.filter(i => !cloudIds.has(i.id));
-          const merged = [...cloudIssues, ...filteredDefaults];
-          setEDergiList(merged);
-          localStorage.setItem('pikam_edergi_list', JSON.stringify(merged));
+          setEDergiList(cloudIssues);
+          localStorage.setItem('pikam_edergi_list', JSON.stringify(cloudIssues));
+        } else if (eDergiList.length > 0) {
+          supabase.from('e_dergi_issues').upsert(eDergiList);
         }
 
-        // 6. Fetch Articles List
+        // 6. Fetch Articles List (Pure Cloud Truth & Exact Order)
         const { data: cloudArticles } = await supabase.from('articles').select('*');
         if (cloudArticles && cloudArticles.length > 0) {
-          const cloudArtIds = new Set(cloudArticles.map(a => a.id));
-          const filteredArtDefaults = PIKAM_DATA.articles.filter(a => !cloudArtIds.has(a.id));
-          const mergedArts = [...cloudArticles, ...filteredArtDefaults];
-          setArticlesList(mergedArts);
-          localStorage.setItem('pikam_articles_list', JSON.stringify(mergedArts));
+          setArticlesList(cloudArticles);
+          localStorage.setItem('pikam_articles_list', JSON.stringify(cloudArticles));
+        } else if (articlesList.length > 0) {
+          supabase.from('articles').upsert(articlesList);
         }
       } catch (err) {
         console.log('Supabase cloud fetch notice:', err);
@@ -225,6 +168,17 @@ export default function App() {
 
     fetchCloudData();
 
+    // Re-fetch automatically whenever window/tab receives focus
+    window.addEventListener('focus', fetchCloudData);
+
+    // SUPABASE REALTIME SUBSCRIPTION FOR INSTANT CROSS-DEVICE SYNC
+    const channel = supabase
+      .channel('pikam-realtime-sync')
+      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+        fetchCloudData();
+      })
+      .subscribe();
+
     const checkAdminRoute = () => {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
@@ -232,6 +186,7 @@ export default function App() {
       
       if (path.includes('admin') || hash.includes('admin') || search.includes('admin')) {
         setIsAdmin(true);
+        fetchCloudData(); // Re-sync immediately on entering admin panel
       } else {
         setIsAdmin(false);
       }
@@ -242,8 +197,10 @@ export default function App() {
     window.addEventListener('hashchange', checkAdminRoute);
 
     return () => {
+      window.removeEventListener('focus', fetchCloudData);
       window.removeEventListener('popstate', checkAdminRoute);
       window.removeEventListener('hashchange', checkAdminRoute);
+      supabase.removeChannel(channel);
     };
   }, []);
 
@@ -345,10 +302,8 @@ export default function App() {
     setCurrentUser(user);
     try {
       const { data: cloudProfiles } = await supabase.from('profiles').select('*');
-      const localSaved = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-      let mergedUsers = [];
       if (cloudProfiles && cloudProfiles.length > 0) {
-        mergedUsers = cloudProfiles.map(p => ({
+        const mappedUsers = cloudProfiles.map(p => ({
           id: p.id,
           fullName: p.full_name || p.fullName,
           email: p.email,
@@ -356,14 +311,9 @@ export default function App() {
           interests: p.interests,
           registeredAt: p.registered_at || p.registeredAt
         }));
+        setRegisteredUsersList(mappedUsers);
+        localStorage.setItem('pikam_registered_users', JSON.stringify(mappedUsers));
       }
-      localSaved.forEach(lu => {
-        if (!mergedUsers.some(mu => (mu.email && lu.email && mu.email.toLowerCase() === lu.email.toLowerCase()) || mu.id === lu.id)) {
-          mergedUsers.push(lu);
-        }
-      });
-      setRegisteredUsersList(mergedUsers);
-      localStorage.setItem('pikam_registered_users', JSON.stringify(mergedUsers));
     } catch (err) {
       console.log('Login success user refresh notice:', err);
     }
@@ -449,7 +399,7 @@ export default function App() {
     localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
   };
 
-  const handleMoveArticleUp = (index) => {
+  const handleMoveArticleUp = async (index) => {
     if (index === 0) return;
     const updated = [...articlesList];
     const temp = updated[index];
@@ -457,9 +407,14 @@ export default function App() {
     updated[index - 1] = temp;
     setArticlesList(updated);
     localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
+
+    try {
+      // Sync reordered state to Supabase
+      await supabase.from('articles').upsert(updated);
+    } catch (err) {}
   };
 
-  const handleMoveArticleDown = (index) => {
+  const handleMoveArticleDown = async (index) => {
     if (index === articlesList.length - 1) return;
     const updated = [...articlesList];
     const temp = updated[index];
@@ -467,6 +422,11 @@ export default function App() {
     updated[index + 1] = temp;
     setArticlesList(updated);
     localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
+
+    try {
+      // Sync reordered state to Supabase
+      await supabase.from('articles').upsert(updated);
+    } catch (err) {}
   };
 
   const handleDeleteArticle = async (id) => {
