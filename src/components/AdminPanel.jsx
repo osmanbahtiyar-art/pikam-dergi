@@ -9,7 +9,8 @@ export default function AdminPanel({
   authorsList, onAddAuthor, onDeleteAuthor, onUpdateAuthor,
   heroFeatured, onUpdateHeroFeatured,
   sectionVisibility, onToggleSection,
-  allCommentsList = [], onDeleteComment
+  allCommentsList = [], onDeleteComment,
+  onForceSyncCloud
 }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
@@ -465,7 +466,17 @@ export default function AdminPanel({
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button 
+            onClick={() => {
+              if (onForceSyncCloud) onForceSyncCloud();
+              setSuccessMsg('Bilgisayarınızdaki tüm makale, üye, yazar ve ayar verileri Supabase Bulut Veritabanına aktarıldı ve senkronize edildi!');
+              setTimeout(() => setSuccessMsg(''), 7000);
+            }} 
+            style={{ background: '#10b981', color: 'white', padding: '6px 14px', borderRadius: '4px', fontSize: '0.82rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700' }}
+          >
+            <Upload size={14} /> Bilgisayardaki Verileri Buluta Yükle
+          </button>
           <a href="/" target="_blank" rel="noreferrer" style={{ background: '#1c2541', color: '#e2e8f0', padding: '6px 14px', borderRadius: '4px', fontSize: '0.82rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600' }}>
             <Eye size={14} /> Sitede Gör ↗
           </a>

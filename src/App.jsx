@@ -152,95 +152,172 @@ export default function App() {
 
   const [isAdmin, setIsAdmin] = useState(false);
 
-  useEffect(() => {
-    // PURE SUPABASE CLOUD TRUTH FETCH FUNCTION ACROSS ALL DEVICES
-    const fetchCloudData = async () => {
-      try {
-        // 1. Fetch Registered Users Profiles
-        const { data: cloudProfiles } = await supabase.from('profiles').select('*');
-        if (cloudProfiles && cloudProfiles.length > 0) {
-          const mappedUsers = cloudProfiles.map(p => ({
-            id: p.id,
-            fullName: p.full_name || p.fullName,
-            email: p.email,
-            phone: p.phone,
-            interests: p.interests,
-            registeredAt: p.registered_at || p.registeredAt
-          }));
-          setRegisteredUsersList(mappedUsers);
-          localStorage.setItem('pikam_registered_users', JSON.stringify(mappedUsers));
-        }
-
-        // 2. Fetch Reader Comments
-        const { data: cloudComments } = await supabase.from('article_comments').select('*');
-        if (cloudComments && cloudComments.length > 0) {
-          const mappedComments = cloudComments.map(c => ({
-            id: c.id,
-            articleId: c.article_id || c.articleId,
-            articleTitle: c.article_title || c.articleTitle,
-            authorName: c.author_name || c.authorName,
-            authorEmail: c.author_email || c.authorEmail,
-            commentText: c.comment_text || c.commentText,
-            createdAt: c.created_at || c.createdAt
-          }));
-          setAllCommentsList(mappedComments);
-          localStorage.setItem('pikam_article_comments', JSON.stringify(mappedComments));
-        }
-
-        // 3. Fetch Authors List (Pure Cloud Truth)
-        const { data: cloudAuthors } = await supabase.from('authors').select('*');
-        if (cloudAuthors && cloudAuthors.length > 0) {
-          const mapped = cloudAuthors.map(mapAuthorFromCloud);
-          setAuthorsList(mapped);
-          localStorage.setItem('pikam_authors_list', JSON.stringify(mapped));
-        }
-
-        // 4. Fetch Site Settings
-        const { data: cloudSettings } = await supabase.from('site_settings').select('*');
-        if (cloudSettings && cloudSettings.length > 0) {
-          const heroSetting = cloudSettings.find(s => s.id === 'hero_featured');
-          if (heroSetting && heroSetting.data) {
-            setHeroFeatured(heroSetting.data);
-            localStorage.setItem('pikam_hero_featured', JSON.stringify(heroSetting.data));
-          }
-
-          const visibilitySetting = cloudSettings.find(s => s.id === 'section_visibility');
-          if (visibilitySetting && visibilitySetting.data) {
-            setSectionVisibility(visibilitySetting.data);
-            localStorage.setItem('pikam_section_visibility', JSON.stringify(visibilitySetting.data));
-          }
-        }
-
-        // 5. Fetch E-Dergi Issues (Pure Cloud Truth)
-        const { data: cloudIssues } = await supabase.from('e_dergi_issues').select('*');
-        if (cloudIssues && cloudIssues.length > 0) {
-          const mappedIssues = cloudIssues.map(mapIssueFromCloud);
-          setEDergiList(mappedIssues);
-          localStorage.setItem('pikam_edergi_list', JSON.stringify(mappedIssues));
-        }
-
-        // 6. Fetch Articles List (Pure Cloud Truth & Exact Order)
-        const { data: cloudArticles } = await supabase.from('articles').select('*');
-        if (cloudArticles && cloudArticles.length > 0) {
-          const mappedArts = cloudArticles.map(mapArticleFromCloud);
-          setArticlesList(mappedArts);
-          localStorage.setItem('pikam_articles_list', JSON.stringify(mappedArts));
-        }
-      } catch (err) {
-        console.log('Supabase cloud fetch notice:', err);
+  // CUMULATIVE MERGE & CLOUD PUSH FUNCTION
+  const fetchAndMergeCloudData = async () => {
+    try {
+      // 1. Registered Users Profiles Cumulative Merge
+      const { data: cloudProfiles } = await supabase.from('profiles').select('*');
+      const localUsers = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
+      let mergedUsers = [];
+      if (cloudProfiles && cloudProfiles.length > 0) {
+        mergedUsers = cloudProfiles.map(p => ({
+          id: p.id,
+          fullName: p.full_name || p.fullName,
+          email: p.email,
+          phone: p.phone,
+          interests: p.interests,
+          registeredAt: p.registered_at || p.registeredAt
+        }));
       }
-    };
+      if (localUsers && localUsers.length > 0) {
+        localUsers.forEach(lu => {
+          if (!mergedUsers.some(mu => (mu.email && lu.email && mu.email.toLowerCase() === lu.email.toLowerCase()) || mu.id === lu.id)) {
+            mergedUsers.push(lu);
+          }
+        });
+      }
+      if (mergedUsers.length > 0) {
+        setRegisteredUsersList(mergedUsers);
+        localStorage.setItem('pikam_registered_users', JSON.stringify(mergedUsers));
+        supabase.from('profiles').upsert(mergedUsers.map(u => ({
+          id: u.id,
+          full_name: u.fullName,
+          fullName: u.fullName,
+          email: u.email,
+          phone: u.phone,
+          interests: u.interests,
+          registered_at: u.registeredAt,
+          registeredAt: u.registeredAt
+        })));
+      }
 
-    fetchCloudData();
+      // 2. Reader Comments Cumulative Merge
+      const { data: cloudComments } = await supabase.from('article_comments').select('*');
+      const localComments = JSON.parse(localStorage.getItem('pikam_article_comments') || '[]');
+      let mergedComments = [];
+      if (cloudComments && cloudComments.length > 0) {
+        mergedComments = cloudComments.map(c => ({
+          id: c.id,
+          articleId: c.article_id || c.articleId,
+          articleTitle: c.article_title || c.articleTitle,
+          authorName: c.author_name || c.authorName,
+          authorEmail: c.author_email || c.authorEmail,
+          commentText: c.comment_text || c.commentText,
+          createdAt: c.created_at || c.createdAt
+        }));
+      }
+      if (localComments && localComments.length > 0) {
+        localComments.forEach(lc => {
+          if (!mergedComments.some(mc => mc.id === lc.id)) {
+            mergedComments.push(lc);
+          }
+        });
+      }
+      if (mergedComments.length > 0) {
+        setAllCommentsList(mergedComments);
+        localStorage.setItem('pikam_article_comments', JSON.stringify(mergedComments));
+        supabase.from('article_comments').upsert(mergedComments.map(c => ({
+          id: c.id,
+          article_id: c.articleId,
+          article_title: c.articleTitle,
+          author_name: c.authorName,
+          author_email: c.authorEmail,
+          comment_text: c.commentText,
+          created_at: c.createdAt
+        })));
+      }
+
+      // 3. Authors List Cumulative Merge
+      const { data: cloudAuthors } = await supabase.from('authors').select('*');
+      const localAuthors = JSON.parse(localStorage.getItem('pikam_authors_list') || '[]');
+      let mergedAuthors = [];
+      if (cloudAuthors && cloudAuthors.length > 0) {
+        mergedAuthors = cloudAuthors.map(mapAuthorFromCloud);
+      }
+      if (localAuthors && localAuthors.length > 0) {
+        localAuthors.forEach(la => {
+          if (!mergedAuthors.some(ma => ma.id === la.id)) {
+            mergedAuthors.push(la);
+          }
+        });
+      }
+      if (mergedAuthors.length > 0) {
+        setAuthorsList(mergedAuthors);
+        localStorage.setItem('pikam_authors_list', JSON.stringify(mergedAuthors));
+        supabase.from('authors').upsert(mergedAuthors.map(mapAuthorForCloud));
+      }
+
+      // 4. Site Settings
+      const { data: cloudSettings } = await supabase.from('site_settings').select('*');
+      if (cloudSettings && cloudSettings.length > 0) {
+        const heroSetting = cloudSettings.find(s => s.id === 'hero_featured');
+        if (heroSetting && heroSetting.data) {
+          setHeroFeatured(heroSetting.data);
+          localStorage.setItem('pikam_hero_featured', JSON.stringify(heroSetting.data));
+        }
+
+        const visibilitySetting = cloudSettings.find(s => s.id === 'section_visibility');
+        if (visibilitySetting && visibilitySetting.data) {
+          setSectionVisibility(visibilitySetting.data);
+          localStorage.setItem('pikam_section_visibility', JSON.stringify(visibilitySetting.data));
+        }
+      }
+
+      // 5. E-Dergi Issues Cumulative Merge
+      const { data: cloudIssues } = await supabase.from('e_dergi_issues').select('*');
+      const localIssues = JSON.parse(localStorage.getItem('pikam_edergi_list') || '[]');
+      let mergedIssues = [];
+      if (cloudIssues && cloudIssues.length > 0) {
+        mergedIssues = cloudIssues.map(mapIssueFromCloud);
+      }
+      if (localIssues && localIssues.length > 0) {
+        localIssues.forEach(li => {
+          if (!mergedIssues.some(mi => mi.id === li.id)) {
+            mergedIssues.push(li);
+          }
+        });
+      }
+      if (mergedIssues.length > 0) {
+        setEDergiList(mergedIssues);
+        localStorage.setItem('pikam_edergi_list', JSON.stringify(mergedIssues));
+        supabase.from('e_dergi_issues').upsert(mergedIssues.map(mapIssueForCloud));
+      }
+
+      // 6. Articles List Cumulative Merge & Push
+      const { data: cloudArticles } = await supabase.from('articles').select('*');
+      const localArts = JSON.parse(localStorage.getItem('pikam_articles_list') || '[]');
+      let mergedArts = [];
+      if (cloudArticles && cloudArticles.length > 0) {
+        mergedArts = cloudArticles.map(mapArticleFromCloud);
+      }
+      if (localArts && localArts.length > 0) {
+        localArts.forEach(la => {
+          if (!mergedArts.some(ma => ma.id === la.id)) {
+            mergedArts.push(la);
+          }
+        });
+      }
+      if (mergedArts.length > 0) {
+        setArticlesList(mergedArts);
+        localStorage.setItem('pikam_articles_list', JSON.stringify(mergedArts));
+        supabase.from('articles').upsert(mergedArts.map(mapArticleForCloud));
+      }
+    } catch (err) {
+      console.log('Supabase cumulative merge notice:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAndMergeCloudData();
 
     // Re-fetch automatically whenever window/tab receives focus
-    window.addEventListener('focus', fetchCloudData);
+    window.addEventListener('focus', fetchAndMergeCloudData);
 
     // SUPABASE REALTIME SUBSCRIPTION FOR INSTANT CROSS-DEVICE SYNC
     const channel = supabase
       .channel('pikam-realtime-sync')
       .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-        fetchCloudData();
+        fetchAndMergeCloudData();
       })
       .subscribe();
 
@@ -251,7 +328,7 @@ export default function App() {
       
       if (path.includes('admin') || hash.includes('admin') || search.includes('admin')) {
         setIsAdmin(true);
-        fetchCloudData(); // Re-sync immediately on entering admin panel
+        fetchAndMergeCloudData(); // Re-sync immediately on entering admin panel
       } else {
         setIsAdmin(false);
       }
@@ -262,7 +339,7 @@ export default function App() {
     window.addEventListener('hashchange', checkAdminRoute);
 
     return () => {
-      window.removeEventListener('focus', fetchCloudData);
+      window.removeEventListener('focus', fetchAndMergeCloudData);
       window.removeEventListener('popstate', checkAdminRoute);
       window.removeEventListener('hashchange', checkAdminRoute);
       supabase.removeChannel(channel);
@@ -540,6 +617,7 @@ export default function App() {
         onToggleSection={handleToggleSection}
         allCommentsList={allCommentsList}
         onDeleteComment={handleDeleteComment}
+        onForceSyncCloud={fetchAndMergeCloudData}
       />
     );
   }
