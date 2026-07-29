@@ -84,7 +84,7 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // PURE SUPABASE CLOUD TRUTH FETCH FUNCTION ACROSS ALL DEVICES
+    // PURE SUPABASE CLOUD TRUTH FETCH & SYNC FUNCTION ACROSS ALL DEVICES
     const fetchCloudData = async () => {
       try {
         // 1. Fetch Registered Users Profiles
@@ -124,7 +124,6 @@ export default function App() {
           setAuthorsList(cloudAuthors);
           localStorage.setItem('pikam_authors_list', JSON.stringify(cloudAuthors));
         } else if (authorsList.length > 0) {
-          // Push initial defaults to cloud if cloud table is empty
           supabase.from('authors').upsert(authorsList);
         }
 
@@ -167,6 +166,21 @@ export default function App() {
     };
 
     fetchCloudData();
+
+    // Push local data to cloud on load if local data exists
+    const pushLocalToCloud = async () => {
+      try {
+        const localArts = JSON.parse(localStorage.getItem('pikam_articles_list') || '[]');
+        if (localArts.length > 0) await supabase.from('articles').upsert(localArts);
+
+        const localAuths = JSON.parse(localStorage.getItem('pikam_authors_list') || '[]');
+        if (localAuths.length > 0) await supabase.from('authors').upsert(localAuths);
+
+        const localIssues = JSON.parse(localStorage.getItem('pikam_edergi_list') || '[]');
+        if (localIssues.length > 0) await supabase.from('e_dergi_issues').upsert(localIssues);
+      } catch (e) {}
+    };
+    pushLocalToCloud();
 
     // Re-fetch automatically whenever window/tab receives focus
     window.addEventListener('focus', fetchCloudData);
@@ -409,7 +423,6 @@ export default function App() {
     localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
 
     try {
-      // Sync reordered state to Supabase
       await supabase.from('articles').upsert(updated);
     } catch (err) {}
   };
@@ -424,7 +437,6 @@ export default function App() {
     localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
 
     try {
-      // Sync reordered state to Supabase
       await supabase.from('articles').upsert(updated);
     } catch (err) {}
   };
