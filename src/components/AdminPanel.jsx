@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download, Image as ImageIcon, Newspaper, Feather, EyeOff, Settings, Edit3, Layout, X } from 'lucide-react';
+import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download, Image as ImageIcon, Newspaper, Feather, EyeOff, Settings, Edit3, Layout, X, ArrowUp, ArrowDown } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function AdminPanel({ 
   eDergiList, onAddEDergi, onDeleteEDergi, 
-  onAddArticle, articlesList, onDeleteArticle, 
+  onAddArticle, onUpdateArticle, onToggleHideArticle, onMoveArticleUp, onMoveArticleDown, articlesList, onDeleteArticle, 
   registeredUsersList, onDeleteUser,
   authorsList, onAddAuthor, onDeleteAuthor, onUpdateAuthor,
   heroFeatured, onUpdateHeroFeatured,
@@ -28,14 +28,15 @@ export default function AdminPanel({
   const [pdfFileName, setPdfFileName] = useState('');
   const [editorNote, setEditorNote] = useState('PİKAM 75. sayımızda Doğu Akdeniz enerji koridorları ve küresel makroekonomi masaya yatırılıyor.');
 
-  // Article Form State
+  // Article Form & Edit State
+  const [editingArticleId, setEditingArticleId] = useState(null);
   const [artTitle, setArtTitle] = useState('');
   const [artCategory, setArtCategory] = useState('POLİTİKA');
   const [artAuthor, setArtAuthor] = useState('Prof. Dr. Ahmet Yılmaz');
   const [artExcerpt, setArtExcerpt] = useState('');
   const [artImage, setArtImage] = useState('');
 
-  // Author Add/Edit Form State
+  // Author Form & Edit State
   const [editingAuthorId, setEditingAuthorId] = useState(null);
   const [authorName, setAuthorName] = useState('');
   const [authorRole, setAuthorRole] = useState('');
@@ -78,7 +79,6 @@ export default function AdminPanel({
   const processPermanentImage = async (file) => {
     if (!file) return null;
 
-    // 1. Try uploading to Supabase Storage 'pikam-images' bucket
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `pikam_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -98,7 +98,6 @@ export default function AdminPanel({
       console.log('Supabase storage upload notice:', err);
     }
 
-    // 2. Fallback: Convert to permanent Base64 Data URL (stored directly in DB, works forever across all devices and tabs!)
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result);
@@ -141,6 +140,25 @@ export default function AdminPanel({
       const permUrl = await processPermanentImage(file);
       setHeroImage(permUrl);
     }
+  };
+
+  const startEditArticle = (article) => {
+    setEditingArticleId(article.id);
+    setArtTitle(article.title || '');
+    setArtCategory(article.category || 'POLİTİKA');
+    setArtAuthor(typeof article.author === 'string' ? article.author : article.author?.name || 'Prof. Dr. Ahmet Yılmaz');
+    setArtExcerpt(article.excerpt || '');
+    setArtImage(article.image || '');
+    setActiveTab('makale');
+  };
+
+  const cancelEditArticle = () => {
+    setEditingArticleId(null);
+    setArtTitle('');
+    setArtCategory('POLİTİKA');
+    setArtAuthor('Prof. Dr. Ahmet Yılmaz');
+    setArtExcerpt('');
+    setArtImage('');
   };
 
   const startEditAuthor = (author) => {
@@ -209,7 +227,6 @@ export default function AdminPanel({
     if (!authorName) return;
 
     if (editingAuthorId) {
-      // UPDATE EXISTING AUTHOR
       const updatedAuthor = {
         id: editingAuthorId,
         name: authorName,
@@ -222,7 +239,6 @@ export default function AdminPanel({
       setSuccessMsg(`"${authorName}" yazarının bilgileri başarıyla güncellendi!`);
       cancelEditAuthor();
     } else {
-      // ADD NEW AUTHOR
       const newAuthor = {
         id: `auth-${Date.now()}`,
         name: authorName,
@@ -329,32 +345,43 @@ export default function AdminPanel({
 
     const finalImage = artImage || categoryDefaultImages[artCategory] || 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80';
 
-    const newArt = {
-      id: `art-${Date.now()}`,
-      category: artCategory,
-      categoryColor: categoryColors[artCategory] || '#ef4444',
-      title: artTitle,
-      excerpt: artExcerpt,
-      author: artAuthor,
-      date: 'Bugün',
-      readTime: '6 Dakika',
-      image: finalImage,
-      content: `<p>${artExcerpt}</p><p>Politik ve İktisadi Araştırmalar Merkezi yayın kurulunca hazırlanan özel analiz.</p>`
-    };
-
-    try {
-      await supabase.from('articles').insert([newArt]);
-    } catch (err) {
-      console.log('Supabase article sync notice:', err);
+    if (editingArticleId) {
+      // UPDATE EXISTING ARTICLE
+      const updatedArt = {
+        id: editingArticleId,
+        category: artCategory,
+        categoryColor: categoryColors[artCategory] || '#ef4444',
+        title: artTitle,
+        excerpt: artExcerpt,
+        author: artAuthor,
+        date: 'Bugün (Düzenlendi)',
+        readTime: '6 Dakika',
+        image: finalImage,
+        content: `<p>${artExcerpt}</p><p>Politik ve İktisadi Araştırmalar Merkezi yayın kurulunca hazırlanan özel analiz.</p>`
+      };
+      onUpdateArticle(updatedArt);
+      setSuccessMsg(`"${artTitle}" makalesi başarıyla güncellendi!`);
+      cancelEditArticle();
+    } else {
+      // ADD NEW ARTICLE
+      const newArt = {
+        id: `art-${Date.now()}`,
+        category: artCategory,
+        categoryColor: categoryColors[artCategory] || '#ef4444',
+        title: artTitle,
+        excerpt: artExcerpt,
+        author: artAuthor,
+        date: 'Bugün',
+        readTime: '6 Dakika',
+        image: finalImage,
+        content: `<p>${artExcerpt}</p><p>Politik ve İktisadi Araştırmalar Merkezi yayın kurulunca hazırlanan özel analiz.</p>`
+      };
+      onAddArticle(newArt);
+      setSuccessMsg(`"${artTitle}" makalesi kapak görseliyle birlikte saniyeler içinde sitede yayına girdi!`);
+      cancelEditArticle();
     }
 
-    onAddArticle(newArt);
-
     setIsPublishing(false);
-    setSuccessMsg(`"${artTitle}" makalesi kapak görseliyle birlikte saniyeler içinde sitede yayına girdi!`);
-    setArtTitle('');
-    setArtExcerpt('');
-    setArtImage('');
     setTimeout(() => setSuccessMsg(''), 7000);
   };
 
@@ -428,7 +455,7 @@ export default function AdminPanel({
             <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.25rem', letterSpacing: '1px', margin: 0 }}>
               PİKAM DERGİ GELİŞMİŞ CMS YÖNETİM PANELSİ
             </h1>
-            <span style={{ fontSize: '0.78rem', color: '#38bdf8' }}>Tam Arayüz, Akış ve Kadro Düzenleme Portalı (pikamdergi.com/admin)</span>
+            <span style={{ fontSize: '0.78rem', color: '#38bdf8' }}>Tam Arayüz, Akış, Sıralama ve Gizleme Portalı (pikamdergi.com/admin)</span>
           </div>
         </div>
 
@@ -491,7 +518,7 @@ export default function AdminPanel({
             style={{ background: activeTab === 'makale_listesi' ? '#0b132b' : '#ffffff', color: activeTab === 'makale_listesi' ? '#ffffff' : '#475569', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             <Newspaper size={15} color={activeTab === 'makale_listesi' ? '#38bdf8' : '#eab308'} />
-            <span>Makale Listesi ({articlesList.length})</span>
+            <span>Makale Yönetimi & Sıralama ({articlesList.length})</span>
           </button>
 
           <button 
@@ -511,7 +538,7 @@ export default function AdminPanel({
           </button>
 
           <button 
-            onClick={() => setActiveTab('makale')} 
+            onClick={() => { setActiveTab('makale'); cancelEditArticle(); }} 
             style={{ background: activeTab === 'makale' ? '#0b132b' : '#ffffff', color: activeTab === 'makale' ? '#ffffff' : '#475569', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             <PlusCircle size={15} />
@@ -900,15 +927,15 @@ export default function AdminPanel({
           </div>
         )}
 
-        {/* TAB: YAYINLANMIŞ MAKALELER LİSTESİ */}
+        {/* TAB: YAYINLANMIŞ MAKALELER LİSTESİ, DÜZENLEME, SIRALAMA VE GİZLEME */}
         {activeTab === 'makale_listesi' && (
           <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0b132b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Newspaper size={22} color="#eab308" />
-              <span>SİTEDE YAYINLANAN MAKALE VE YAZILARI YÖNET (SİL / KALDIR)</span>
+              <span>SİTEDE YAYINLANAN MAKALELERİ YÖNET, DÜZENLE, SIRALA VE GİZLE</span>
             </h2>
             <p style={{ color: '#64748b', fontSize: '0.88rem', marginBottom: '24px' }}>
-              Web sitenizde yayında olan tüm makaleler aşağıda listelenmiştir. Dilediğiniz makalenin yanındaki **"Siteden Sil"** butonuna basarak tek tıkla canlı siteden kaldırabilirsiniz.
+              Makalelerin **başlığını, özetini ve resmini düzenleyebilir**, sırasını **yukarı/aşağı** taşıyabilir, **gizleyip gösterabilir** veya silebilirsiniz.
             </p>
 
             {articlesList.length === 0 ? (
@@ -917,14 +944,20 @@ export default function AdminPanel({
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-                {articlesList.map((art) => (
-                  <div key={art.id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#ffffff', boxShadow: '0 2px 6px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                {articlesList.map((art, idx) => (
+                  <div key={art.id} style={{ border: art.hidden ? '2px dashed #94a3b8' : '1px solid #e2e8f0', opacity: art.hidden ? 0.75 : 1, borderRadius: '8px', overflow: 'hidden', background: '#ffffff', boxShadow: '0 2px 6px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <div>
                       <div style={{ position: 'relative', height: '140px' }}>
                         <img src={art.image} alt={art.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         <span style={{ position: 'absolute', top: '8px', left: '8px', background: art.categoryColor || '#10b981', color: 'white', fontSize: '0.7rem', fontWeight: '800', padding: '2px 8px', borderRadius: '4px' }}>
                           {art.category}
                         </span>
+
+                        {art.hidden && (
+                          <span style={{ position: 'absolute', top: '8px', right: '8px', background: '#dc2626', color: 'white', fontSize: '0.7rem', fontWeight: '800', padding: '2px 8px', borderRadius: '4px' }}>
+                            GİZLİ (Sitede Görünmüyor)
+                          </span>
+                        )}
                       </div>
                       <div style={{ padding: '16px' }}>
                         <h4 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.05rem', color: '#0f172a', margin: '0 0 6px 0', lineHeight: '1.3' }}>{art.title}</h4>
@@ -935,17 +968,53 @@ export default function AdminPanel({
                       </div>
                     </div>
 
-                    <div style={{ padding: '12px 16px', background: '#f8fafc', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end' }}>
-                      <button 
-                        onClick={() => {
-                          if (confirm(`"${art.title}" makalesini siteden tamamen silmek istediğinize emin misiniz?`)) {
-                            onDeleteArticle(art.id);
-                          }
-                        }}
-                        style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                      >
-                        <Trash2 size={14} /> Siteden Sil
-                      </button>
+                    {/* CONTROL ACTION BUTTONS: DÜZENLE, SIRALA, GİZLE/GÖSTER, SİL */}
+                    <div style={{ padding: '12px 16px', background: '#f8fafc', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button 
+                          onClick={() => startEditArticle(art)}
+                          style={{ flex: 1, background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', padding: '6px 8px', borderRadius: '4px', fontSize: '0.76rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                        >
+                          <Edit3 size={13} /> Düzenle
+                        </button>
+
+                        <button 
+                          onClick={() => onToggleHideArticle(art.id)}
+                          style={{ flex: 1, background: art.hidden ? '#dcfce7' : '#fef3c7', color: art.hidden ? '#15803d' : '#b45309', border: '1px solid #fde68a', padding: '6px 8px', borderRadius: '4px', fontSize: '0.76rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                        >
+                          {art.hidden ? <Eye size={13} /> : <EyeOff size={13} />}
+                          <span>{art.hidden ? 'Göster' : 'Gizle'}</span>
+                        </button>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button 
+                          disabled={idx === 0}
+                          onClick={() => onMoveArticleUp(idx)}
+                          style={{ flex: 1, background: idx === 0 ? '#f1f5f9' : '#ffffff', color: idx === 0 ? '#94a3b8' : '#334155', border: '1px solid #cbd5e1', padding: '5px 6px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: '600', cursor: idx === 0 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                        >
+                          <ArrowUp size={13} /> Yukarı Taşı
+                        </button>
+
+                        <button 
+                          disabled={idx === articlesList.length - 1}
+                          onClick={() => onMoveArticleDown(idx)}
+                          style={{ flex: 1, background: idx === articlesList.length - 1 ? '#f1f5f9' : '#ffffff', color: idx === articlesList.length - 1 ? '#94a3b8' : '#334155', border: '1px solid #cbd5e1', padding: '5px 6px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: '600', cursor: idx === articlesList.length - 1 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                        >
+                          <ArrowDown size={13} /> Aşağı Taşı
+                        </button>
+
+                        <button 
+                          onClick={() => {
+                            if (confirm(`"${art.title}" makalesini siteden tamamen silmek istediğinize emin misiniz?`)) {
+                              onDeleteArticle(art.id);
+                            }
+                          }}
+                          style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '5px 8px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                        >
+                          <Trash2 size={13} /> Sil
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1110,16 +1179,24 @@ export default function AdminPanel({
           </div>
         )}
 
-        {/* TAB 3: YENİ MAKALE EKLEME FORMU */}
+        {/* TAB 3: YENİ MAKALE EKLEME VE DÜZENLEME FORMU */}
         {activeTab === 'makale' && (
           <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0b132b', marginBottom: '20px' }}>
-              YENİ MAKALE VEYA RAPOR YAYINLA
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0b132b', margin: 0 }}>
+                {editingArticleId ? 'MAKALEYİ DÜZENLE VE GÜNCELLE' : 'YENİ MAKALE VEYA RAPOR YAYINLA'}
+              </h2>
+
+              {editingArticleId && (
+                <button onClick={cancelEditArticle} style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <X size={14} /> Düzenlemeyi İptal Et
+                </button>
+              )}
+            </div>
 
             <form onSubmit={handlePublishArticle} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>MAKALE / ANALİZ BAŞLIĞI</label>
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>MAKALE / ANALİZ BAŞLIĞI *</label>
                 <input 
                   type="text" 
                   value={artTitle} 
@@ -1149,7 +1226,7 @@ export default function AdminPanel({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>YAZAR / ANALİST</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>YAZAR / ANALİST *</label>
                   <input 
                     type="text" 
                     value={artAuthor} 
@@ -1193,7 +1270,7 @@ export default function AdminPanel({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>ÖZET VE İÇERİK</label>
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>ÖZET VE İÇERİK *</label>
                 <textarea 
                   rows="4" 
                   value={artExcerpt} 
@@ -1207,9 +1284,10 @@ export default function AdminPanel({
               <button 
                 type="submit" 
                 disabled={isPublishing}
-                style={{ background: '#0b132b', color: 'white', padding: '12px 24px', borderRadius: '6px', fontWeight: '700', fontSize: '0.95rem', border: 'none', cursor: isPublishing ? 'not-allowed' : 'pointer', alignSelf: 'flex-start' }}
+                style={{ background: editingArticleId ? '#16a34a' : '#0b132b', color: 'white', padding: '12px 24px', borderRadius: '6px', fontWeight: '700', fontSize: '0.95rem', border: 'none', cursor: isPublishing ? 'not-allowed' : 'pointer', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px' }}
               >
-                MAKALEYİ YAYINLA
+                {editingArticleId ? <Edit3 size={16} /> : <PlusCircle size={16} />}
+                <span>{editingArticleId ? 'MAKALEYİ GÜNCELLE VE YAYINLA' : 'MAKALEYİ YAYINLA'}</span>
               </button>
             </form>
           </div>

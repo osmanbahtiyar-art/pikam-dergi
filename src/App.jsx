@@ -95,7 +95,6 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // FETCH ALL CLOUD DATA FROM SUPABASE WITH FAIL-SAFE MERGING FOR PERMANENT USER ACCUMULATION
     const fetchCloudData = async () => {
       try {
         // 1. Fetch Registered Users Profiles with Cumulative Merging
@@ -114,12 +113,10 @@ export default function App() {
           }));
         }
 
-        // Add any local users not in cloud to merged list and sync them to Supabase!
         if (localSaved && localSaved.length > 0) {
           localSaved.forEach(lu => {
             if (!mergedUsers.some(mu => (mu.email && lu.email && mu.email.toLowerCase() === lu.email.toLowerCase()) || mu.id === lu.id)) {
               mergedUsers.push(lu);
-              // Push missing user to Supabase!
               try {
                 supabase.from('profiles').upsert([{
                   id: lu.id,
@@ -278,7 +275,6 @@ export default function App() {
 
   const handleLoginSuccess = async (user) => {
     setCurrentUser(user);
-    // Refresh registered users list immediately
     try {
       const { data: cloudProfiles } = await supabase.from('profiles').select('*');
       const localSaved = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
@@ -358,6 +354,53 @@ export default function App() {
     }
   };
 
+  const handleUpdateArticle = async (updatedArticle) => {
+    const updated = articlesList.map(a => a.id === updatedArticle.id ? updatedArticle : a);
+    setArticlesList(updated);
+    localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
+
+    try {
+      await supabase.from('articles').upsert([updatedArticle]);
+    } catch (err) {
+      console.log('Supabase article update notice:', err);
+    }
+  };
+
+  const handleToggleHideArticle = async (articleId) => {
+    const updated = articlesList.map(a => {
+      if (a.id === articleId) {
+        const newArt = { ...a, hidden: !a.hidden };
+        try {
+          supabase.from('articles').upsert([newArt]);
+        } catch (err) {}
+        return newArt;
+      }
+      return a;
+    });
+    setArticlesList(updated);
+    localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
+  };
+
+  const handleMoveArticleUp = (index) => {
+    if (index === 0) return;
+    const updated = [...articlesList];
+    const temp = updated[index];
+    updated[index] = updated[index - 1];
+    updated[index - 1] = temp;
+    setArticlesList(updated);
+    localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
+  };
+
+  const handleMoveArticleDown = (index) => {
+    if (index === articlesList.length - 1) return;
+    const updated = [...articlesList];
+    const temp = updated[index];
+    updated[index] = updated[index + 1];
+    updated[index + 1] = temp;
+    setArticlesList(updated);
+    localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
+  };
+
   const handleDeleteArticle = async (id) => {
     const updated = articlesList.filter(a => a.id !== id);
     setArticlesList(updated);
@@ -388,6 +431,10 @@ export default function App() {
         onAddEDergi={handleAddEDergi}
         onDeleteEDergi={handleDeleteEDergi}
         onAddArticle={handleAddArticle}
+        onUpdateArticle={handleUpdateArticle}
+        onToggleHideArticle={handleToggleHideArticle}
+        onMoveArticleUp={handleMoveArticleUp}
+        onMoveArticleDown={handleMoveArticleDown}
         articlesList={articlesList}
         onDeleteArticle={handleDeleteArticle}
         registeredUsersList={registeredUsersList}

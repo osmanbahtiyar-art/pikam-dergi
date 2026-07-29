@@ -3,13 +3,17 @@ import { PIKAM_DATA } from '../data/pikamData';
 import { Calendar, ArrowUpRight } from 'lucide-react';
 
 export default function EditorialFeed({ activeCategory, articlesList, onSelectArticle }) {
-  const sourceArticles = articlesList && articlesList.length > 0 ? articlesList : PIKAM_DATA.articles;
+  const rawArticles = articlesList && articlesList.length > 0 ? articlesList : PIKAM_DATA.articles;
+  // Filter out hidden articles for site visitors
+  const sourceArticles = rawArticles.filter(a => !a.hidden);
 
   const isAllCategory = activeCategory === 'TÜMÜ' || activeCategory === 'ANASAYFA' || activeCategory === 'KÜNYE' || activeCategory === 'E-DERGİ' || activeCategory === 'YAZARLAR';
 
   const filteredArticles = isAllCategory 
     ? sourceArticles 
     : sourceArticles.filter(a => a.category === activeCategory);
+
+  const fallbackImage = 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80';
 
   return (
     <section className="editorial-section">
@@ -32,41 +36,52 @@ export default function EditorialFeed({ activeCategory, articlesList, onSelectAr
           </div>
         ) : (
           <div className="editorial-grid">
-            {filteredArticles.map((article) => (
-              <article key={article.id} className="article-card" onClick={() => onSelectArticle(article)}>
-                <div className="article-img-wrap">
-                  <img src={article.image} alt={article.title} className="article-img" />
-                  <span 
-                    className="category-tag" 
-                    style={{ 
-                      position: 'absolute', 
-                      top: '12px', 
-                      left: '12px', 
-                      backgroundColor: article.categoryColor || '#10b981'
-                    }}
-                  >
-                    {article.category}
-                  </span>
-                </div>
+            {filteredArticles.map((article) => {
+              const imgUrl = (article.image && !article.image.startsWith('blob:')) ? article.image : fallbackImage;
+              return (
+                <article key={article.id} className="article-card" onClick={() => onSelectArticle(article)}>
+                  <div className="article-img-wrap">
+                    <img 
+                      src={imgUrl} 
+                      alt={article.title} 
+                      className="article-img" 
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = fallbackImage;
+                      }}
+                    />
+                    <span 
+                      className="category-tag" 
+                      style={{ 
+                        position: 'absolute', 
+                        top: '12px', 
+                        left: '12px', 
+                        backgroundColor: article.categoryColor || '#10b981'
+                      }}
+                    >
+                      {article.category}
+                    </span>
+                  </div>
 
-                <div className="article-body">
-                  <h3 className="article-title">{article.title}</h3>
-                  <p className="article-excerpt">{article.excerpt}</p>
+                  <div className="article-body">
+                    <h3 className="article-title">{article.title}</h3>
+                    <p className="article-excerpt">{article.excerpt}</p>
 
-                  <div className="article-footer">
-                    <div style={{ fontWeight: '600', color: '#1e293b' }}>
-                      {typeof article.author === 'string' ? article.author : article.author?.name}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <Calendar size={11} /> {article.date || 'Bugün'}
-                      </span>
-                      <ArrowUpRight size={14} color="#64748b" />
+                    <div className="article-footer">
+                      <div style={{ fontWeight: '600', color: '#1e293b' }}>
+                        {typeof article.author === 'string' ? article.author : article.author?.name}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <Calendar size={11} /> {article.date || 'Bugün'}
+                        </span>
+                        <ArrowUpRight size={14} color="#64748b" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
       </div>
