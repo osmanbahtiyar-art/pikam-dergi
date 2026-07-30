@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, Clock, Share2, Volume2, MessageSquare, ThumbsUp, Lock, UserCheck, Send, Check, Copy } from 'lucide-react';
+import { X, Calendar, Clock, Share2, Volume2, Square, MessageSquare, ThumbsUp, Lock, UserCheck, Send, Check, Copy } from 'lucide-react';
 
 export default function ArticleModal({ article, currentUser, allCommentsList = [], onAddComment, onOpenAuthModal, onClose }) {
   const [fontSize, setFontSize] = useState(1.05); // rem
@@ -7,8 +7,63 @@ export default function ArticleModal({ article, currentUser, allCommentsList = [
   const [likeCount, setLikeCount] = useState(48);
   const [newCommentText, setNewCommentText] = useState("");
   const [copySuccess, setCopySuccess] = useState(false);
+  const [isPlayingSpeech, setIsPlayingSpeech] = useState(false);
 
   if (!article) return null;
+
+  const handleToggleSpeech = () => {
+    if (!('speechSynthesis' in window)) {
+      alert('Tarayıcınız sesli okuma özelliğini desteklememektedir.');
+      return;
+    }
+
+    if (isPlayingSpeech) {
+      window.speechSynthesis.cancel();
+      setIsPlayingSpeech(false);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const tempDiv = document.createElement('div');
+    const rawText = article.content || article.excerpt || '';
+    tempDiv.innerHTML = rawText;
+    const cleanText = (tempDiv.textContent || tempDiv.innerText || rawText)
+      .replace(/Politik ve İktisadi Araştırmalar Merkezi yayın kurulunca hazırlanan özel analiz\.?/gi, '')
+      .trim();
+
+    const fullTextToRead = `${article.title}. ${cleanText}`;
+
+    const utterance = new SpeechSynthesisUtterance(fullTextToRead);
+    utterance.lang = 'tr-TR';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    const trVoice = voices.find(v => v.lang && v.lang.toLowerCase().includes('tr'));
+    if (trVoice) {
+      utterance.voice = trVoice;
+    }
+
+    utterance.onend = () => {
+      setIsPlayingSpeech(false);
+    };
+
+    utterance.onerror = () => {
+      setIsPlayingSpeech(false);
+    };
+
+    window.speechSynthesis.speak(utterance);
+    setIsPlayingSpeech(true);
+  };
+
+  const handleCloseModal = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsPlayingSpeech(false);
+    onClose();
+  };
 
   // Filter comments specifically for this article (No fake comments!)
   const articleComments = allCommentsList.filter(c => c.articleId === article.id || c.article_id === article.id);
@@ -90,9 +145,9 @@ export default function ArticleModal({ article, currentUser, allCommentsList = [
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={handleCloseModal}>
       <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close-btn" onClick={onClose}>
+        <button className="modal-close-btn" onClick={handleCloseModal}>
           <X size={20} />
         </button>
 
@@ -130,8 +185,8 @@ export default function ArticleModal({ article, currentUser, allCommentsList = [
                 <div style={{ fontWeight: '700', color: '#0f172a', fontSize: '0.95rem' }}>
                   {typeof article.author === 'string' ? article.author : article.author?.name}
                 </div>
-                <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                  {article.author?.title || 'PİKAM Kıdemli Analisti'}
+                <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: '600' }}>
+                  Yazar
                 </div>
               </div>
             </div>
@@ -157,11 +212,25 @@ export default function ArticleModal({ article, currentUser, allCommentsList = [
               </div>
 
               <button 
-                onClick={() => alert('Metin sesli okuma başlatıldı (Simülasyon).')} 
-                style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#e0f2fe', color: '#0369a1', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '600' }}
+                onClick={handleToggleSpeech} 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  background: isPlayingSpeech ? '#fef2f2' : '#e0f2fe', 
+                  color: isPlayingSpeech ? '#dc2626' : '#0369a1', 
+                  border: isPlayingSpeech ? '1px solid #fca5a5' : '1px solid #bae6fd', 
+                  cursor: 'pointer', 
+                  padding: '6px 12px', 
+                  borderRadius: '4px', 
+                  fontSize: '0.8rem', 
+                  fontWeight: '700',
+                  transition: 'all 0.2s ease'
+                }}
+                title={isPlayingSpeech ? "Sesli Okumayı Durdur" : "Makaleyi Sesli Dinle"}
               >
-                <Volume2 size={15} />
-                <span>Dinle</span>
+                {isPlayingSpeech ? <Square size={15} color="#dc2626" /> : <Volume2 size={15} color="#0369a1" />}
+                <span>{isPlayingSpeech ? 'Durdur' : 'Dinle'}</span>
               </button>
 
               <button 
