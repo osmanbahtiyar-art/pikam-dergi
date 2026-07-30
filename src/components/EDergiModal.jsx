@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, Download, ZoomIn, BookOpen, Layers, Loader2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Download, ZoomIn, BookOpen, Loader2 } from 'lucide-react';
 
 export default function EDergiModal({ issue, onClose }) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -19,11 +19,53 @@ export default function EDergiModal({ issue, onClose }) {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
 
-  // Render PDF page dynamically using PDF.js if issue.pdfUrl or pagesDataUrls is provided
+  const handleDownloadPdf = () => {
+    if (!issue.pdfUrl || issue.pdfUrl === '#') {
+      alert('Dergi PDF dosyası henüz yüklenmemiştir.');
+      return;
+    }
+
+    const fileName = issue.pdfFileName || `PIKAM-Dergi-${(issue.issueNumber || '').replace(' ', '-')}.pdf`;
+
+    if (issue.pdfUrl.startsWith('data:application/pdf;base64,')) {
+      try {
+        const base64Data = issue.pdfUrl.split(',')[1];
+        const binaryStr = atob(base64Data);
+        const len = binaryStr.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      } catch (err) {
+        console.error('Download error:', err);
+        window.open(issue.pdfUrl, '_blank');
+      }
+    } else {
+      const a = document.createElement('a');
+      a.href = issue.pdfUrl;
+      a.target = '_blank';
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
+  // Render PDF page dynamically using PDF.js
   useEffect(() => {
     let isMounted = true;
 
-    // Check if pre-rendered image exists for this page
+    // Check pre-rendered pages array
     if (issue.pagesDataUrls && issue.pagesDataUrls[currentPage - 1]) {
       setRenderedPdfPage(issue.pagesDataUrls[currentPage - 1]);
       setIsRenderingPage(false);
@@ -93,39 +135,35 @@ export default function EDergiModal({ issue, onClose }) {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#334155', padding: '4px 10px', borderRadius: '4px', fontSize: '0.82rem' }}>
-              <button onClick={handlePrevPage} disabled={currentPage === 1} style={{ opacity: currentPage === 1 ? 0.4 : 1, color: 'white' }}>
+              <button onClick={handlePrevPage} disabled={currentPage === 1} style={{ opacity: currentPage === 1 ? 0.4 : 1, color: 'white', background: 'none', border: 'none', cursor: 'pointer' }}>
                 <ChevronLeft size={16} />
               </button>
 
               <span>Sayfa {currentPage} / {totalPages}</span>
 
-              <button onClick={handleNextPage} disabled={currentPage === totalPages} style={{ opacity: currentPage === totalPages ? 0.4 : 1, color: 'white' }}>
+              <button onClick={handleNextPage} disabled={currentPage === totalPages} style={{ opacity: currentPage === totalPages ? 0.4 : 1, color: 'white', background: 'none', border: 'none', cursor: 'pointer' }}>
                 <ChevronRight size={16} />
               </button>
             </div>
 
             <button 
               onClick={() => setZoomLevel(zoomLevel === 100 ? 125 : 100)} 
-              style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#cbd5e1', fontSize: '0.8rem' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#cbd5e1', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer' }}
               title="Sayfayı Yakınlaştır"
             >
               <ZoomIn size={16} />
               <span>%{zoomLevel}</span>
             </button>
 
-            {issue.pdfUrl && issue.pdfUrl !== '#' && (
-              <a 
-                href={issue.pdfUrl} 
-                download={issue.pdfFileName || `PIKAM-Dergi-${issue.monthYear.replace(' ', '-')}.pdf`}
-                className="top-search-btn" 
-                style={{ background: '#2563eb', color: 'white', textDecoration: 'none' }}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Download size={14} />
-                <span>PDF İndir</span>
-              </a>
-            )}
+            <button 
+              onClick={handleDownloadPdf}
+              className="top-search-btn" 
+              style={{ background: '#2563eb', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '4px', fontWeight: '700', fontSize: '0.82rem' }}
+              title="Tüm PDF Dergiyi İndir"
+            >
+              <Download size={15} />
+              <span>Tüm PDF'i İndir</span>
+            </button>
 
             <button className="modal-close-btn" style={{ position: 'relative', top: 0, right: 0 }} onClick={onClose}>
               <X size={18} />
