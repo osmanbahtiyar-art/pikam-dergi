@@ -337,6 +337,8 @@ export default function AdminPanel({
 
     setIsPublishing(true);
 
+    const safePdfUrl = (pdfDataUrl && pdfDataUrl.length < 1500000) ? pdfDataUrl : '#';
+
     if (editingIssueId) {
       const updatedIssue = {
         id: editingIssueId,
@@ -344,7 +346,7 @@ export default function AdminPanel({
         monthYear,
         theme,
         coverImage: coverImage || '/pikam_kapak_temmuz_1784839785714.jpg',
-        pdfUrl: pdfDataUrl || (pdfFile ? URL.createObjectURL(pdfFile) : '#'),
+        pdfUrl: safePdfUrl,
         pdfFileName: pdfFileName || 'PIKAM_Dergi_Dijital.pdf',
         pageCount: parseInt(pageCount) || (pagesDataUrls.length ? pagesDataUrls.length : 64),
         pagesDataUrls: pagesDataUrls || [],
@@ -367,7 +369,7 @@ export default function AdminPanel({
         monthYear,
         theme,
         coverImage: coverImage || '/pikam_kapak_temmuz_1784839785714.jpg',
-        pdfUrl: pdfDataUrl || (pdfFile ? URL.createObjectURL(pdfFile) : '#'),
+        pdfUrl: safePdfUrl,
         pdfFileName: pdfFileName || 'PIKAM_Dergi_Dijital.pdf',
         pageCount: parseInt(pageCount) || (pagesDataUrls.length ? pagesDataUrls.length : 64),
         pagesDataUrls: pagesDataUrls || [],

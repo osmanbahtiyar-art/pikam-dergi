@@ -8,7 +8,7 @@ export const initPdfJs = () => {
 
 /**
  * Reads a PDF File, extracts Page 1 as an optimized JPEG Data URL (Cover),
- * extracts total page count, and renders key pages into lightweight JPEG Data URLs.
+ * extracts total page count, and renders pages into lightweight JPEG Data URLs.
  */
 export const processPdfFile = async (file) => {
   initPdfJs();
@@ -34,7 +34,7 @@ export const processPdfFile = async (file) => {
         const pdfDoc = await loadingTask.promise;
         const totalPages = pdfDoc.numPages;
 
-        // 1. Render Page 1 for Cover Image (Optimized max width 600px, quality 0.75)
+        // 1. Render Page 1 for Cover Image (Optimized max width 600px, quality 0.7)
         const page1 = await pdfDoc.getPage(1);
         const unscaledVP = page1.getViewport({ scale: 1.0 });
         const coverScale = Math.min(1.2, 600 / unscaledVP.width);
@@ -46,16 +46,16 @@ export const processPdfFile = async (file) => {
         coverCanvas.width = coverViewport.width;
 
         await page1.render({ canvasContext: coverContext, viewport: coverViewport }).promise;
-        const coverDataUrl = coverCanvas.toDataURL('image/jpeg', 0.75);
+        const coverDataUrl = coverCanvas.toDataURL('image/jpeg', 0.7);
 
-        // 2. Render up to 15 key pages into lightweight Data URLs (Optimized max width 500px, quality 0.55)
+        // 2. Render up to 40 pages into lightweight Data URLs (max width 450px, quality 0.5)
         const pagesDataUrls = [];
-        const maxPagesToPreRender = Math.min(totalPages, 15);
+        const maxPagesToPreRender = Math.min(totalPages, 40);
 
         for (let pageNum = 1; pageNum <= maxPagesToPreRender; pageNum++) {
           const page = await pdfDoc.getPage(pageNum);
           const pUnscaled = page.getViewport({ scale: 1.0 });
-          const pScale = Math.min(1.0, 500 / pUnscaled.width);
+          const pScale = Math.min(1.0, 450 / pUnscaled.width);
           const pViewport = page.getViewport({ scale: pScale });
 
           const pCanvas = document.createElement('canvas');
@@ -64,7 +64,7 @@ export const processPdfFile = async (file) => {
           pCanvas.width = pViewport.width;
 
           await page.render({ canvasContext: pContext, viewport: pViewport }).promise;
-          pagesDataUrls.push(pCanvas.toDataURL('image/jpeg', 0.55));
+          pagesDataUrls.push(pCanvas.toDataURL('image/jpeg', 0.5));
         }
 
         resolve({
