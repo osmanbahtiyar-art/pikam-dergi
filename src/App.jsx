@@ -322,18 +322,23 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (articlesList && articlesList.length > 0) {
+    const checkUrlArticle = () => {
+      if (!articlesList || articlesList.length === 0) return;
       const pathStr = window.location.pathname.replace(/^\//, '').trim();
       const params = new URLSearchParams(window.location.search);
       const targetId = pathStr || params.get('article');
       
-      if (targetId) {
+      if (targetId && targetId.toLowerCase() !== 'admin') {
         const found = articlesList.find(a => String(a.id).toLowerCase() === String(targetId).toLowerCase());
         if (found) {
           setSelectedArticle(found);
         }
       }
-    }
+    };
+
+    checkUrlArticle();
+    window.addEventListener('popstate', checkUrlArticle);
+    return () => window.removeEventListener('popstate', checkUrlArticle);
   }, [articlesList]);
 
   const handleAddComment = async (newComment) => {
