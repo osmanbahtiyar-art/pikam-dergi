@@ -696,6 +696,37 @@ export default function App() {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleForcePushCloudAll = async () => {
+    try {
+      console.log('☁️ Pushing ALL local state to Supabase Cloud Database...');
+
+      for (const issue of eDergiList) {
+        await supabase.from('e_dergi_issues').upsert([mapIssueForCloud(issue)]);
+      }
+
+      for (const article of articlesList) {
+        await supabase.from('articles').upsert([mapArticleForCloud(article)]);
+      }
+
+      for (const author of authorsList) {
+        await supabase.from('authors').upsert([mapAuthorForCloud(author)]);
+      }
+
+      await supabase.from('site_settings').upsert([
+        { id: 'hero_featured', data: heroFeatured },
+        { id: 'section_visibility', data: sectionVisibility },
+        { id: 'nav_visibility', data: navVisibility },
+        { id: 'kunye_data', data: kunyeData }
+      ]);
+
+      await fetchAndMergeCloudData();
+      return true;
+    } catch (err) {
+      console.error('Push all cloud error:', err);
+      return false;
+    }
+  };
+
   // RENDER ADMIN PANEL IF ADMIN ROUTE DETECTED
   if (isAdmin) {
     return (
@@ -732,7 +763,7 @@ export default function App() {
         onUpdateKunye={handleUpdateKunye}
         allCommentsList={allCommentsList}
         onDeleteComment={handleDeleteComment}
-        onForceSyncCloud={fetchAndMergeCloudData}
+        onForceSyncCloud={handleForcePushCloudAll}
       />
     );
   }

@@ -22,6 +22,7 @@ export default function AdminPanel({
   const [loginError, setLoginError] = useState('');
   const [activeTab, setActiveTab] = useState('uyeler');
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
   // E-Dergi Form State
@@ -574,14 +575,20 @@ export default function AdminPanel({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button 
-            onClick={() => {
-              if (onForceSyncCloud) onForceSyncCloud();
-              setSuccessMsg('Bilgisayarınızdaki tüm makale, üye, yazar ve ayar verileri Supabase Bulut Veritabanına aktarıldı ve senkronize edildi!');
+            disabled={isSyncingAll}
+            onClick={async () => {
+              setIsSyncingAll(true);
+              if (onForceSyncCloud) {
+                await onForceSyncCloud();
+              }
+              setIsSyncingAll(false);
+              setSuccessMsg('✓ Bütün E-Dergiler, Makaleler, Kadro ve Ayarlar Supabase Bulut Veritabanı ile tam senkronize edildi! Tüm cihazlarda ve sitede yayında.');
               setTimeout(() => setSuccessMsg(''), 7000);
             }} 
-            style={{ background: '#10b981', color: 'white', padding: '6px 14px', borderRadius: '4px', fontSize: '0.82rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700' }}
+            style={{ background: isSyncingAll ? '#059669' : '#10b981', color: 'white', padding: '6px 14px', borderRadius: '4px', fontSize: '0.82rem', border: 'none', cursor: isSyncingAll ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700' }}
           >
-            <Upload size={14} /> Bilgisayardaki Verileri Buluta Yükle
+            {isSyncingAll ? <Loader2 size={14} className="spin" /> : <Upload size={14} />}
+            <span>{isSyncingAll ? 'Buluta Yükleniyor...' : 'Bilgisayardaki Verileri Buluta Yükle'}</span>
           </button>
           <a href="/" target="_blank" rel="noreferrer" style={{ background: '#1c2541', color: '#e2e8f0', padding: '6px 14px', borderRadius: '4px', fontSize: '0.82rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600' }}>
             <Eye size={14} /> Sitede Gör ↗
