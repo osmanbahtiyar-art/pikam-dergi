@@ -3,7 +3,7 @@ import { PIKAM_DATA } from '../data/pikamData';
 import { BookOpen, Eye } from 'lucide-react';
 
 export default function EDergiSection({ id, eDergiList, onOpenEDergiModal }) {
-  const issuesToDisplay = eDergiList || PIKAM_DATA.eDergiIssues;
+  const issuesToDisplay = (eDergiList || PIKAM_DATA.eDergiIssues).filter(i => !i.hidden);
   const fallbackCover = '/pikam_kapak_temmuz_1784839785714.jpg';
 
   return (

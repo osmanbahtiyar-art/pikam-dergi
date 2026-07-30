@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 import { processPdfFile } from '../lib/pdfHelper';
 
 export default function AdminPanel({ 
-  eDergiList, onAddEDergi, onDeleteEDergi, 
+  eDergiList, onAddEDergi, onUpdateEDergi, onToggleHideEDergi, onMoveEDergiUp, onMoveEDergiDown, onDeleteEDergi, 
   onAddArticle, onUpdateArticle, onToggleHideArticle, onMoveArticleUp, onMoveArticleDown, articlesList, onDeleteArticle, 
   registeredUsersList, onDeleteUser,
   authorsList, onAddAuthor, onDeleteAuthor, onUpdateAuthor,
@@ -25,6 +25,7 @@ export default function AdminPanel({
   const [successMsg, setSuccessMsg] = useState('');
 
   // E-Dergi Form State
+  const [editingIssueId, setEditingIssueId] = useState(null);
   const [issueNumber, setIssueNumber] = useState('Sayı 75');
   const [monthYear, setMonthYear] = useState('Ağustos 2026');
   const [theme, setTheme] = useState('Doğu Akdeniz ve Yeni Enerji Geopolitiği');
@@ -35,6 +36,30 @@ export default function AdminPanel({
   const [pagesDataUrls, setPagesDataUrls] = useState([]);
   const [isPdfProcessing, setIsPdfProcessing] = useState(false);
   const [editorNote, setEditorNote] = useState('PİKAM 75. sayımızda Doğu Akdeniz enerji koridorları ve küresel makroekonomi masaya yatırılıyor.');
+
+  const startEditIssue = (issue) => {
+    setEditingIssueId(issue.id);
+    setIssueNumber(issue.issueNumber || issue.issuenumber || '');
+    setMonthYear(issue.monthYear || issue.monthyear || '');
+    setTheme(issue.theme || '');
+    setPageCount(issue.pageCount || issue.pagecount || 64);
+    setCoverImage(issue.coverImage || issue.coverimage || '');
+    setPdfFileName(issue.pdfFileName || issue.pdffilename || '');
+    if (issue.pagesDataUrls) setPagesDataUrls(issue.pagesDataUrls);
+    setActiveTab('edergi');
+  };
+
+  const cancelEditIssue = () => {
+    setEditingIssueId(null);
+    setIssueNumber('Sayı 75');
+    setMonthYear('Ağustos 2026');
+    setTheme('Doğu Akdeniz ve Yeni Enerji Geopolitiği');
+    setPageCount(72);
+    setCoverImage('/pikam_kapak_temmuz_1784839785714.jpg');
+    setPdfFile(null);
+    setPdfFileName('');
+    setPagesDataUrls([]);
+  };
 
   // Article Form & Edit State
   const [editingArticleId, setEditingArticleId] = useState(null);
@@ -311,40 +336,63 @@ export default function AdminPanel({
 
     setIsPublishing(true);
 
-    const newIssue = {
-      id: `ed-${Date.now()}`,
-      issueNumber,
-      monthYear,
-      theme,
-      coverImage: coverImage || '/pikam_kapak_temmuz_1784839785714.jpg',
-      pdfUrl: pdfFile ? URL.createObjectURL(pdfFile) : '#',
-      pdfFileName: pdfFileName || 'PIKAM_Dergi_Dijital.pdf',
-      pageCount: parseInt(pageCount) || (pagesDataUrls.length ? pagesDataUrls.length : 64),
-      pagesDataUrls: pagesDataUrls || [],
-      pages: pagesDataUrls.length > 0 ? pagesDataUrls.map((url, idx) => ({
-        page: idx + 1,
-        title: idx === 0 ? 'Kapak' : `Sayfa ${idx + 1}`,
-        imageUrl: url
-      })) : [
-        { page: 1, title: 'Kapak', subtitle: `${monthYear} Öne Çıkanlar` },
-        { page: 2, title: 'Editörden', content: editorNote },
-        { page: 3, title: 'İçindekiler & Yayın Kurulu', content: '04-20 Küresel Ticaret | 21-40 Enerji Jeopolitiği | 41-72 Yapay Zeka Doktrini' }
-      ]
-    };
+    if (editingIssueId) {
+      const updatedIssue = {
+        id: editingIssueId,
+        issueNumber,
+        monthYear,
+        theme,
+        coverImage: coverImage || '/pikam_kapak_temmuz_1784839785714.jpg',
+        pdfUrl: pdfFile ? URL.createObjectURL(pdfFile) : '#',
+        pdfFileName: pdfFileName || 'PIKAM_Dergi_Dijital.pdf',
+        pageCount: parseInt(pageCount) || (pagesDataUrls.length ? pagesDataUrls.length : 64),
+        pagesDataUrls: pagesDataUrls || [],
+        pages: pagesDataUrls.length > 0 ? pagesDataUrls.map((url, idx) => ({
+          page: idx + 1,
+          title: idx === 0 ? 'Kapak' : `Sayfa ${idx + 1}`,
+          imageUrl: url
+        })) : [
+          { page: 1, title: 'Kapak', subtitle: `${monthYear} Öne Çıkanlar` },
+          { page: 2, title: 'Editörden', content: editorNote }
+        ]
+      };
+      if (onUpdateEDergi) onUpdateEDergi(updatedIssue);
+      setSuccessMsg(`"${issueNumber} (${monthYear})"` + ' sayısı başarıyla güncellendi!');
+      cancelEditIssue();
+    } else {
+      const newIssue = {
+        id: `ed-${Date.now()}`,
+        issueNumber,
+        monthYear,
+        theme,
+        coverImage: coverImage || '/pikam_kapak_temmuz_1784839785714.jpg',
+        pdfUrl: pdfFile ? URL.createObjectURL(pdfFile) : '#',
+        pdfFileName: pdfFileName || 'PIKAM_Dergi_Dijital.pdf',
+        pageCount: parseInt(pageCount) || (pagesDataUrls.length ? pagesDataUrls.length : 64),
+        pagesDataUrls: pagesDataUrls || [],
+        pages: pagesDataUrls.length > 0 ? pagesDataUrls.map((url, idx) => ({
+          page: idx + 1,
+          title: idx === 0 ? 'Kapak' : `Sayfa ${idx + 1}`,
+          imageUrl: url
+        })) : [
+          { page: 1, title: 'Kapak', subtitle: `${monthYear} Öne Çıkanlar` },
+          { page: 2, title: 'Editörden', content: editorNote },
+          { page: 3, title: 'İçindekiler & Yayın Kurulu', content: '04-20 Küresel Ticaret | 21-40 Enerji Jeopolitiği | 41-72 Yapay Zeka Doktrini' }
+        ]
+      };
 
-    try {
-      await supabase.from('e_dergi_issues').insert([newIssue]);
-    } catch (err) {
-      console.log('Supabase sync notice:', err);
+      try {
+        await supabase.from('e_dergi_issues').insert([newIssue]);
+      } catch (err) {
+        console.log('Supabase sync notice:', err);
+      }
+
+      onAddEDergi(newIssue);
+      setSuccessMsg(`"${issueNumber} (${monthYear}) - ${theme}" başarıyla pikamdergi.com sitesinde yayınlandı!`);
+      cancelEditIssue();
     }
 
-    onAddEDergi(newIssue);
-
     setIsPublishing(false);
-    setSuccessMsg(`"${issueNumber} (${monthYear}) - ${theme}" başarıyla pikamdergi.com sitesinde yayınlandı!`);
-    
-    setPdfFile(null);
-    setPdfFileName('');
     setTimeout(() => setSuccessMsg(''), 7000);
   };
 
@@ -1508,32 +1556,92 @@ export default function AdminPanel({
 
         {/* TAB 2: YAYINLANMIŞ DERGİ SAYILARI LİSTESİ */}
         {activeTab === 'arsiv' && (
-          <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0b132b', marginBottom: '20px' }}>
-              SİTEDE YAYINDA OLAN DERGİ SAYILARI
-            </h2>
+          <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0b132b', margin: 0 }}>
+                  SİTEDE YAYINDA OLAN DERGİ SAYILARI VE YÖNETİMİ
+                </h2>
+                <p style={{ color: '#64748b', fontSize: '0.88rem', margin: '4px 0 0 0' }}>
+                  Yayınlanan dergi sayılarını Düzenleyebilir, Sıralayabilir (Yukarı/Aşağı), Gizleyebilir veya Silebilirsiniz.
+                </p>
+              </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-              {eDergiList.map((issue) => (
-                <div key={issue.id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', padding: '16px', background: '#f8fafc', display: 'flex', gap: '14px' }}>
-                  <img src={issue.coverImage} alt={issue.monthYear} style={{ width: '75px', height: '100px', objectFit: 'cover', borderRadius: '4px' }} />
-                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1 }}>
-                    <div>
-                      <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#0284c7' }}>{issue.issueNumber}</span>
-                      <h4 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.05rem', color: '#0f172a', margin: '2px 0' }}>{issue.monthYear}</h4>
-                      <p style={{ fontSize: '0.78rem', color: '#64748b' }}>"{issue.theme}"</p>
+              <button 
+                onClick={() => { setActiveTab('edergi'); cancelEditIssue(); }}
+                style={{ background: '#0b132b', color: 'white', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <PlusCircle size={16} />
+                <span>Yeni Dergi Sayısı Ekle</span>
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+              {eDergiList.map((issue, idx) => (
+                <div key={issue.id} style={{ border: issue.hidden ? '2px dashed #cbd5e1' : '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: issue.hidden ? '#f1f5f9' : '#ffffff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div style={{ padding: '16px', display: 'flex', gap: '14px', position: 'relative' }}>
+                    <img src={issue.coverImage} alt={issue.monthYear} style={{ width: '85px', height: '115px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1', opacity: issue.hidden ? 0.6 : 1 }} />
+                    <div style={{ flexGrow: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <span style={{ fontSize: '0.78rem', fontWeight: '800', color: '#0284c7', background: '#e0f2fe', padding: '2px 8px', borderRadius: '4px' }}>{issue.issueNumber}</span>
+                        {issue.hidden && (
+                          <span style={{ background: '#000000', color: '#fef08a', padding: '2px 6px', borderRadius: '4px', fontSize: '0.68rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <EyeOff size={11} /> GİZLİ
+                          </span>
+                        )}
+                      </div>
+                      <h4 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.1rem', color: '#0f172a', margin: '6px 0 4px 0' }}>{issue.monthYear}</h4>
+                      <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>"{issue.theme}"</p>
+                    </div>
+                  </div>
+
+                  {/* ACTION CONTROLS: DÜZENLE, GİZLE/GÖSTER, SIRALA, SİL */}
+                  <div style={{ padding: '12px 16px', background: '#f8fafc', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button 
+                        onClick={() => startEditIssue(issue)}
+                        style={{ flex: 1, background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', padding: '6px 8px', borderRadius: '4px', fontSize: '0.76rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                      >
+                        <Edit3 size={13} /> Düzenle
+                      </button>
+
+                      <button 
+                        onClick={() => onToggleHideEDergi && onToggleHideEDergi(issue.id)}
+                        style={{ flex: 1, background: issue.hidden ? '#dcfce7' : '#fef3c7', color: issue.hidden ? '#15803d' : '#b45309', border: '1px solid #fde68a', padding: '6px 8px', borderRadius: '4px', fontSize: '0.76rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                      >
+                        {issue.hidden ? <Eye size={13} /> : <EyeOff size={13} />}
+                        <span>{issue.hidden ? 'Göster' : 'Gizle'}</span>
+                      </button>
                     </div>
 
-                    <button 
-                      onClick={() => {
-                        if (confirm(`"${issue.issueNumber} (${issue.monthYear})"` + ' sayısını siteden kaldırmak istediğinize emin misiniz?')) {
-                          onDeleteEDergi(issue.id);
-                        }
-                      }}
-                      style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '4px' }}
-                    >
-                      <Trash2 size={12} /> Siteden Kaldır
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button 
+                        disabled={idx === 0}
+                        onClick={() => onMoveEDergiUp && onMoveEDergiUp(idx)}
+                        style={{ flex: 1, background: idx === 0 ? '#f1f5f9' : '#ffffff', color: idx === 0 ? '#94a3b8' : '#334155', border: '1px solid #cbd5e1', padding: '5px 6px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: '600', cursor: idx === 0 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                      >
+                        <ArrowUp size={13} /> Yukarı
+                      </button>
+
+                      <button 
+                        disabled={idx === eDergiList.length - 1}
+                        onClick={() => onMoveEDergiDown && onMoveEDergiDown(idx)}
+                        style={{ flex: 1, background: idx === eDergiList.length - 1 ? '#f1f5f9' : '#ffffff', color: idx === eDergiList.length - 1 ? '#94a3b8' : '#334155', border: '1px solid #cbd5e1', padding: '5px 6px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: '600', cursor: idx === eDergiList.length - 1 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                      >
+                        <ArrowDown size={13} /> Aşağı
+                      </button>
+
+                      <button 
+                        onClick={() => {
+                          if (confirm(`"${issue.issueNumber} (${issue.monthYear})"` + ' sayısını siteden tamamen kaldırmak istediğinize emin misiniz?')) {
+                            onDeleteEDergi(issue.id);
+                          }
+                        }}
+                        style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '5px 8px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                      >
+                        <Trash2 size={13} /> Sil
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

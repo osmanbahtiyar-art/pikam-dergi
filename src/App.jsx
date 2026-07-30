@@ -511,6 +511,58 @@ export default function App() {
     }
   };
 
+  const handleUpdateEDergi = async (updatedIssue) => {
+    const updated = eDergiList.map(i => i.id === updatedIssue.id ? updatedIssue : i);
+    setEDergiList(updated);
+    localStorage.setItem('pikam_edergi_list', JSON.stringify(updated));
+
+    try {
+      await supabase.from('e_dergi_issues').upsert([mapIssueForCloud(updatedIssue)]);
+    } catch (err) {
+      console.log('Supabase edergi update notice:', err);
+    }
+  };
+
+  const handleToggleHideEDergi = async (id) => {
+    const updated = eDergiList.map(i => {
+      if (i.id === id) {
+        return { ...i, hidden: !i.hidden };
+      }
+      return i;
+    });
+    setEDergiList(updated);
+    localStorage.setItem('pikam_edergi_list', JSON.stringify(updated));
+
+    const target = updated.find(i => i.id === id);
+    if (target) {
+      try {
+        await supabase.from('e_dergi_issues').upsert([mapIssueForCloud(target)]);
+      } catch (err) {
+        console.log('Supabase edergi hide notice:', err);
+      }
+    }
+  };
+
+  const handleMoveEDergiUp = (index) => {
+    if (index <= 0) return;
+    const newList = [...eDergiList];
+    const temp = newList[index];
+    newList[index] = newList[index - 1];
+    newList[index - 1] = temp;
+    setEDergiList(newList);
+    localStorage.setItem('pikam_edergi_list', JSON.stringify(newList));
+  };
+
+  const handleMoveEDergiDown = (index) => {
+    if (index >= eDergiList.length - 1) return;
+    const newList = [...eDergiList];
+    const temp = newList[index];
+    newList[index] = newList[index + 1];
+    newList[index + 1] = temp;
+    setEDergiList(newList);
+    localStorage.setItem('pikam_edergi_list', JSON.stringify(newList));
+  };
+
   const handleDeleteEDergi = async (id) => {
     const updated = eDergiList.filter(i => i.id !== id);
     setEDergiList(updated);
@@ -618,6 +670,10 @@ export default function App() {
       <AdminPanel 
         eDergiList={eDergiList}
         onAddEDergi={handleAddEDergi}
+        onUpdateEDergi={handleUpdateEDergi}
+        onToggleHideEDergi={handleToggleHideEDergi}
+        onMoveEDergiUp={handleMoveEDergiUp}
+        onMoveEDergiDown={handleMoveEDergiDown}
         onDeleteEDergi={handleDeleteEDergi}
         onAddArticle={handleAddArticle}
         onUpdateArticle={handleUpdateArticle}
