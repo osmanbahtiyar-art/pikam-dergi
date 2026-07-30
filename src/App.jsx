@@ -505,7 +505,13 @@ export default function App() {
     localStorage.setItem('pikam_edergi_list', JSON.stringify(updated));
 
     try {
-      await supabase.from('e_dergi_issues').upsert([mapIssueForCloud(newIssue)]);
+      const { error } = await supabase.from('e_dergi_issues').upsert([mapIssueForCloud(newIssue)]);
+      if (error) {
+        console.error('Supabase E-Dergi add error:', error);
+      } else {
+        console.log('✓ E-Dergi successfully upserted to Supabase Cloud!');
+        fetchAndMergeCloudData();
+      }
     } catch (err) {
       console.log('Supabase edergi add notice:', err);
     }
@@ -517,7 +523,13 @@ export default function App() {
     localStorage.setItem('pikam_edergi_list', JSON.stringify(updated));
 
     try {
-      await supabase.from('e_dergi_issues').upsert([mapIssueForCloud(updatedIssue)]);
+      const { error } = await supabase.from('e_dergi_issues').upsert([mapIssueForCloud(updatedIssue)]);
+      if (error) {
+        console.error('Supabase E-Dergi update error:', error);
+      } else {
+        console.log('✓ E-Dergi successfully updated in Supabase Cloud!');
+        fetchAndMergeCloudData();
+      }
     } catch (err) {
       console.log('Supabase edergi update notice:', err);
     }

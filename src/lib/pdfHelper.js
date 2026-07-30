@@ -1,4 +1,4 @@
-// PDF.js Helper for Extracting Covers and Rendering Pages dynamically
+// PDF.js Helper for Extracting Covers and Rendering Pages dynamically with Payload Compression
 
 export const initPdfJs = () => {
   if (typeof window !== 'undefined' && window.pdfjsLib) {
@@ -7,8 +7,8 @@ export const initPdfJs = () => {
 };
 
 /**
- * Reads a PDF File, extracts its Page 1 as a JPEG Data URL (Cover),
- * extracts total page count, and renders pages into Data URLs.
+ * Reads a PDF File, extracts Page 1 as an optimized JPEG Data URL (Cover),
+ * extracts total page count, and renders key pages into lightweight JPEG Data URLs.
  */
 export const processPdfFile = async (file) => {
   initPdfJs();
@@ -23,9 +23,9 @@ export const processPdfFile = async (file) => {
         if (!window.pdfjsLib) {
           console.warn('PDF.js library not loaded yet');
           resolve({
-            pdfArrayBuffer: arrayBuffer,
             pageCount: 1,
-            coverImage: null
+            coverImage: null,
+            pagesDataUrls: []
           });
           return;
         }
@@ -34,32 +34,37 @@ export const processPdfFile = async (file) => {
         const pdfDoc = await loadingTask.promise;
         const totalPages = pdfDoc.numPages;
 
-        // Render Page 1 for Cover Image
+        // 1. Render Page 1 for Cover Image (Optimized max width 600px, quality 0.75)
         const page1 = await pdfDoc.getPage(1);
-        const viewport = page1.getViewport({ scale: 1.5 });
+        const unscaledVP = page1.getViewport({ scale: 1.0 });
+        const coverScale = Math.min(1.2, 600 / unscaledVP.width);
+        const coverViewport = page1.getViewport({ scale: coverScale });
 
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+        const coverCanvas = document.createElement('canvas');
+        const coverContext = coverCanvas.getContext('2d');
+        coverCanvas.height = coverViewport.height;
+        coverCanvas.width = coverViewport.width;
 
-        await page1.render({ canvasContext: context, viewport }).promise;
-        const coverDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        await page1.render({ canvasContext: coverContext, viewport: coverViewport }).promise;
+        const coverDataUrl = coverCanvas.toDataURL('image/jpeg', 0.75);
 
-        // Render up to 50 pages into Data URLs for instant flipbook browsing
+        // 2. Render up to 15 key pages into lightweight Data URLs (Optimized max width 500px, quality 0.55)
         const pagesDataUrls = [];
-        const maxPagesToPreRender = Math.min(totalPages, 50);
+        const maxPagesToPreRender = Math.min(totalPages, 15);
 
         for (let pageNum = 1; pageNum <= maxPagesToPreRender; pageNum++) {
           const page = await pdfDoc.getPage(pageNum);
-          const pViewport = page.getViewport({ scale: 1.2 });
+          const pUnscaled = page.getViewport({ scale: 1.0 });
+          const pScale = Math.min(1.0, 500 / pUnscaled.width);
+          const pViewport = page.getViewport({ scale: pScale });
+
           const pCanvas = document.createElement('canvas');
           const pContext = pCanvas.getContext('2d');
           pCanvas.height = pViewport.height;
           pCanvas.width = pViewport.width;
 
           await page.render({ canvasContext: pContext, viewport: pViewport }).promise;
-          pagesDataUrls.push(pCanvas.toDataURL('image/jpeg', 0.8));
+          pagesDataUrls.push(pCanvas.toDataURL('image/jpeg', 0.55));
         }
 
         resolve({
