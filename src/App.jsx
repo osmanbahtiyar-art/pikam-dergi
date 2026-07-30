@@ -461,6 +461,26 @@ export default function App() {
     }
   };
 
+  const handleMoveAuthorUp = (index) => {
+    if (index <= 0) return;
+    const newList = [...authorsList];
+    const temp = newList[index];
+    newList[index] = newList[index - 1];
+    newList[index - 1] = temp;
+    setAuthorsList(newList);
+    localStorage.setItem('pikam_authors_list', JSON.stringify(newList));
+  };
+
+  const handleMoveAuthorDown = (index) => {
+    if (index >= authorsList.length - 1) return;
+    const newList = [...authorsList];
+    const temp = newList[index];
+    newList[index] = newList[index + 1];
+    newList[index + 1] = temp;
+    setAuthorsList(newList);
+    localStorage.setItem('pikam_authors_list', JSON.stringify(newList));
+  };
+
   const handleLoginSuccess = async (user) => {
     setCurrentUser(user);
     try {
@@ -700,6 +720,8 @@ export default function App() {
         onAddAuthor={handleAddAuthor}
         onDeleteAuthor={handleDeleteAuthor}
         onUpdateAuthor={handleUpdateAuthor}
+        onMoveAuthorUp={handleMoveAuthorUp}
+        onMoveAuthorDown={handleMoveAuthorDown}
         heroFeatured={heroFeatured}
         onUpdateHeroFeatured={handleUpdateHeroFeatured}
         sectionVisibility={sectionVisibility}

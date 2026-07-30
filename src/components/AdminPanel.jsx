@@ -8,7 +8,7 @@ export default function AdminPanel({
   eDergiList, onAddEDergi, onUpdateEDergi, onToggleHideEDergi, onMoveEDergiUp, onMoveEDergiDown, onDeleteEDergi, 
   onAddArticle, onUpdateArticle, onToggleHideArticle, onMoveArticleUp, onMoveArticleDown, articlesList, onDeleteArticle, 
   registeredUsersList, onDeleteUser,
-  authorsList, onAddAuthor, onDeleteAuthor, onUpdateAuthor,
+  authorsList, onAddAuthor, onDeleteAuthor, onUpdateAuthor, onMoveAuthorUp, onMoveAuthorDown,
   heroFeatured, onUpdateHeroFeatured,
   sectionVisibility, onToggleSection,
   navVisibility = {}, onToggleNavTab,
@@ -1048,16 +1048,16 @@ export default function AdminPanel({
             </div>
 
             {/* LIST: MEVCUT YAZARLAR VE AKADEMİK KADRO */}
-            <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+            <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
               <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.25rem', color: '#0b132b', marginBottom: '20px' }}>
                 SİTEDE YAYINDA OLAN EKİBİMİZ VE AKADEMİK KADRO ({authorsList.length})
               </h3>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-                {authorsList.map((author) => (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                {authorsList.map((author, idx) => (
                   <div key={author.id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', background: '#f8fafc', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                      <img src={author.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80'} alt={author.name} style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover' }} />
+                      <img src={author.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80'} alt={author.name} style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #cbd5e1' }} />
                       <div>
                         <h4 style={{ fontSize: '0.95rem', color: '#0f172a', margin: 0, fontWeight: '700' }}>{author.name}</h4>
                         <span style={{ fontSize: '0.75rem', color: '#8b5cf6', fontWeight: '600' }}>{author.role}</span>
@@ -1065,24 +1065,44 @@ export default function AdminPanel({
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button 
-                        onClick={() => startEditAuthor(author)}
-                        style={{ flex: 1, background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', padding: '6px 10px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
-                      >
-                        <Edit3 size={13} /> Düzenle
-                      </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                          onClick={() => startEditAuthor(author)}
+                          style={{ flex: 1, background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', padding: '6px 10px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                        >
+                          <Edit3 size={13} /> Düzenle
+                        </button>
 
-                      <button 
-                        onClick={() => {
-                          if (confirm(`"${author.name}" kişisini ekibimizden tamamen kaldırmak istediğinize emin misiniz?`)) {
-                            onDeleteAuthor(author.id);
-                          }
-                        }}
-                        style={{ flex: 1, background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '6px 10px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
-                      >
-                        <Trash2 size={13} /> Sil
-                      </button>
+                        <button 
+                          onClick={() => {
+                            if (confirm(`"${author.name}" kişisini ekibimizden tamamen kaldırmak istediğinize emin misiniz?`)) {
+                              onDeleteAuthor(author.id);
+                            }
+                          }}
+                          style={{ flex: 1, background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '6px 10px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                        >
+                          <Trash2 size={13} /> Sil
+                        </button>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button 
+                          disabled={idx === 0}
+                          onClick={() => onMoveAuthorUp && onMoveAuthorUp(idx)}
+                          style={{ flex: 1, background: idx === 0 ? '#f1f5f9' : '#ffffff', color: idx === 0 ? '#94a3b8' : '#334155', border: '1px solid #cbd5e1', padding: '5px 6px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: '600', cursor: idx === 0 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                        >
+                          <ArrowUp size={13} /> Yukarı Taşı
+                        </button>
+
+                        <button 
+                          disabled={idx === authorsList.length - 1}
+                          onClick={() => onMoveAuthorDown && onMoveAuthorDown(idx)}
+                          style={{ flex: 1, background: idx === authorsList.length - 1 ? '#f1f5f9' : '#ffffff', color: idx === authorsList.length - 1 ? '#94a3b8' : '#334155', border: '1px solid #cbd5e1', padding: '5px 6px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: '600', cursor: idx === authorsList.length - 1 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                        >
+                          <ArrowDown size={13} /> Aşağı Taşı
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
