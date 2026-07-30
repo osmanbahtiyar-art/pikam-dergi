@@ -229,17 +229,22 @@ export default function App() {
         localStorage.setItem('pikam_article_comments', JSON.stringify(mappedComments));
       }
 
-      // 3. Authors List
+      // 3. Authors List (Uses exact locked order from site_settings)
       const { data: cloudAuthors } = await supabase.from('authors').select('*');
-      if (cloudAuthors && cloudAuthors.length > 0) {
-        const mappedAuthors = cloudAuthors.map(mapAuthorFromCloud);
-        setAuthorsList(mappedAuthors);
-        localStorage.setItem('pikam_authors_list', JSON.stringify(mappedAuthors));
-      }
 
-      // 4. Site Settings (Hero, Visibility, Nav, Künye)
+      // 4. Site Settings (Hero, Visibility, Nav, Künye, Authors Order, Admin Notes)
       const { data: cloudSettings } = await supabase.from('site_settings').select('*');
       if (cloudSettings && cloudSettings.length > 0) {
+        const authorsOrderSetting = cloudSettings.find(s => s.id === 'authors_ordered_list');
+        if (authorsOrderSetting && authorsOrderSetting.data && authorsOrderSetting.data.length > 0) {
+          setAuthorsList(authorsOrderSetting.data);
+          localStorage.setItem('pikam_authors_list', JSON.stringify(authorsOrderSetting.data));
+        } else if (cloudAuthors && cloudAuthors.length > 0) {
+          const mappedAuthors = cloudAuthors.map(mapAuthorFromCloud);
+          setAuthorsList(mappedAuthors);
+          localStorage.setItem('pikam_authors_list', JSON.stringify(mappedAuthors));
+        }
+
         const heroSetting = cloudSettings.find(s => s.id === 'hero_featured');
         if (heroSetting && heroSetting.data) {
           setHeroFeatured(heroSetting.data);
@@ -447,37 +452,36 @@ export default function App() {
     }
   };
 
+  const handleSaveAuthorsCloud = async (newList) => {
+    setAuthorsList(newList);
+    localStorage.setItem('pikam_authors_list', JSON.stringify(newList));
+    try {
+      await supabase.from('site_settings').upsert([{ id: 'authors_ordered_list', data: newList }]);
+      for (let i = 0; i < newList.length; i++) {
+        await supabase.from('authors').upsert([{ ...mapAuthorForCloud(newList[i]), displayorder: i }]);
+      }
+    } catch (err) {
+      console.log('Supabase author order sync notice:', err);
+    }
+  };
+
   const handleAddAuthor = async (newAuthor) => {
     const updated = [newAuthor, ...authorsList];
-    setAuthorsList(updated);
-    localStorage.setItem('pikam_authors_list', JSON.stringify(updated));
-
-    try {
-      await supabase.from('authors').upsert([mapAuthorForCloud(newAuthor)]);
-    } catch (err) {
-      console.log('Supabase author add notice:', err);
-    }
+    handleSaveAuthorsCloud(updated);
   };
 
   const handleUpdateAuthor = async (updatedAuthor) => {
     const updated = authorsList.map(a => a.id === updatedAuthor.id ? updatedAuthor : a);
-    setAuthorsList(updated);
-    localStorage.setItem('pikam_authors_list', JSON.stringify(updated));
-
-    try {
-      await supabase.from('authors').upsert([mapAuthorForCloud(updatedAuthor)]);
-    } catch (err) {
-      console.log('Supabase author update notice:', err);
-    }
+    handleSaveAuthorsCloud(updated);
   };
 
   const handleDeleteAuthor = async (authorId) => {
     const updated = authorsList.filter(a => a.id !== authorId);
     setAuthorsList(updated);
     localStorage.setItem('pikam_authors_list', JSON.stringify(updated));
-
     try {
       await supabase.from('authors').delete().eq('id', authorId);
+      await supabase.from('site_settings').upsert([{ id: 'authors_ordered_list', data: updated }]);
     } catch (err) {
       console.log('Supabase author delete notice:', err);
     }
@@ -489,8 +493,7 @@ export default function App() {
     const temp = newList[index];
     newList[index] = newList[index - 1];
     newList[index - 1] = temp;
-    setAuthorsList(newList);
-    localStorage.setItem('pikam_authors_list', JSON.stringify(newList));
+    handleSaveAuthorsCloud(newList);
   };
 
   const handleMoveAuthorDown = (index) => {
@@ -499,8 +502,7 @@ export default function App() {
     const temp = newList[index];
     newList[index] = newList[index + 1];
     newList[index + 1] = temp;
-    setAuthorsList(newList);
-    localStorage.setItem('pikam_authors_list', JSON.stringify(newList));
+    handleSaveAuthorsCloud(newList);
   };
 
   const handleLoginSuccess = async (user) => {
@@ -769,7 +771,8 @@ export default function App() {
         { id: 'section_visibility', data: sectionVisibility },
         { id: 'nav_visibility', data: navVisibility },
         { id: 'kunye_data', data: kunyeData },
-        { id: 'admin_notes_list', data: adminNotesList }
+        { id: 'admin_notes_list', data: adminNotesList },
+        { id: 'authors_ordered_list', data: authorsList }
       ]);
 
       await fetchAndMergeCloudData();
