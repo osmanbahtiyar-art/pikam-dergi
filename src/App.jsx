@@ -229,20 +229,25 @@ export default function App() {
         localStorage.setItem('pikam_article_comments', JSON.stringify(mappedComments));
       }
 
-      // 3. Authors List (Uses exact locked order from site_settings)
+      // 3. Authors List (Uses exact locked order from site_settings merged with all cloud authors)
       const { data: cloudAuthors } = await supabase.from('authors').select('*');
 
       // 4. Site Settings (Hero, Visibility, Nav, Künye, Authors Order, Admin Notes)
       const { data: cloudSettings } = await supabase.from('site_settings').select('*');
       if (cloudSettings && cloudSettings.length > 0) {
         const authorsOrderSetting = cloudSettings.find(s => s.id === 'authors_ordered_list');
-        if (authorsOrderSetting && authorsOrderSetting.data && authorsOrderSetting.data.length > 0) {
-          setAuthorsList(authorsOrderSetting.data);
-          localStorage.setItem('pikam_authors_list', JSON.stringify(authorsOrderSetting.data));
-        } else if (cloudAuthors && cloudAuthors.length > 0) {
+        if (cloudAuthors && cloudAuthors.length > 0) {
           const mappedAuthors = cloudAuthors.map(mapAuthorFromCloud);
-          setAuthorsList(mappedAuthors);
-          localStorage.setItem('pikam_authors_list', JSON.stringify(mappedAuthors));
+          if (authorsOrderSetting && Array.isArray(authorsOrderSetting.data) && authorsOrderSetting.data.length > 0) {
+            const orderedIds = new Set(authorsOrderSetting.data.map(a => a.id));
+            const missingCloudAuthors = mappedAuthors.filter(a => !orderedIds.has(a.id));
+            const mergedList = [...authorsOrderSetting.data, ...missingCloudAuthors];
+            setAuthorsList(mergedList);
+            localStorage.setItem('pikam_authors_list', JSON.stringify(mergedList));
+          } else {
+            setAuthorsList(mappedAuthors);
+            localStorage.setItem('pikam_authors_list', JSON.stringify(mappedAuthors));
+          }
         }
 
         const heroSetting = cloudSettings.find(s => s.id === 'hero_featured');
