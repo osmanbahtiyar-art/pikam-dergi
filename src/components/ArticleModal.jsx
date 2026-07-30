@@ -14,7 +14,7 @@ export default function ArticleModal({ article, currentUser, allCommentsList = [
   const articleComments = allCommentsList.filter(c => c.articleId === article.id || c.article_id === article.id);
 
   const getArticleShareUrl = () => {
-    return `${window.location.origin}/?article=${article.id}`;
+    return `${window.location.origin}/${article.id}`;
   };
 
   const handleShareWhatsApp = () => {

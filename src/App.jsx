@@ -311,22 +311,24 @@ export default function App() {
   const handleOpenArticle = (art) => {
     setSelectedArticle(art);
     if (art && art.id) {
-      const newUrl = `${window.location.pathname}?article=${art.id}`;
+      const newUrl = `/${art.id}`;
       window.history.pushState({ articleId: art.id }, '', newUrl);
     }
   };
 
   const handleCloseArticle = () => {
     setSelectedArticle(null);
-    window.history.pushState(null, '', window.location.pathname);
+    window.history.pushState(null, '', '/');
   };
 
   useEffect(() => {
     if (articlesList && articlesList.length > 0) {
+      const pathStr = window.location.pathname.replace(/^\//, '').trim();
       const params = new URLSearchParams(window.location.search);
-      const articleId = params.get('article');
-      if (articleId) {
-        const found = articlesList.find(a => String(a.id) === String(articleId));
+      const targetId = pathStr || params.get('article');
+      
+      if (targetId) {
+        const found = articlesList.find(a => String(a.id).toLowerCase() === String(targetId).toLowerCase());
         if (found) {
           setSelectedArticle(found);
         }

@@ -397,9 +397,18 @@ export default function AdminPanel({
       setSuccessMsg(`"${artTitle}" makalesi başarıyla güncellendi!`);
       cancelEditArticle();
     } else {
-      // ADD NEW ARTICLE
+      // ADD NEW ARTICLE - CALCULATE NEXT yayinlar-N ID
+      const yayinlarNumbers = (articlesList || [])
+        .map(a => {
+          const match = String(a.id || '').match(/^yayinlar-(\d+)$/i);
+          return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter(n => !isNaN(n));
+      const maxNum = yayinlarNumbers.length > 0 ? Math.max(...yayinlarNumbers) : (articlesList || []).length;
+      const nextId = `yayinlar-${maxNum + 1}`;
+
       const newArt = {
-        id: `art-${Date.now()}`,
+        id: nextId,
         category: artCategory,
         categoryColor: categoryColors[artCategory] || '#ef4444',
         title: artTitle,
