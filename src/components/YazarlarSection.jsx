@@ -12,11 +12,8 @@ export default function YazarlarSection({ id, authorsList, onSelectAuthor }) {
         <div className="section-header" style={{ borderBottomColor: '#38bdf8' }}>
           <div className="section-title" style={{ color: '#ffffff' }}>
             <Feather size={22} color="#38bdf8" />
-            <span>EKİBİMİZ & AKADEMİK KADRO</span>
+            <span>EKİBİMİZ</span>
           </div>
-          <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
-            Düşünce Kuruluşu Kıdemli Analistleri ({sourceAuthors.length} Yazar)
-          </span>
         </div>
 
         <div className="yazarlar-grid">
