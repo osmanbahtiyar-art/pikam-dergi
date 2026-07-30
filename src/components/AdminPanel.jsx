@@ -368,6 +368,17 @@ export default function AdminPanel({
     const finalImage = artImage || categoryDefaultImages[artCategory] || 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80';
     const finalDate = artDate.trim() || '29 Temmuz 2026';
 
+    const formatParagraphsToHtml = (text) => {
+      if (!text) return '';
+      const cleanText = text.replace(/<p>/g, '').replace(/<\/p>/g, '\n\n');
+      const paragraphs = cleanText.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+      return paragraphs
+        .map(p => `<p style="margin-bottom: 1.4rem; line-height: 1.8;">${p.replace(/\n/g, '<br />')}</p>`)
+        .join('');
+    };
+
+    const formattedContent = formatParagraphsToHtml(artExcerpt);
+
     if (editingArticleId) {
       // UPDATE EXISTING ARTICLE
       const updatedArt = {
@@ -380,7 +391,7 @@ export default function AdminPanel({
         date: finalDate,
         readTime: '6 Dakika',
         image: finalImage,
-        content: `<p>${artExcerpt}</p><p>Politik ve İktisadi Araştırmalar Merkezi yayın kurulunca hazırlanan özel analiz.</p>`
+        content: formattedContent
       };
       onUpdateArticle(updatedArt);
       setSuccessMsg(`"${artTitle}" makalesi başarıyla güncellendi!`);
@@ -397,7 +408,7 @@ export default function AdminPanel({
         date: finalDate,
         readTime: '6 Dakika',
         image: finalImage,
-        content: `<p>${artExcerpt}</p><p>Politik ve İktisadi Araştırmalar Merkezi yayın kurulunca hazırlanan özel analiz.</p>`
+        content: formattedContent
       };
       onAddArticle(newArt);
       setSuccessMsg(`"${artTitle}" makalesi kapak görseliyle birlikte saniyeler içinde sitede yayına girdi!`);

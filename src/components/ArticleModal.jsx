@@ -188,24 +188,16 @@ export default function ArticleModal({ article, currentUser, allCommentsList = [
         </div>
 
         {/* ARTICLE BODY */}
-        <div className="article-modal-body" style={{ fontSize: `${fontSize}rem` }}>
+        <div className="article-modal-body" style={{ fontSize: `${fontSize}rem`, whiteSpace: 'pre-line' }}>
           {article.content ? (
             <div dangerouslySetInnerHTML={{ __html: article.content }} />
           ) : (
             <div>
-              <p className="lead" style={{ fontWeight: '600', color: '#0f172a', marginBottom: '16px' }}>
-                {article.excerpt}
-              </p>
-              <p>
-                Politik ve İktisadi Araştırmalar Merkezi (PİKAM) tarafından hazırlanan bu çalışma, küresel konjonktürde yaşanan makroekonomik dalgalanmalar ile bölgesel jeopolitik gelişmeler arasındaki doğrudan etkileşimi analiz etmektedir.
-              </p>
-              <blockquote className="editorial-quote">
-                "Uluslararası ilişkilerde ve iktisat politikalarında stratejik derinlik, ampirik veriler ile ulusal vizyonun sentezlenmesiyle mümkündür."
-              </blockquote>
-              <h3>Sonuç ve Değerlendirme</h3>
-              <p>
-                Gelecek dönem politikalarının şekillenmesinde kamusal ve akademik istişare kanallarının açık tutulması hayati önem taşımaktadır. PİKAM bu doğrultuda rapor ve analizlerini yayımlamaya devam edecektir.
-              </p>
+              {String(article.excerpt || '').split(/\n\s*\n/).map((p, pIdx) => (
+                <p key={pIdx} style={{ marginBottom: '1.4rem', lineHeight: '1.8' }}>
+                  {p}
+                </p>
+              ))}
             </div>
           )}
 
