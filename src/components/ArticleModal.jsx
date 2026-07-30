@@ -1,16 +1,54 @@
 import React, { useState } from 'react';
-import { X, Calendar, Clock, Share2, Volume2, MessageSquare, ThumbsUp, Lock, UserCheck, Send } from 'lucide-react';
+import { X, Calendar, Clock, Share2, Volume2, MessageSquare, ThumbsUp, Lock, UserCheck, Send, Check, Copy } from 'lucide-react';
 
 export default function ArticleModal({ article, currentUser, allCommentsList = [], onAddComment, onOpenAuthModal, onClose }) {
   const [fontSize, setFontSize] = useState(1.05); // rem
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(48);
   const [newCommentText, setNewCommentText] = useState("");
+  const [copySuccess, setCopySuccess] = useState(false);
 
   if (!article) return null;
 
   // Filter comments specifically for this article (No fake comments!)
   const articleComments = allCommentsList.filter(c => c.articleId === article.id || c.article_id === article.id);
+
+  const getArticleShareUrl = () => {
+    return `${window.location.origin}/?article=${article.id}`;
+  };
+
+  const handleShareWhatsApp = () => {
+    const shareUrl = getArticleShareUrl();
+    const text = encodeURIComponent(`"${article.title}" - PİKAM Dergi Analizini Okuyun:\n${shareUrl}`);
+    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+  };
+
+  const handleShareTwitter = () => {
+    const shareUrl = getArticleShareUrl();
+    const text = encodeURIComponent(`"${article.title}" - PİKAM Dergi Analizi`);
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(shareUrl)}`, '_blank');
+  };
+
+  const handleShareLinkedIn = () => {
+    const shareUrl = getArticleShareUrl();
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`, '_blank');
+  };
+
+  const handleCopyLink = () => {
+    const shareUrl = getArticleShareUrl();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareUrl);
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = shareUrl;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 4000);
+  };
 
   const handleLike = () => {
     if (!liked) {
@@ -60,7 +98,7 @@ export default function ArticleModal({ article, currentUser, allCommentsList = [
 
         {/* ARTICLE HEADER */}
         <div className="article-modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
             <span className="category-tag" style={{ backgroundColor: article.categoryColor || '#10b981' }}>
               {article.category}
             </span>
@@ -72,18 +110,18 @@ export default function ArticleModal({ article, currentUser, allCommentsList = [
             </span>
           </div>
 
-          <h1 style={{ fontFamily: 'Playfair Display', fontSize: '2rem', color: '#0b132b', lineHeight: 1.25 }}>
+          <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.85rem', color: '#0b132b', lineHeight: 1.25 }}>
             {article.title}
           </h1>
 
           {article.subtitle && (
-            <p style={{ fontSize: '1.1rem', color: '#475569', marginTop: '10px', fontStyle: 'italic' }}>
+            <p style={{ fontSize: '1.05rem', color: '#475569', marginTop: '10px', fontStyle: 'italic' }}>
               {article.subtitle}
             </p>
           )}
 
           {/* AUTHOR BAR & CONTROLS */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #e2e8f0', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               {article.author?.avatar && (
                 <img src={article.author.avatar} alt={article.author.name} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }} />
@@ -99,11 +137,11 @@ export default function ArticleModal({ article, currentUser, allCommentsList = [
             </div>
 
             {/* FONT CONTROLS & UTILS */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px' }}>
                 <button 
                   onClick={() => setFontSize(Math.max(0.9, fontSize - 0.1))} 
-                  style={{ fontWeight: '700', fontSize: '0.8rem', padding: '2px 6px', color: '#334155' }}
+                  style={{ fontWeight: '700', fontSize: '0.8rem', padding: '2px 6px', color: '#334155', border: 'none', background: 'transparent', cursor: 'pointer' }}
                   title="Metni Küçült"
                 >
                   A-
@@ -111,7 +149,7 @@ export default function ArticleModal({ article, currentUser, allCommentsList = [
                 <span style={{ color: '#cbd5e1' }}>|</span>
                 <button 
                   onClick={() => setFontSize(Math.min(1.4, fontSize + 0.1))} 
-                  style={{ fontWeight: '700', fontSize: '0.95rem', padding: '2px 6px', color: '#334155' }}
+                  style={{ fontWeight: '700', fontSize: '0.95rem', padding: '2px 6px', color: '#334155', border: 'none', background: 'transparent', cursor: 'pointer' }}
                   title="Metni Büyüt"
                 >
                   A+
@@ -120,7 +158,7 @@ export default function ArticleModal({ article, currentUser, allCommentsList = [
 
               <button 
                 onClick={() => alert('Metin sesli okuma başlatıldı (Simülasyon).')} 
-                style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#e0f2fe', color: '#0369a1', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '600' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#e0f2fe', color: '#0369a1', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '600' }}
               >
                 <Volume2 size={15} />
                 <span>Dinle</span>
@@ -128,7 +166,7 @@ export default function ArticleModal({ article, currentUser, allCommentsList = [
 
               <button 
                 onClick={handleLike}
-                style={{ display: 'flex', alignItems: 'center', gap: '4px', background: liked ? '#dcfce7' : '#f1f5f9', color: liked ? '#15803d' : '#334155', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '600' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', background: liked ? '#dcfce7' : '#f1f5f9', color: liked ? '#15803d' : '#334155', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '600' }}
               >
                 <ThumbsUp size={15} />
                 <span>{likeCount}</span>
@@ -171,29 +209,60 @@ export default function ArticleModal({ article, currentUser, allCommentsList = [
             </div>
           )}
 
-          {/* SOCIAL SHARE IN TURKISH */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '40px', paddingTop: '20px', borderTop: '2px solid #0f172a' }}>
-            <div style={{ fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Share2 size={16} />
-              <span>BU ANALİZİ PAYLAŞIN:</span>
+          {/* REAL SOCIAL SHARE WITH DIRECT ARTICLE DEEP LINK */}
+          <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '2px solid #0f172a' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95rem' }}>
+                <Share2 size={18} color="#0284c7" />
+                <span>BU MAKALEYİ DOĞRUDAN LİNK İLE PAYLAŞIN:</span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button 
+                  onClick={handleShareWhatsApp} 
+                  style={{ background: '#25d366', color: 'white', border: 'none', cursor: 'pointer', padding: '8px 14px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  🟢 WhatsApp
+                </button>
+                <button 
+                  onClick={handleShareTwitter} 
+                  style={{ background: '#000000', color: 'white', border: 'none', cursor: 'pointer', padding: '8px 14px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  🐦 X (Twitter)
+                </button>
+                <button 
+                  onClick={handleShareLinkedIn} 
+                  style={{ background: '#0a66c2', color: 'white', border: 'none', cursor: 'pointer', padding: '8px 14px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  💼 LinkedIn
+                </button>
+                <button 
+                  onClick={handleCopyLink} 
+                  style={{ background: copySuccess ? '#16a34a' : '#0b132b', color: 'white', border: 'none', cursor: 'pointer', padding: '8px 14px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  {copySuccess ? <Check size={16} /> : <Copy size={16} />}
+                  <span>{copySuccess ? 'Link Kopyalandı!' : 'Linki Kopyala'}</span>
+                </button>
+              </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => alert('LinkedIn bağlantısı kopyalandı.')} style={{ background: '#0a66c2', color: 'white', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '600' }}>
-                LinkedIn'de Paylaş
-              </button>
-              <button onClick={() => alert('X/Twitter bağlantısı kopyalandı.')} style={{ background: '#000000', color: 'white', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '600' }}>
-                X'te Paylaş
-              </button>
-              <button onClick={() => alert('WhatsApp gönderim ekranı açıldı.')} style={{ background: '#25d366', color: 'white', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '600' }}>
-                WhatsApp
+            {/* DIRECT ARTICLE LINK BOX */}
+            <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+              <div style={{ fontSize: '0.8rem', color: '#475569', wordBreak: 'break-all' }}>
+                <strong style={{ color: '#0f172a' }}>Makale Bağlantısı:</strong> {getArticleShareUrl()}
+              </div>
+              <button 
+                onClick={handleCopyLink} 
+                style={{ background: '#e2e8f0', color: '#334155', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '700', whiteSpace: 'nowrap' }}
+              >
+                {copySuccess ? '✓ Kopyalandı' : 'Kopyala'}
               </button>
             </div>
           </div>
 
           {/* COMMENTS SECTION - GATED ONLY FOR LOGGED IN USERS */}
           <div style={{ marginTop: '40px', background: '#f8fafc', padding: '24px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-            <h3 style={{ fontFamily: 'Playfair Display', fontSize: '1.25rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.25rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <MessageSquare size={18} color="#0284c7" />
               <span>Gerçek Okuyucu Değerlendirmeleri ({articleComments.length})</span>
             </h3>

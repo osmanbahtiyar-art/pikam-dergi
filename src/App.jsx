@@ -308,6 +308,32 @@ export default function App() {
     };
   }, []);
 
+  const handleOpenArticle = (art) => {
+    setSelectedArticle(art);
+    if (art && art.id) {
+      const newUrl = `${window.location.pathname}?article=${art.id}`;
+      window.history.pushState({ articleId: art.id }, '', newUrl);
+    }
+  };
+
+  const handleCloseArticle = () => {
+    setSelectedArticle(null);
+    window.history.pushState(null, '', window.location.pathname);
+  };
+
+  useEffect(() => {
+    if (articlesList && articlesList.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const articleId = params.get('article');
+      if (articleId) {
+        const found = articlesList.find(a => String(a.id) === String(articleId));
+        if (found) {
+          setSelectedArticle(found);
+        }
+      }
+    }
+  }, [articlesList]);
+
   const handleAddComment = async (newComment) => {
     const updated = [newComment, ...allCommentsList];
     setAllCommentsList(updated);
@@ -636,7 +662,7 @@ export default function App() {
 
       {sectionVisibility.showTicker && (
         <Ticker 
-          onSelectArticle={(art) => setSelectedArticle(art)}
+          onSelectArticle={handleOpenArticle}
         />
       )}
 
@@ -652,14 +678,14 @@ export default function App() {
         {sectionVisibility.showHero && (
           <HeroGrid 
             heroFeatured={heroFeatured}
-            onSelectArticle={(art) => setSelectedArticle(art)}
+            onSelectArticle={handleOpenArticle}
           />
         )}
 
         <EditorialFeed 
           activeCategory={activeCategory}
           articlesList={articlesList}
-          onSelectArticle={(art) => setSelectedArticle(art)}
+          onSelectArticle={handleOpenArticle}
         />
 
         {sectionVisibility.showYazarlar && (
@@ -689,7 +715,7 @@ export default function App() {
             setSelectedArticle(null);
             setIsAuthModalOpen(true);
           }}
-          onClose={() => setSelectedArticle(null)}
+          onClose={handleCloseArticle}
         />
       )}
 
@@ -703,7 +729,7 @@ export default function App() {
       {isSearchOpen && (
         <SearchModal 
           onClose={() => setIsSearchOpen(false)}
-          onSelectArticle={(art) => setSelectedArticle(art)}
+          onSelectArticle={handleOpenArticle}
         />
       )}
 
