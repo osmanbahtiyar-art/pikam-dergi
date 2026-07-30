@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download, Image as ImageIcon, Newspaper, Feather, EyeOff, Settings, Edit3, Layout, X, ArrowUp, ArrowDown, MessageSquare, Compass, Info, AlignLeft } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
+import { processPdfFile } from '../lib/pdfHelper';
+
 export default function AdminPanel({ 
   eDergiList, onAddEDergi, onDeleteEDergi, 
   onAddArticle, onUpdateArticle, onToggleHideArticle, onMoveArticleUp, onMoveArticleDown, articlesList, onDeleteArticle, 
@@ -30,6 +32,8 @@ export default function AdminPanel({
   const [coverImage, setCoverImage] = useState('/pikam_kapak_temmuz_1784839785714.jpg');
   const [pdfFile, setPdfFile] = useState(null);
   const [pdfFileName, setPdfFileName] = useState('');
+  const [pagesDataUrls, setPagesDataUrls] = useState([]);
+  const [isPdfProcessing, setIsPdfProcessing] = useState(false);
   const [editorNote, setEditorNote] = useState('PİKAM 75. sayımızda Doğu Akdeniz enerji koridorları ve küresel makroekonomi masaya yatırılıyor.');
 
   // Article Form & Edit State
@@ -315,8 +319,13 @@ export default function AdminPanel({
       coverImage: coverImage || '/pikam_kapak_temmuz_1784839785714.jpg',
       pdfUrl: pdfFile ? URL.createObjectURL(pdfFile) : '#',
       pdfFileName: pdfFileName || 'PIKAM_Dergi_Dijital.pdf',
-      pageCount: parseInt(pageCount) || 64,
-      pages: [
+      pageCount: parseInt(pageCount) || (pagesDataUrls.length ? pagesDataUrls.length : 64),
+      pagesDataUrls: pagesDataUrls || [],
+      pages: pagesDataUrls.length > 0 ? pagesDataUrls.map((url, idx) => ({
+        page: idx + 1,
+        title: idx === 0 ? 'Kapak' : `Sayfa ${idx + 1}`,
+        imageUrl: url
+      })) : [
         { page: 1, title: 'Kapak', subtitle: `${monthYear} Öne Çıkanlar` },
         { page: 2, title: 'Editörden', content: editorNote },
         { page: 3, title: 'İçindekiler & Yayın Kurulu', content: '04-20 Küresel Ticaret | 21-40 Enerji Jeopolitiği | 41-72 Yapay Zeka Doktrini' }
@@ -1392,21 +1401,33 @@ export default function AdminPanel({
                   <input 
                     type="file" 
                     accept=".pdf" 
-                    onChange={(e) => {
-                      if (e.target.files[0]) {
-                        setPdfFile(e.target.files[0]);
-                        setPdfFileName(e.target.files[0].name);
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setPdfFile(file);
+                        setPdfFileName(file.name);
+                        setIsPdfProcessing(true);
+                        try {
+                          const result = await processPdfFile(file);
+                          if (result.pageCount) setPageCount(result.pageCount);
+                          if (result.coverImage) setCoverImage(result.coverImage);
+                          if (result.pagesDataUrls) setPagesDataUrls(result.pagesDataUrls);
+                        } catch (err) {
+                          console.error('PDF process error:', err);
+                        } finally {
+                          setIsPdfProcessing(false);
+                        }
                       }
                     }} 
                     style={{ display: 'none' }}
                     id="pdf-upload"
                   />
                   <label htmlFor="pdf-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                    <Upload size={32} color="#0284c7" />
+                    {isPdfProcessing ? <Loader2 size={32} className="animate-spin" color="#0284c7" /> : <Upload size={32} color="#0284c7" />}
                     <span style={{ fontWeight: '700', color: '#0f172a', fontSize: '0.95rem' }}>
-                      {pdfFileName ? `Seçilen Dosya: ${pdfFileName}` : 'PDF Dosyası Yüklemek İçin Tıklayın'}
+                      {isPdfProcessing ? 'PDF Sayfaları İşleniyor ve İlk Sayfa Kapak Olarak Ayarlanıyor...' : pdfFileName ? `Seçilen Dosya: ${pdfFileName}` : 'PDF Dosyası Yüklemek İçin Tıklayın'}
                     </span>
-                    <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Maksimum Dosya Boyutu: 50MB (İnteraktif Flipbook Uyumlu)</span>
+                    <span style={{ fontSize: '0.78rem', color: '#64748b' }}>PDF'in ilk sayfası otomatik kapak görseli yapılır ve tüm sayfalar interaktif okuyucuya aktarılır.</span>
                   </label>
                 </div>
               </div>

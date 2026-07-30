@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
-import { X, ChevronLeft, ChevronRight, Download, ZoomIn, BookOpen, Layers } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, ChevronLeft, ChevronRight, Download, ZoomIn, BookOpen, Layers, Loader2 } from 'lucide-react';
 
 export default function EDergiModal({ issue, onClose }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [zoomLevel, setZoomLevel] = useState(100);
+  const [renderedPdfPage, setRenderedPdfPage] = useState(null);
+  const [isRenderingPage, setIsRenderingPage] = useState(false);
 
   if (!issue) return null;
 
-  const totalPages = issue.pageCount || 68;
+  const totalPages = issue.pageCount || (issue.pagesDataUrls ? issue.pagesDataUrls.length : 68);
 
   const handleNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
@@ -16,6 +18,61 @@ export default function EDergiModal({ issue, onClose }) {
   const handlePrevPage = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
+
+  // Render PDF page dynamically using PDF.js if issue.pdfUrl or pagesDataUrls is provided
+  useEffect(() => {
+    let isMounted = true;
+
+    // Check if pre-rendered image exists for this page
+    if (issue.pagesDataUrls && issue.pagesDataUrls[currentPage - 1]) {
+      setRenderedPdfPage(issue.pagesDataUrls[currentPage - 1]);
+      setIsRenderingPage(false);
+      return;
+    }
+
+    if (issue.pages && issue.pages[currentPage - 1] && issue.pages[currentPage - 1].imageUrl) {
+      setRenderedPdfPage(issue.pages[currentPage - 1].imageUrl);
+      setIsRenderingPage(false);
+      return;
+    }
+
+    if (!issue.pdfUrl || issue.pdfUrl === '#' || typeof window === 'undefined' || !window.pdfjsLib) {
+      setRenderedPdfPage(null);
+      setIsRenderingPage(false);
+      return;
+    }
+
+    setIsRenderingPage(true);
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    window.pdfjsLib.getDocument(issue.pdfUrl).promise.then(async (pdfDoc) => {
+      if (currentPage > pdfDoc.numPages) {
+        if (isMounted) setIsRenderingPage(false);
+        return;
+      }
+
+      const page = await pdfDoc.getPage(currentPage);
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      await page.render({ canvasContext: context, viewport }).promise;
+      if (isMounted) {
+        setRenderedPdfPage(canvas.toDataURL('image/jpeg', 0.85));
+        setIsRenderingPage(false);
+      }
+    }).catch(err => {
+      console.warn('PDF page rendering fallback:', err);
+      if (isMounted) {
+        setRenderedPdfPage(null);
+        setIsRenderingPage(false);
+      }
+    });
+
+    return () => { isMounted = false; };
+  }, [issue, currentPage]);
 
   const activePageData = issue.pages && issue.pages.find(p => p.page === currentPage);
 
@@ -56,18 +113,19 @@ export default function EDergiModal({ issue, onClose }) {
               <span>%{zoomLevel}</span>
             </button>
 
-            <a 
-              href={issue.coverImage} 
-              download={`PIKAM-Dergi-${issue.monthYear.replace(' ', '-')}.pdf`}
-              className="top-search-btn" 
-              style={{ background: '#2563eb', color: 'white' }}
-              onClick={(e) => {
-                alert(`"${issue.monthYear} (${issue.issueNumber})" dijital nüshası PDF formatında indiriliyor...`);
-              }}
-            >
-              <Download size={14} />
-              <span>PDF İndir</span>
-            </a>
+            {issue.pdfUrl && issue.pdfUrl !== '#' && (
+              <a 
+                href={issue.pdfUrl} 
+                download={issue.pdfFileName || `PIKAM-Dergi-${issue.monthYear.replace(' ', '-')}.pdf`}
+                className="top-search-btn" 
+                style={{ background: '#2563eb', color: 'white', textDecoration: 'none' }}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Download size={14} />
+                <span>PDF İndir</span>
+              </a>
+            )}
 
             <button className="modal-close-btn" style={{ position: 'relative', top: 0, right: 0 }} onClick={onClose}>
               <X size={18} />
@@ -84,19 +142,35 @@ export default function EDergiModal({ issue, onClose }) {
               transition: 'transform 0.2s ease',
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              minHeight: '620px',
+              padding: '16px'
             }}
           >
-            {currentPage === 1 ? (
+            {isRenderingPage ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '480px', color: '#0284c7' }}>
+                <Loader2 size={36} className="animate-spin" />
+                <span style={{ marginTop: '12px', fontWeight: '700', fontSize: '0.95rem' }}>Yüklediğiniz PDF'in Sayfası Oluşturuluyor (Sayfa {currentPage})...</span>
+              </div>
+            ) : renderedPdfPage ? (
+              <div style={{ textAlign: 'center', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <img 
+                  src={renderedPdfPage} 
+                  alt={`Sayfa ${currentPage}`} 
+                  style={{ maxWidth: '100%', maxHeight: '580px', objectFit: 'contain', borderRadius: '4px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }} 
+                />
+              </div>
+            ) : currentPage === 1 ? (
               <div style={{ textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                <img src={issue.coverImage} alt={issue.monthYear} style={{ maxHeight: '420px', borderRadius: '4px', boxShadow: '0 8px 20px rgba(0,0,0,0.3)' }} />
+                <img src={issue.coverImage} alt={issue.monthYear} style={{ maxHeight: '440px', borderRadius: '4px', boxShadow: '0 8px 20px rgba(0,0,0,0.3)' }} />
                 <h3 style={{ fontFamily: 'Playfair Display', fontSize: '1.4rem', marginTop: '16px', color: '#0f172a' }}>
                   PİKAM DERGİ - {issue.monthYear} SAYISI
                 </h3>
                 <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Kapak Teması: {issue.theme}</p>
               </div>
             ) : (
-              <div>
+              <div style={{ width: '100%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #0f172a', paddingBottom: '8px', marginBottom: '20px' }}>
                   <span style={{ fontFamily: 'Playfair Display', fontWeight: '800', fontSize: '1rem', color: '#0f172a' }}>
                     PİKAM DERGİ | {issue.monthYear}
@@ -121,9 +195,9 @@ export default function EDergiModal({ issue, onClose }) {
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '10px', marginTop: '20px', fontSize: '0.75rem', color: '#94a3b8' }}>
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '10px', marginTop: '20px', fontSize: '0.75rem', color: '#94a3b8' }}>
               <span>Politik ve İktisadi Araştırmalar Merkezi Dijital Yayınları</span>
-              <span>Sayfa {currentPage}</span>
+              <span>Sayfa {currentPage} / {totalPages}</span>
             </div>
           </div>
         </div>
