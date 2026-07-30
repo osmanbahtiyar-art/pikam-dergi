@@ -34,6 +34,7 @@ export default function AdminPanel({
   const [pdfFile, setPdfFile] = useState(null);
   const [pdfFileName, setPdfFileName] = useState('');
   const [pdfDataUrl, setPdfDataUrl] = useState('');
+  const [customPdfUrl, setCustomPdfUrl] = useState('');
   const [pagesDataUrls, setPagesDataUrls] = useState([]);
   const [isPdfProcessing, setIsPdfProcessing] = useState(false);
   const [editorNote, setEditorNote] = useState('PİKAM 75. sayımızda Doğu Akdeniz enerji koridorları ve küresel makroekonomi masaya yatırılıyor.');
@@ -337,7 +338,7 @@ export default function AdminPanel({
 
     setIsPublishing(true);
 
-    const safePdfUrl = (pdfDataUrl && pdfDataUrl.length < 1500000) ? pdfDataUrl : '#';
+    const safePdfUrl = customPdfUrl || ((pdfDataUrl && pdfDataUrl.length < 1500000) ? pdfDataUrl : '#');
 
     if (editingIssueId) {
       const updatedIssue = {
@@ -1542,7 +1543,7 @@ export default function AdminPanel({
                   <label htmlFor="pdf-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                     {isPdfProcessing ? <Loader2 size={32} className="animate-spin" color="#0284c7" /> : <Upload size={32} color="#0284c7" />}
                     <span style={{ fontWeight: '700', color: '#0f172a', fontSize: '0.95rem' }}>
-                      {isPdfProcessing ? 'PDF Sayfaları İşleniyor ve İlk Sayfa Kapak Olarak Ayarlanıyor...' : pdfFileName ? `Seçilen Dosya: ${pdfFileName}` : 'PDF Dosyası Yüklemek İçin Tıklayın'}
+                      {isPdfProcessing ? 'PDF Sayfaları İşleniyor ve İlk Sayfa Kapak Olarak Ayarlanıyor...' : pdfFileName ? `Seçilen Dosya: ${pdfFileName}` : 'PDF Dosyası Yüklemek İçin Tıklayın (500MB Dosyalar Desteklenir)'}
                     </span>
                     <span style={{ fontSize: '0.78rem', color: '#64748b' }}>PDF'in ilk sayfası otomatik kapak görseli yapılır ve tüm sayfalar interaktif okuyucuya aktarılır.</span>
                   </label>
