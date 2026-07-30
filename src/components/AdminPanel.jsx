@@ -385,12 +385,6 @@ export default function AdminPanel({
         ]
       };
 
-      try {
-        await supabase.from('e_dergi_issues').insert([newIssue]);
-      } catch (err) {
-        console.log('Supabase sync notice:', err);
-      }
-
       onAddEDergi(newIssue);
       setSuccessMsg(`"${issueNumber} (${monthYear}) - ${theme}" başarıyla pikamdergi.com sitesinde yayınlandı!`);
       cancelEditIssue();
