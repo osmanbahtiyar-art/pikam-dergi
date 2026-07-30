@@ -33,6 +33,7 @@ export default function AdminPanel({
   const [coverImage, setCoverImage] = useState('/pikam_kapak_temmuz_1784839785714.jpg');
   const [pdfFile, setPdfFile] = useState(null);
   const [pdfFileName, setPdfFileName] = useState('');
+  const [pdfDataUrl, setPdfDataUrl] = useState('');
   const [pagesDataUrls, setPagesDataUrls] = useState([]);
   const [isPdfProcessing, setIsPdfProcessing] = useState(false);
   const [editorNote, setEditorNote] = useState('PİKAM 75. sayımızda Doğu Akdeniz enerji koridorları ve küresel makroekonomi masaya yatırılıyor.');
@@ -343,7 +344,7 @@ export default function AdminPanel({
         monthYear,
         theme,
         coverImage: coverImage || '/pikam_kapak_temmuz_1784839785714.jpg',
-        pdfUrl: pdfFile ? URL.createObjectURL(pdfFile) : '#',
+        pdfUrl: pdfDataUrl || (pdfFile ? URL.createObjectURL(pdfFile) : '#'),
         pdfFileName: pdfFileName || 'PIKAM_Dergi_Dijital.pdf',
         pageCount: parseInt(pageCount) || (pagesDataUrls.length ? pagesDataUrls.length : 64),
         pagesDataUrls: pagesDataUrls || [],
@@ -366,7 +367,7 @@ export default function AdminPanel({
         monthYear,
         theme,
         coverImage: coverImage || '/pikam_kapak_temmuz_1784839785714.jpg',
-        pdfUrl: pdfFile ? URL.createObjectURL(pdfFile) : '#',
+        pdfUrl: pdfDataUrl || (pdfFile ? URL.createObjectURL(pdfFile) : '#'),
         pdfFileName: pdfFileName || 'PIKAM_Dergi_Dijital.pdf',
         pageCount: parseInt(pageCount) || (pagesDataUrls.length ? pagesDataUrls.length : 64),
         pagesDataUrls: pagesDataUrls || [],
@@ -1496,6 +1497,11 @@ export default function AdminPanel({
                         setPdfFile(file);
                         setPdfFileName(file.name);
                         setIsPdfProcessing(true);
+
+                        const fReader = new FileReader();
+                        fReader.onload = (ev) => setPdfDataUrl(ev.target.result);
+                        fReader.readAsDataURL(file);
+
                         try {
                           const result = await processPdfFile(file);
                           if (result.pageCount) setPageCount(result.pageCount);
