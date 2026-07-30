@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download, Image as ImageIcon, Newspaper, Feather, EyeOff, Settings, Edit3, Layout, X, ArrowUp, ArrowDown, MessageSquare, Compass, Info, AlignLeft } from 'lucide-react';
+import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download, Image as ImageIcon, Newspaper, Feather, EyeOff, Settings, Edit3, Layout, X, ArrowUp, ArrowDown, MessageSquare, Compass, Info, AlignLeft, StickyNote, CheckSquare, Square, AlertCircle, Tag } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 import { processPdfFile } from '../lib/pdfHelper';
@@ -14,6 +14,7 @@ export default function AdminPanel({
   navVisibility = {}, onToggleNavTab,
   kunyeData = {}, onUpdateKunye,
   allCommentsList = [], onDeleteComment,
+  adminNotesList = [], onAddNote, onUpdateNote, onToggleCompleteNote, onDeleteNote,
   onForceSyncCloud
 }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -24,6 +25,66 @@ export default function AdminPanel({
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSyncingAll, setIsSyncingAll] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Admin Notes & Todo Form State
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteContent, setNoteContent] = useState('');
+  const [noteCategory, setNoteCategory] = useState('Yapılacaklar');
+  const [notePriority, setNotePriority] = useState('Yüksek');
+  const [noteFilter, setNoteFilter] = useState('tum');
+
+  const startEditNote = (note) => {
+    setEditingNoteId(note.id);
+    setNoteTitle(note.title);
+    setNoteContent(note.content || '');
+    setNoteCategory(note.category || 'Yapılacaklar');
+    setNotePriority(note.priority || 'Yüksek');
+  };
+
+  const cancelEditNote = () => {
+    setEditingNoteId(null);
+    setNoteTitle('');
+    setNoteContent('');
+    setNoteCategory('Yapılacaklar');
+    setNotePriority('Yüksek');
+  };
+
+  const handleSaveNoteForm = (e) => {
+    e.preventDefault();
+    if (!noteTitle.trim()) return;
+
+    const dateStr = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    if (editingNoteId) {
+      const existing = adminNotesList.find(n => n.id === editingNoteId);
+      const updated = {
+        ...existing,
+        title: noteTitle,
+        content: noteContent,
+        category: noteCategory,
+        priority: notePriority,
+        createdAt: dateStr
+      };
+      if (onUpdateNote) onUpdateNote(updated);
+      setSuccessMsg(`"${noteTitle}" notu başarıyla güncellendi ve buluta kaydedildi!`);
+      cancelEditNote();
+    } else {
+      const newNote = {
+        id: `note-${Date.now()}`,
+        title: noteTitle,
+        content: noteContent,
+        category: noteCategory,
+        priority: notePriority,
+        isCompleted: false,
+        createdAt: dateStr
+      };
+      if (onAddNote) onAddNote(newNote);
+      setSuccessMsg(`"${noteTitle}" notu oluşturuldu ve buluta kaydedildi!`);
+      cancelEditNote();
+    }
+    setTimeout(() => setSuccessMsg(''), 5000);
+  };
 
   // E-Dergi Form State
   const [editingIssueId, setEditingIssueId] = useState(null);
@@ -620,6 +681,14 @@ export default function AdminPanel({
           </button>
 
           <button 
+            onClick={() => setActiveTab('notlar')} 
+            style={{ background: activeTab === 'notlar' ? '#0b132b' : '#ffffff', color: activeTab === 'notlar' ? '#ffffff' : '#475569', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <StickyNote size={15} color={activeTab === 'notlar' ? '#fde047' : '#eab308'} />
+            <span>Yönetici Notları & Yapılacaklar ({adminNotesList.length})</span>
+          </button>
+
+          <button 
             onClick={() => setActiveTab('yorumlar')} 
             style={{ background: activeTab === 'yorumlar' ? '#0b132b' : '#ffffff', color: activeTab === 'yorumlar' ? '#ffffff' : '#475569', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
@@ -691,6 +760,249 @@ export default function AdminPanel({
             <span>Yeni Makale Ekle</span>
           </button>
         </div>
+
+        {/* TAB: YÖNETİCİ NOTLARI & YAPILACAKLAR */}
+        {activeTab === 'notlar' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* STATS SUMMARY BAR */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              <div style={{ background: '#ffffff', padding: '18px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ background: '#fef9c3', padding: '12px', borderRadius: '8px', color: '#ca8a04' }}>
+                  <StickyNote size={24} />
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: '700' }}>TOPLAM NOT & EKSİK</span>
+                  <h3 style={{ fontSize: '1.4rem', color: '#0f172a', margin: 0, fontWeight: '800' }}>{adminNotesList.length}</h3>
+                </div>
+              </div>
+
+              <div style={{ background: '#ffffff', padding: '18px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ background: '#fef2f2', padding: '12px', borderRadius: '8px', color: '#dc2626' }}>
+                  <AlertCircle size={24} />
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: '700' }}>YÜKSEK ÖNCELİKLİ</span>
+                  <h3 style={{ fontSize: '1.4rem', color: '#dc2626', margin: 0, fontWeight: '800' }}>
+                    {adminNotesList.filter(n => n.priority === 'Yüksek' && !n.isCompleted).length}
+                  </h3>
+                </div>
+              </div>
+
+              <div style={{ background: '#ffffff', padding: '18px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ background: '#dcfce7', padding: '12px', borderRadius: '8px', color: '#15803d' }}>
+                  <CheckSquare size={24} />
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: '700' }}>TAMAMLANAN GÖREVLER</span>
+                  <h3 style={{ fontSize: '1.4rem', color: '#15803d', margin: 0, fontWeight: '800' }}>
+                    {adminNotesList.filter(n => n.isCompleted).length}
+                  </h3>
+                </div>
+              </div>
+            </div>
+
+            {/* FORM: YENİ NOT EKLE VEYA DÜZENLE */}
+            <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.35rem', color: '#0b132b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <StickyNote size={22} color="#ca8a04" />
+                  <span>{editingNoteId ? 'NOTU DÜZENLE VE GÜNCELLE' : 'YENİ NOT VEYA SİTE EKSİĞİ EKLE'}</span>
+                </h2>
+
+                {editingNoteId && (
+                  <button onClick={cancelEditNote} style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <X size={14} /> Düzenlemeyi İptal Et
+                  </button>
+                )}
+              </div>
+
+              <form onSubmit={handleSaveNoteForm} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>NOT BAŞLIĞI / KONU *</label>
+                    <input 
+                      type="text" 
+                      value={noteTitle} 
+                      onChange={(e) => setNoteTitle(e.target.value)} 
+                      placeholder="Örn: Mobil Menü Butonu Hızlandırması" 
+                      required
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', fontWeight: '600' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>KATEGORİ</label>
+                    <select 
+                      value={noteCategory} 
+                      onChange={(e) => setNoteCategory(e.target.value)}
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', background: '#ffffff' }}
+                    >
+                      <option value="Yapılacaklar">Yapılacaklar</option>
+                      <option value="Site Eksikleri">Site Eksikleri & Hatalar</option>
+                      <option value="Strateji & Fikirler">Strateji & Fikirler</option>
+                      <option value="Genel Notlar">Genel Notlar</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>ÖNCELİK DERECESİ</label>
+                    <select 
+                      value={notePriority} 
+                      onChange={(e) => setNotePriority(e.target.value)}
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', background: '#ffffff', fontWeight: '700', color: notePriority === 'Yüksek' ? '#dc2626' : notePriority === 'Orta' ? '#ca8a04' : '#0284c7' }}
+                    >
+                      <option value="Yüksek">🔴 Yüksek Öncelik</option>
+                      <option value="Orta">🟡 Orta Öncelik</option>
+                      <option value="Normal">🔵 Normal Öncelik</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>NOT DETAYLARI & AÇIKLAMA</label>
+                  <textarea 
+                    rows="3" 
+                    value={noteContent} 
+                    onChange={(e) => setNoteContent(e.target.value)} 
+                    placeholder="Planlanan adımlar, yapılması gerekenler veya detayları buraya yazın..."
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem', fontFamily: 'inherit' }}
+                  ></textarea>
+                </div>
+
+                <button 
+                  type="submit" 
+                  style={{ background: editingNoteId ? '#16a34a' : '#0b132b', color: 'white', padding: '12px 24px', borderRadius: '6px', fontWeight: '700', fontSize: '0.92rem', border: 'none', cursor: 'pointer', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  {editingNoteId ? <Edit3 size={16} /> : <PlusCircle size={16} />}
+                  <span>{editingNoteId ? 'NOTU GÜNCELLE VE BULUTA KAYDET' : 'NOTU OLUŞTUR VE BULUTA SENKRONİZE ET'}</span>
+                </button>
+              </form>
+            </div>
+
+            {/* LIST & FILTERS: NOTLAR VE EKSİKLER */}
+            <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.25rem', color: '#0b132b', margin: 0 }}>
+                  KAYITLI YÖNETİCİ NOTLARI VE EKSİKLER ({adminNotesList.length})
+                </h3>
+
+                {/* FILTER BUTTONS */}
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {[
+                    { id: 'tum', label: 'Tümü' },
+                    { id: 'yapilacak', label: 'Yapılacaklar' },
+                    { id: 'eksik', label: 'Site Eksikleri' },
+                    { id: 'tamamlanan', label: 'Tamamlananlar' }
+                  ].map(f => (
+                    <button 
+                      key={f.id} 
+                      onClick={() => setNoteFilter(f.id)}
+                      style={{ background: noteFilter === f.id ? '#0b132b' : '#f1f5f9', color: noteFilter === f.id ? 'white' : '#475569', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer' }}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {adminNotesList.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                  <p style={{ color: '#64748b', fontSize: '0.95rem' }}>Henüz kaydedilmiş not bulunmamaktadır. Yukarıdaki formdan yeni not ekleyebilirsiniz.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '18px' }}>
+                  {adminNotesList
+                    .filter(n => {
+                      if (noteFilter === 'yapilacak') return n.category === 'Yapılacaklar' && !n.isCompleted;
+                      if (noteFilter === 'eksik') return n.category === 'Site Eksikleri' && !n.isCompleted;
+                      if (noteFilter === 'tamamlanan') return n.isCompleted;
+                      return true;
+                    })
+                    .map((note) => {
+                      const isHigh = note.priority === 'Yüksek';
+                      const isMed = note.priority === 'Orta';
+
+                      return (
+                        <div 
+                          key={note.id} 
+                          style={{ 
+                            borderLeft: `5px solid ${isHigh ? '#ef4444' : isMed ? '#eab308' : '#0284c7'}`,
+                            border: '1px solid #e2e8f0',
+                            borderLeftWidth: '5px',
+                            borderRadius: '8px',
+                            padding: '18px',
+                            background: note.isCompleted ? '#f8fafc' : '#ffffff',
+                            opacity: note.isCompleted ? 0.75 : 1,
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            gap: '14px'
+                          }}
+                        >
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <button 
+                                  onClick={() => onToggleCompleteNote && onToggleCompleteNote(note.id)}
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: note.isCompleted ? '#16a34a' : '#94a3b8', padding: 0 }}
+                                  title={note.isCompleted ? 'Tamamlandı işaretini kaldır' : 'Tamamlandı olarak işaretle'}
+                                >
+                                  {note.isCompleted ? <CheckSquare size={20} color="#16a34a" /> : <Square size={20} />}
+                                </button>
+
+                                <span style={{ fontSize: '0.72rem', fontWeight: '800', background: '#f1f5f9', color: '#334155', padding: '2px 8px', borderRadius: '4px' }}>
+                                  {note.category || 'Genel'}
+                                </span>
+                              </div>
+
+                              <span style={{ fontSize: '0.68rem', fontWeight: '800', padding: '2px 8px', borderRadius: '4px', background: isHigh ? '#fef2f2' : isMed ? '#fefce8' : '#e0f2fe', color: isHigh ? '#dc2626' : isMed ? '#ca8a04' : '#0369a1' }}>
+                                {note.priority || 'Normal'}
+                              </span>
+                            </div>
+
+                            <h4 style={{ fontSize: '1rem', color: note.isCompleted ? '#64748b' : '#0f172a', margin: '4px 0 6px 0', textDecoration: note.isCompleted ? 'line-through' : 'none', fontWeight: '700' }}>
+                              {note.title}
+                            </h4>
+
+                            {note.content && (
+                              <p style={{ fontSize: '0.84rem', color: '#475569', margin: 0, lineHeight: '1.5', whiteSpace: 'pre-line' }}>
+                                {note.content}
+                              </p>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '10px', fontSize: '0.75rem', color: '#94a3b8' }}>
+                            <span>{note.createdAt || 'Tarih Belirtilmedi'}</span>
+
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button 
+                                onClick={() => startEditNote(note)}
+                                style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', padding: '4px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
+                              >
+                                <Edit3 size={11} /> Düzenle
+                              </button>
+
+                              <button 
+                                onClick={() => {
+                                  if (confirm(`"${note.title}" notunu silmek istediğinize emin misiniz?`)) {
+                                    onDeleteNote(note.id);
+                                  }
+                                }}
+                                style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
+                              >
+                                <Trash2 size={11} /> Sil
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* TAB: KÜNYE DÜZENLEME FORMU */}
         {activeTab === 'kunye_duzenle' && (

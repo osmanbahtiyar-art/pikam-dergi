@@ -177,6 +177,22 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  // Admin Notes & Todo List State (Permanent Cloud & Local Persistence)
+  const [adminNotesList, setAdminNotesList] = useState(() => {
+    const saved = localStorage.getItem('pikam_admin_notes');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 'note-1',
+        title: 'E-Dergi Çapraz Cihaz Kontrolü',
+        content: 'Yüklenen tüm PDF dergilerin iOS Safari ve Android Chrome mobil cihazlarda kesintisiz açıldığının düzenli kontrolü.',
+        category: 'Yapılacaklar',
+        priority: 'Yüksek',
+        isCompleted: false,
+        createdAt: '31 Temmuz 2026'
+      }
+    ];
+  });
+
   const [isAdmin, setIsAdmin] = useState(false);
 
   // REAL-TIME INSTANT SYNCHRONIZATION FUNCTION (SUPABASE CLOUD AS SINGLE SOURCE OF TRUTH)
@@ -246,6 +262,12 @@ export default function App() {
         if (kunyeSetting && kunyeSetting.data) {
           setKunyeData(kunyeSetting.data);
           localStorage.setItem('pikam_kunye_data', JSON.stringify(kunyeSetting.data));
+        }
+
+        const notesSetting = cloudSettings.find(s => s.id === 'admin_notes_list');
+        if (notesSetting && notesSetting.data) {
+          setAdminNotesList(notesSetting.data);
+          localStorage.setItem('pikam_admin_notes', JSON.stringify(notesSetting.data));
         }
       }
 
@@ -696,6 +718,36 @@ export default function App() {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleSaveNotesCloud = async (updatedNotes) => {
+    setAdminNotesList(updatedNotes);
+    localStorage.setItem('pikam_admin_notes', JSON.stringify(updatedNotes));
+    try {
+      await supabase.from('site_settings').upsert([{ id: 'admin_notes_list', data: updatedNotes }]);
+    } catch (err) {
+      console.log('Supabase notes sync notice:', err);
+    }
+  };
+
+  const handleAddNote = (newNote) => {
+    const updated = [newNote, ...adminNotesList];
+    handleSaveNotesCloud(updated);
+  };
+
+  const handleUpdateNote = (updatedNote) => {
+    const updated = adminNotesList.map(n => n.id === updatedNote.id ? updatedNote : n);
+    handleSaveNotesCloud(updated);
+  };
+
+  const handleToggleCompleteNote = (noteId) => {
+    const updated = adminNotesList.map(n => n.id === noteId ? { ...n, isCompleted: !n.isCompleted } : n);
+    handleSaveNotesCloud(updated);
+  };
+
+  const handleDeleteNote = (noteId) => {
+    const updated = adminNotesList.filter(n => n.id !== noteId);
+    handleSaveNotesCloud(updated);
+  };
+
   const handleForcePushCloudAll = async () => {
     try {
       console.log('☁️ Pushing ALL local state to Supabase Cloud Database...');
@@ -716,7 +768,8 @@ export default function App() {
         { id: 'hero_featured', data: heroFeatured },
         { id: 'section_visibility', data: sectionVisibility },
         { id: 'nav_visibility', data: navVisibility },
-        { id: 'kunye_data', data: kunyeData }
+        { id: 'kunye_data', data: kunyeData },
+        { id: 'admin_notes_list', data: adminNotesList }
       ]);
 
       await fetchAndMergeCloudData();
@@ -763,6 +816,11 @@ export default function App() {
         onUpdateKunye={handleUpdateKunye}
         allCommentsList={allCommentsList}
         onDeleteComment={handleDeleteComment}
+        adminNotesList={adminNotesList}
+        onAddNote={handleAddNote}
+        onUpdateNote={handleUpdateNote}
+        onToggleCompleteNote={handleToggleCompleteNote}
+        onDeleteNote={handleDeleteNote}
         onForceSyncCloud={handleForcePushCloudAll}
       />
     );
