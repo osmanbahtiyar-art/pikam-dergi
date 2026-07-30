@@ -1395,6 +1395,47 @@ export default function AdminPanel({
 
               <div>
                 <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>
+                  DERGİ KAPAK FOTOĞRAFI (ÖZEL GÖRSEL YÜKLEYİN VEYA PDF İLK SAYFASI OTOMATİK KULLANILIR)
+                </label>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  {coverImage ? (
+                    <img src={coverImage} alt="Dergi Kapak Önizleme" style={{ width: '90px', height: '120px', objectFit: 'cover', borderRadius: '6px', border: '2px solid #0284c7', boxShadow: '0 4px 10px rgba(0,0,0,0.15)' }} />
+                  ) : (
+                    <div style={{ width: '90px', height: '120px', background: '#f1f5f9', borderRadius: '6px', border: '1px dashed #cbd5e1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '0.75rem', textAlign: 'center', padding: '6px' }}>
+                      <span>Kapak Önizleme</span>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexGrow: 1 }}>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => setCoverImage(ev.target.result);
+                          reader.readAsDataURL(file);
+                        }
+                      }} 
+                      style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#ffffff' }}
+                    />
+                    <input 
+                      type="url" 
+                      placeholder="veya Özel Kapak Görsel Web Bağlantısı (https://...)" 
+                      value={coverImage} 
+                      onChange={(e) => setCoverImage(e.target.value)} 
+                      style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                    />
+                    <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                      PDF yüklediğinizde 1. Sayfa otomatik kapak olur; dilerseniz buradan kendiniz de özel kapak fotoğrafı yükleyebilirsiniz.
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>
                   DERGİ PDF DOSYASI (BİLGİSAYARINIZDAN SEÇİN) *
                 </label>
                 <div style={{ border: '2px dashed #cbd5e1', padding: '20px', borderRadius: '8px', background: '#f8fafc', textAlign: 'center' }}>
