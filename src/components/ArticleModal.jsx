@@ -190,10 +190,10 @@ export default function ArticleModal({ article, currentUser, allCommentsList = [
         {/* ARTICLE BODY */}
         <div className="article-modal-body" style={{ fontSize: `${fontSize}rem`, whiteSpace: 'pre-line' }}>
           {article.content ? (
-            <div dangerouslySetInnerHTML={{ __html: article.content }} />
+            <div dangerouslySetInnerHTML={{ __html: String(article.content).replace(/<p>\s*Politik ve İktisadi Araştırmalar Merkezi yayın kurulunca hazırlanan özel analiz\.?\s*<\/p>|Politik ve İktisadi Araştırmalar Merkezi yayın kurulunca hazırlanan özel analiz\.?/gi, '').trim() }} />
           ) : (
             <div>
-              {String(article.excerpt || '').split(/\n\s*\n/).map((p, pIdx) => (
+              {String(article.excerpt || '').replace(/Politik ve İktisadi Araştırmalar Merkezi yayın kurulunca hazırlanan özel analiz\.?/gi, '').trim().split(/\n\s*\n/).map((p, pIdx) => (
                 <p key={pIdx} style={{ marginBottom: '1.4rem', lineHeight: '1.8' }}>
                   {p}
                 </p>
