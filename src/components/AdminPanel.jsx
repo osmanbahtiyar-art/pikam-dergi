@@ -5,12 +5,12 @@ import { supabase } from '../lib/supabaseClient';
 import { processPdfFile } from '../lib/pdfHelper';
 
 export default function AdminPanel({ 
-  eDergiList, onAddEDergi, onUpdateEDergi, onToggleHideEDergi, onMoveEDergiUp, onMoveEDergiDown, onDeleteEDergi, 
-  onAddArticle, onUpdateArticle, onToggleHideArticle, onMoveArticleUp, onMoveArticleDown, articlesList, onDeleteArticle, 
-  registeredUsersList, onDeleteUser,
-  authorsList, onAddAuthor, onDeleteAuthor, onUpdateAuthor, onMoveAuthorUp, onMoveAuthorDown,
-  heroFeatured, onUpdateHeroFeatured,
-  sectionVisibility, onToggleSection,
+  eDergiList = [], onAddEDergi, onUpdateEDergi, onToggleHideEDergi, onMoveEDergiUp, onMoveEDergiDown, onDeleteEDergi, 
+  onAddArticle, onUpdateArticle, onToggleHideArticle, onMoveArticleUp, onMoveArticleDown, articlesList = [], onDeleteArticle, 
+  registeredUsersList = [], onDeleteUser,
+  authorsList = [], onAddAuthor, onDeleteAuthor, onUpdateAuthor, onMoveAuthorUp, onMoveAuthorDown,
+  heroFeatured = {}, onUpdateHeroFeatured,
+  sectionVisibility = {}, onToggleSection,
   navVisibility = {}, onToggleNavTab,
   kunyeData = {}, onUpdateKunye,
   allCommentsList = [], onDeleteComment,
@@ -20,7 +20,13 @@ export default function AdminPanel({
   newsletterSubscribers = [], onDeleteSubscriber,
   onForceSyncCloud
 }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      return sessionStorage.getItem('pikam_admin_auth') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -347,8 +353,13 @@ export default function AdminPanel({
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (username === 'admin' && password === 'pikam2026') {
+    if (username.trim() === 'admin' && password.trim() === 'pikam2026') {
       setIsAuthenticated(true);
+      try {
+        sessionStorage.setItem('pikam_admin_auth', 'true');
+      } catch (err) {
+        console.log('Session storage error:', err);
+      }
       setLoginError('');
     } else {
       setLoginError('Hatalı kullanıcı adı veya şifre! (Varsayılan: admin / pikam2026)');
@@ -357,6 +368,11 @@ export default function AdminPanel({
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    try {
+      sessionStorage.removeItem('pikam_admin_auth');
+    } catch (err) {
+      console.log('Session storage error:', err);
+    }
     setUsername('');
     setPassword('');
   };

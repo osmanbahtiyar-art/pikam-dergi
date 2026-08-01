@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, FileText, User, LogOut } from 'lucide-react';
+import { Search, FileText, User, LogOut, Lock } from 'lucide-react';
 
 export default function TopBar({ currentUser, onOpenAuthModal, onLogoutUser, onOpenSearch, onOpenKunye }) {
   return (
@@ -48,6 +48,11 @@ export default function TopBar({ currentUser, onOpenAuthModal, onLogoutUser, onO
             <FileText size={14} />
             <span>Künye & Kurumsal</span>
           </button>
+
+          <a href="/admin" className="top-auth-btn" style={{ color: '#94a3b8', textDecoration: 'none' }} title="PİKAM Dergi Yönetici Paneli Girişi">
+            <Lock size={13} />
+            <span>Yönetici Girişi</span>
+          </a>
 
           {/* USER AUTH BUTTON / PROFILE BADGE */}
           {currentUser ? (
