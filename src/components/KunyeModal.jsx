@@ -44,66 +44,88 @@ export default function KunyeModal({ onClose, kunyeData }) {
 
         <div className="kunye-body">
           <div className="kunye-grid">
-            <div className="kunye-item">
-              <h4 style={{ fontSize: '0.82rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-                YAYIN SAHİBİ
-              </h4>
-              <p style={{ fontWeight: '700', color: '#0f172a' }}>{kunye.yayinSahibi || kunye.imtiyazSahibi}</p>
-            </div>
+            {kunye.showYayinSahibi !== false && (kunye.yayinSahibi || kunye.imtiyazSahibi) && (
+              <div className="kunye-item">
+                <h4 style={{ fontSize: '0.82rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
+                  YAYIN SAHİBİ
+                </h4>
+                <p style={{ fontWeight: '700', color: '#0f172a' }}>{kunye.yayinSahibi || kunye.imtiyazSahibi}</p>
+              </div>
+            )}
 
-            <div className="kunye-item">
-              <h4 style={{ fontSize: '0.82rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-                GENEL YAYIN YÖNETMENİ
-              </h4>
-              <p style={{ fontWeight: '700', color: '#0f172a' }}>{kunye.yayinYonetmeni || kunye.genelYayinYonetmeni}</p>
-            </div>
+            {kunye.showYayinYonetmeni !== false && (kunye.yayinYonetmeni || kunye.genelYayinYonetmeni) && (
+              <div className="kunye-item">
+                <h4 style={{ fontSize: '0.82rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
+                  GENEL YAYIN YÖNETMENİ
+                </h4>
+                <p style={{ fontWeight: '700', color: '#0f172a' }}>{kunye.yayinYonetmeni || kunye.genelYayinYonetmeni}</p>
+              </div>
+            )}
 
-            <div className="kunye-item">
-              <h4 style={{ fontSize: '0.82rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-                SORUMLU YAZI İŞLERİ MÜDÜRÜ
-              </h4>
-              <p style={{ fontWeight: '700', color: '#0f172a' }}>{kunye.sorumluYaziIsleri || kunye.editor}</p>
-            </div>
+            {kunye.showSorumluYaziIsleri !== false && (kunye.sorumluYaziIsleri || kunye.editor) && (
+              <div className="kunye-item">
+                <h4 style={{ fontSize: '0.82rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
+                  SORUMLU YAZI İŞLERİ MÜDÜRÜ
+                </h4>
+                <p style={{ fontWeight: '700', color: '#0f172a' }}>{kunye.sorumluYaziIsleri || kunye.editor}</p>
+              </div>
+            )}
 
-            <div className="kunye-item">
-              <h4 style={{ fontSize: '0.82rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-                TASARIM VE GRAFİK MİMARİSİ
-              </h4>
-              <p style={{ fontWeight: '700', color: '#0f172a' }}>{kunye.grafikTasarim || 'PİKAM Dijital Yayıncılık Servisi'}</p>
-            </div>
+            {kunye.showGrafikTasarim !== false && kunye.grafikTasarim && (
+              <div className="kunye-item">
+                <h4 style={{ fontSize: '0.82rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
+                  TASARIM VE GRAFİK MİMARİSİ
+                </h4>
+                <p style={{ fontWeight: '700', color: '#0f172a' }}>{kunye.grafikTasarim}</p>
+              </div>
+            )}
           </div>
 
-          <div style={{ marginTop: '28px', background: '#f8fafc', padding: '20px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-            <h3 style={{ fontFamily: 'Playfair Display', fontSize: '1.15rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <ShieldCheck size={20} color="#10b981" />
-              <span>AKADEMİK DANIŞMA VE HAKEM KURULU</span>
-            </h3>
-            <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
-              {boardList.map((member, index) => (
-                <li key={index} style={{ padding: '6px 0', borderBottom: '1px solid #e2e8f0', fontSize: '0.9rem', color: '#334155' }}>
-                  • {member}
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* AKADEMİK DANIŞMA VE HAKEM KURULU (SHOW/HIDE TOGGLE CONTROLLED) */}
+          {kunye.showAkademikDanismaKurulu !== false && boardList && boardList.length > 0 && boardList[0] !== '' && (
+            <div style={{ marginTop: '28px', background: '#f8fafc', padding: '20px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+              <h3 style={{ fontFamily: 'Playfair Display', fontSize: '1.15rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <ShieldCheck size={20} color="#10b981" />
+                <span>AKADEMİK DANIŞMA VE HAKEM KURULU</span>
+              </h3>
+              <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+                {boardList.map((member, index) => (
+                  <li key={index} style={{ padding: '6px 0', borderBottom: '1px solid #e2e8f0', fontSize: '0.9rem', color: '#334155' }}>
+                    • {member}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div style={{ marginTop: '28px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '0.88rem', color: '#475569' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <MapPin size={16} color="#0b132b" />
-              <span>{iletisimObj.adres}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Phone size={16} color="#0b132b" />
-              <span>{iletisimObj.telefon}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Mail size={16} color="#0b132b" />
-              <span>{iletisimObj.eposta}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Globe size={16} color="#0b132b" />
-              <span>{iletisimObj.web}</span>
-            </div>
+            {kunye.showAdres !== false && iletisimObj.adres && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <MapPin size={16} color="#0b132b" />
+                <span>{iletisimObj.adres}</span>
+              </div>
+            )}
+
+            {kunye.showTelefon !== false && iletisimObj.telefon && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Phone size={16} color="#0b132b" />
+                <span>{iletisimObj.telefon}</span>
+              </div>
+            )}
+
+            {kunye.showEposta !== false && iletisimObj.eposta && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Mail size={16} color="#0b132b" />
+                <span>{iletisimObj.eposta}</span>
+              </div>
+            )}
+
+            {kunye.showWeb !== false && iletisimObj.web && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Globe size={16} color="#0b132b" />
+                <span>{iletisimObj.web}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

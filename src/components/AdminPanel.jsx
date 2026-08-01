@@ -199,16 +199,33 @@ export default function AdminPanel({
   const [authorAvatar, setAuthorAvatar] = useState('');
   const [authorLatest, setAuthorLatest] = useState('');
 
-  // Künye Edit Form State
+  // Künye Edit Form State & Visibility Toggles
   const [kunyeSahip, setKunyeSahip] = useState(kunyeData?.yayinSahibi || kunyeData?.imtiyazSahibi || 'Politik ve İktisadi Araştırmalar Merkezi (PİKAM) A.Ş.');
+  const [kunyeShowSahip, setKunyeShowSahip] = useState(kunyeData?.showYayinSahibi !== false);
+
   const [kunyeYonetmen, setKunyeYonetmen] = useState(kunyeData?.yayinYonetmeni || kunyeData?.genelYayinYonetmeni || 'Prof. Dr. Osman Bahtiyar');
+  const [kunyeShowYonetmen, setKunyeShowYonetmen] = useState(kunyeData?.showYayinYonetmeni !== false);
+
   const [kunyeEditor, setKunyeEditor] = useState(kunyeData?.sorumluYaziIsleri || kunyeData?.editor || 'Doç. Dr. Selin Aksoy');
+  const [kunyeShowEditor, setKunyeShowEditor] = useState(kunyeData?.showSorumluYaziIsleri !== false);
+
   const [kunyeGrafik, setKunyeGrafik] = useState(kunyeData?.grafikTasarim || 'PİKAM Dijital Yayıncılık Servisi');
+  const [kunyeShowGrafik, setKunyeShowGrafik] = useState(kunyeData?.showGrafikTasarim !== false);
+
   const [kunyeDanisma, setKunyeDanisma] = useState(Array.isArray(kunyeData?.akademikDanismaKurulu) ? kunyeData.akademikDanismaKurulu.join(', ') : (kunyeData?.akademikDanismaKurulu || 'Prof. Dr. Ahmet Yılmaz, Dr. Murat Karahan, Zeynep Demir'));
+  const [kunyeShowDanisma, setKunyeShowDanisma] = useState(kunyeData?.showAkademikDanismaKurulu !== false);
+
   const [kunyeAdres, setKunyeAdres] = useState(kunyeData?.iletisim?.adres || kunyeData?.adres || 'PİKAM Genel Merkezi, Ankara / Türkiye');
+  const [kunyeShowAdres, setKunyeShowAdres] = useState(kunyeData?.showAdres !== false);
+
   const [kunyeTelefon, setKunyeTelefon] = useState(kunyeData?.iletisim?.telefon || kunyeData?.telefon || '+90 (312) 400 00 00');
+  const [kunyeShowTelefon, setKunyeShowTelefon] = useState(kunyeData?.showTelefon !== false);
+
   const [kunyeEposta, setKunyeEposta] = useState(kunyeData?.iletisim?.eposta || kunyeData?.eposta || 'info@pikamdergi.com');
+  const [kunyeShowEposta, setKunyeShowEposta] = useState(kunyeData?.showEposta !== false);
+
   const [kunyeWeb, setKunyeWeb] = useState(kunyeData?.iletisim?.web || kunyeData?.web || 'www.pikamtr.com');
+  const [kunyeShowWeb, setKunyeShowWeb] = useState(kunyeData?.showWeb !== false);
 
   // Hero Main Featured CMS Form State
   const [heroTitle, setHeroTitle] = useState(heroFeatured?.title || '');
@@ -234,14 +251,31 @@ export default function AdminPanel({
   useEffect(() => {
     if (kunyeData) {
       setKunyeSahip(kunyeData.yayinSahibi || kunyeData.imtiyazSahibi || 'Politik ve İktisadi Araştırmalar Merkezi (PİKAM) A.Ş.');
+      setKunyeShowSahip(kunyeData.showYayinSahibi !== false);
+
       setKunyeYonetmen(kunyeData.yayinYonetmeni || kunyeData.genelYayinYonetmeni || 'Prof. Dr. Osman Bahtiyar');
+      setKunyeShowYonetmen(kunyeData.showYayinYonetmeni !== false);
+
       setKunyeEditor(kunyeData.sorumluYaziIsleri || kunyeData.editor || 'Doç. Dr. Selin Aksoy');
+      setKunyeShowEditor(kunyeData.showSorumluYaziIsleri !== false);
+
       setKunyeGrafik(kunyeData.grafikTasarim || 'PİKAM Dijital Yayıncılık Servisi');
+      setKunyeShowGrafik(kunyeData.showGrafikTasarim !== false);
+
       setKunyeDanisma(Array.isArray(kunyeData.akademikDanismaKurulu) ? kunyeData.akademikDanismaKurulu.join(', ') : (kunyeData.akademikDanismaKurulu || 'Prof. Dr. Ahmet Yılmaz, Dr. Murat Karahan, Zeynep Demir'));
+      setKunyeShowDanisma(kunyeData.showAkademikDanismaKurulu !== false);
+
       setKunyeAdres(kunyeData.iletisim?.adres || kunyeData.adres || 'PİKAM Genel Merkezi, Ankara / Türkiye');
+      setKunyeShowAdres(kunyeData.showAdres !== false);
+
       setKunyeTelefon(kunyeData.iletisim?.telefon || kunyeData.telefon || '+90 (312) 400 00 00');
+      setKunyeShowTelefon(kunyeData.showTelefon !== false);
+
       setKunyeEposta(kunyeData.iletisim?.eposta || kunyeData.eposta || 'info@pikamdergi.com');
+      setKunyeShowEposta(kunyeData.showEposta !== false);
+
       setKunyeWeb(kunyeData.iletisim?.web || kunyeData.web || 'www.pikamtr.com');
+      setKunyeShowWeb(kunyeData.showWeb !== false);
     }
   }, [kunyeData]);
 
@@ -443,15 +477,31 @@ export default function AdminPanel({
 
   const handleSaveKunyeForm = (e) => {
     e.preventDefault();
+
     const updatedKunye = {
       yayinSahibi: kunyeSahip,
       imtiyazSahibi: kunyeSahip,
+      showYayinSahibi: kunyeShowSahip,
+
       yayinYonetmeni: kunyeYonetmen,
       genelYayinYonetmeni: kunyeYonetmen,
+      showYayinYonetmeni: kunyeShowYonetmen,
+
       sorumluYaziIsleri: kunyeEditor,
       editor: kunyeEditor,
+      showSorumluYaziIsleri: kunyeShowEditor,
+
       grafikTasarim: kunyeGrafik,
-      akademikDanismaKurulu: kunyeDanisma.split(',').map(s => s.trim()).filter(Boolean),
+      showGrafikTasarim: kunyeShowGrafik,
+
+      akademikDanismaKurulu: kunyeDanisma ? kunyeDanisma.split(',').map(s => s.trim()).filter(Boolean) : [],
+      showAkademikDanismaKurulu: kunyeShowDanisma,
+
+      showAdres: kunyeShowAdres,
+      showTelefon: kunyeShowTelefon,
+      showEposta: kunyeShowEposta,
+      showWeb: kunyeShowWeb,
+
       iletisim: {
         adres: kunyeAdres,
         telefon: kunyeTelefon,
@@ -461,7 +511,7 @@ export default function AdminPanel({
     };
 
     if (onUpdateKunye) onUpdateKunye(updatedKunye);
-    setSuccessMsg('PİKAM Dergi Künye ve Kurumsal Bilgileri başarıyla güncellendi ve sitede yayına alındı!');
+    setSuccessMsg('✓ PİKAM Dergi Künye ve Kurumsal Bilgileri başarıyla güncellendi ve buluta kaydedildi!');
     setTimeout(() => setSuccessMsg(''), 7000);
   };
 
@@ -1649,41 +1699,67 @@ export default function AdminPanel({
             </p>
 
             <form onSubmit={handleSaveKunyeForm} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              
+              {/* YAYIN SAHİBİ */}
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>YAYIN / İMTİYAZ SAHİBİ *</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b' }}>YAYIN / İMTİYAZ SAHİBİ</label>
+                  <label style={{ fontSize: '0.8rem', color: kunyeShowSahip ? '#0284c7' : '#94a3b8', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <input type="checkbox" checked={kunyeShowSahip} onChange={(e) => setKunyeShowSahip(e.target.checked)} />
+                    <span>{kunyeShowSahip ? 'Sitede Açık' : 'Sitede Gizli'}</span>
+                  </label>
+                </div>
                 <input 
                   type="text" 
                   value={kunyeSahip} 
                   onChange={(e) => setKunyeSahip(e.target.value)} 
-                  required
                   style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                 />
               </div>
 
+              {/* GENEL YAYIN YÖNETMENİ */}
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>GENEL YAYIN YÖNETMENİ *</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b' }}>GENEL YAYIN YÖNETMENİ</label>
+                  <label style={{ fontSize: '0.8rem', color: kunyeShowYonetmen ? '#0284c7' : '#94a3b8', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <input type="checkbox" checked={kunyeShowYonetmen} onChange={(e) => setKunyeShowYonetmen(e.target.checked)} />
+                    <span>{kunyeShowYonetmen ? 'Sitede Açık' : 'Sitede Gizli'}</span>
+                  </label>
+                </div>
                 <input 
                   type="text" 
                   value={kunyeYonetmen} 
                   onChange={(e) => setKunyeYonetmen(e.target.value)} 
-                  required
                   style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                 />
               </div>
 
+              {/* SORUMLU YAZI İŞLERİ MÜDÜRÜ */}
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>SORUMLU YAZI İŞLERİ MÜDÜRÜ / EDITÖR *</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b' }}>SORUMLU YAZI İŞLERİ MÜDÜRÜ / EDİTÖR</label>
+                  <label style={{ fontSize: '0.8rem', color: kunyeShowEditor ? '#0284c7' : '#94a3b8', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <input type="checkbox" checked={kunyeShowEditor} onChange={(e) => setKunyeShowEditor(e.target.checked)} />
+                    <span>{kunyeShowEditor ? 'Sitede Açık' : 'Sitede Gizli'}</span>
+                  </label>
+                </div>
                 <input 
                   type="text" 
                   value={kunyeEditor} 
                   onChange={(e) => setKunyeEditor(e.target.value)} 
-                  required
                   style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                 />
               </div>
 
+              {/* TASARIM VE GRAFİK MİMARİSİ */}
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>TASARIM VE GRAFİK MİMARİSİ</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b' }}>TASARIM VE GRAFİK MİMARİSİ</label>
+                  <label style={{ fontSize: '0.8rem', color: kunyeShowGrafik ? '#0284c7' : '#94a3b8', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <input type="checkbox" checked={kunyeShowGrafik} onChange={(e) => setKunyeShowGrafik(e.target.checked)} />
+                    <span>{kunyeShowGrafik ? 'Sitede Açık' : 'Sitede Gizli'}</span>
+                  </label>
+                </div>
                 <input 
                   type="text" 
                   value={kunyeGrafik} 
@@ -1692,19 +1768,35 @@ export default function AdminPanel({
                 />
               </div>
 
-              <div style={{ gridColumn: 'span 2' }}>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>AKADEMİK DANIŞMA VE HAKEM KURULU (Virgülle Ayırın)</label>
+              {/* AKADEMİK DANIŞMA VE HAKEM KURULU (SHOW/HIDE TOGGLE) */}
+              <div style={{ gridColumn: 'span 2', background: '#e0f2fe', padding: '16px 20px', borderRadius: '8px', border: '1px solid #bae6fd' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ fontSize: '0.88rem', fontWeight: '800', color: '#0369a1' }}>AKADEMİK DANIŞMA VE HAKEM KURULU (Virgülle Ayırın)</label>
+                  <label style={{ fontSize: '0.85rem', color: '#0f172a', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', background: '#ffffff', padding: '4px 10px', borderRadius: '6px', border: '1px solid #bae6fd' }}>
+                    <input type="checkbox" checked={kunyeShowDanisma} onChange={(e) => setKunyeShowDanisma(e.target.checked)} />
+                    <span style={{ color: kunyeShowDanisma ? '#16a34a' : '#dc2626' }}>
+                      {kunyeShowDanisma ? '✓ SİTEDE YAYINLANIYOR (AÇIK)' : '✕ SİTEDE GİZLENDİ (KAPALI)'}
+                    </span>
+                  </label>
+                </div>
                 <input 
                   type="text" 
                   value={kunyeDanisma} 
                   onChange={(e) => setKunyeDanisma(e.target.value)} 
                   placeholder="Prof. Dr. Ahmet Yılmaz, Dr. Murat Karahan, Zeynep Demir"
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', background: '#ffffff' }}
                 />
               </div>
 
+              {/* ADRES */}
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>ADRES</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b' }}>ADRES</label>
+                  <label style={{ fontSize: '0.8rem', color: kunyeShowAdres ? '#0284c7' : '#94a3b8', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <input type="checkbox" checked={kunyeShowAdres} onChange={(e) => setKunyeShowAdres(e.target.checked)} />
+                    <span>{kunyeShowAdres ? 'Sitede Açık' : 'Sitede Gizli'}</span>
+                  </label>
+                </div>
                 <input 
                   type="text" 
                   value={kunyeAdres} 
@@ -1713,8 +1805,15 @@ export default function AdminPanel({
                 />
               </div>
 
+              {/* TELEFON NUMARASI */}
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>TELEFON NUMARASI</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b' }}>TELEFON NUMARASI</label>
+                  <label style={{ fontSize: '0.8rem', color: kunyeShowTelefon ? '#0284c7' : '#94a3b8', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <input type="checkbox" checked={kunyeShowTelefon} onChange={(e) => setKunyeShowTelefon(e.target.checked)} />
+                    <span>{kunyeShowTelefon ? 'Sitede Açık' : 'Sitede Gizli'}</span>
+                  </label>
+                </div>
                 <input 
                   type="text" 
                   value={kunyeTelefon} 
@@ -1723,8 +1822,15 @@ export default function AdminPanel({
                 />
               </div>
 
+              {/* E-POSTA ADRESİ */}
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>E-POSTA ADRESİ</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b' }}>E-POSTA ADRESİ</label>
+                  <label style={{ fontSize: '0.8rem', color: kunyeShowEposta ? '#0284c7' : '#94a3b8', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <input type="checkbox" checked={kunyeShowEposta} onChange={(e) => setKunyeShowEposta(e.target.checked)} />
+                    <span>{kunyeShowEposta ? 'Sitede Açık' : 'Sitede Gizli'}</span>
+                  </label>
+                </div>
                 <input 
                   type="text" 
                   value={kunyeEposta} 
@@ -1733,8 +1839,15 @@ export default function AdminPanel({
                 />
               </div>
 
+              {/* WEB ADRESİ */}
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>WEB ADRESİ</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b' }}>WEB ADRESİ</label>
+                  <label style={{ fontSize: '0.8rem', color: kunyeShowWeb ? '#0284c7' : '#94a3b8', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <input type="checkbox" checked={kunyeShowWeb} onChange={(e) => setKunyeShowWeb(e.target.checked)} />
+                    <span>{kunyeShowWeb ? 'Sitede Açık' : 'Sitede Gizli'}</span>
+                  </label>
+                </div>
                 <input 
                   type="text" 
                   value={kunyeWeb} 
