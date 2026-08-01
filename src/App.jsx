@@ -845,6 +845,8 @@ export default function App() {
         onOpenKunye={() => setIsKunyeOpen(true)}
       />
 
+      <Header />
+
       <Navbar 
         activeCategory={activeCategory}
         onSelectCategory={(cat) => setActiveCategory(cat)}

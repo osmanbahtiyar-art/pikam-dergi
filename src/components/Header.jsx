@@ -4,15 +4,15 @@ import { ExternalLink } from 'lucide-react';
 
 export default function Header() {
   return (
-    <header className="site-header">
-      <div className="container header-brand header-brand-inner" style={{ flexWrap: 'wrap', gap: '28px', justifyContent: 'center' }}>
+    <header className="site-header" style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '22px 0 18px 0' }}>
+      <div className="container header-brand-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '32px', flexWrap: 'wrap' }}>
         {/* LOGO 1: Modern Blue 'P' Emblem Icon */}
         <a href="https://www.pikamtr.com/" target="_blank" rel="noreferrer" title="PİKAM Ana Web Sitesine Git (pikamtr.com)" style={{ display: 'flex', alignItems: 'center' }}>
           <img 
             src="/pikam_blue_emblem.png" 
             alt="PİKAM Kurumsal Amblem" 
             className="header-logo-img"
-            style={{ width: '85px', height: '85px', objectFit: 'contain' }}
+            style={{ width: '90px', height: '90px', objectFit: 'contain', transition: 'transform 0.3s ease' }}
           />
         </a>
 
@@ -22,11 +22,11 @@ export default function Header() {
             <img 
               src="/pikam_blue_logotype.png" 
               alt="PİKAM Politik ve İktisadi Araştırma Merkezi" 
-              style={{ maxHeight: '72px', width: 'auto', objectFit: 'contain', marginBottom: '8px' }}
+              style={{ maxHeight: '80px', width: 'auto', objectFit: 'contain', marginBottom: '6px' }}
             />
           </a>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '2px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '4px' }}>
             <a 
               href="https://www.pikamtr.com/" 
               target="_blank" 
