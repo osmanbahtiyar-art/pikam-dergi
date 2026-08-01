@@ -193,6 +193,38 @@ export default function App() {
     ];
   });
 
+  // Dynamic Header & Footer CMS State
+  const [headerData, setHeaderData] = useState(() => {
+    const saved = localStorage.getItem('pikam_header_data');
+    return saved ? JSON.parse(saved) : {
+      showSiteHeader: true,
+      emblemUrl: '/pikam_blue_emblem.png',
+      logotypeUrl: '/pikam_blue_logotype.png',
+      showEmblem: true,
+      showLogotype: true,
+      title: 'PİKAM DERGİ',
+      fullTitle: 'Politik ve İktisadi Araştırmalar Merkezi',
+      tagline: 'Küresel Jeopolitik, İktisadi Stratejiler ve Politika Analizleri',
+      issn: 'ISSN 2717-9842 | Yıl: 7 | Sayı: 74 | Temmuz 2026',
+      portalUrl: 'https://www.pikamtr.com/',
+      portalLabel: 'pikamtr.com'
+    };
+  });
+
+  const [footerData, setFooterData] = useState(() => {
+    const saved = localStorage.getItem('pikam_footer_data');
+    return saved ? JSON.parse(saved) : {
+      showSiteFooter: true,
+      logoUrl: '/pikam_logo.png',
+      title: 'PİKAM DERGİ',
+      description: 'Politik ve İktisadi Araştırmalar Merkezi (PİKAM) bağımsız, akademik ve stratejik düşünce kuruluşu dijital yayın organıdır.',
+      portalUrl: 'https://www.pikamtr.com/',
+      portalLabel: 'Merkez Portalı: www.pikamtr.com',
+      issnText: 'ISSN: 2717-9842 | Ankara, Türkiye',
+      copyrightText: '© 2026 PİKAM - Politik ve İktisadi Araştırmalar Merkezi (pikamtr.com). Tüm Hakları Saklıdır.'
+    };
+  });
+
   const [isAdmin, setIsAdmin] = useState(false);
 
   // REAL-TIME INSTANT SYNCHRONIZATION FUNCTION (SUPABASE CLOUD AS SINGLE SOURCE OF TRUTH)
@@ -272,6 +304,18 @@ export default function App() {
         if (kunyeSetting && kunyeSetting.data) {
           setKunyeData(kunyeSetting.data);
           localStorage.setItem('pikam_kunye_data', JSON.stringify(kunyeSetting.data));
+        }
+
+        const headerSetting = cloudSettings.find(s => s.id === 'header_data');
+        if (headerSetting && headerSetting.data) {
+          setHeaderData(headerSetting.data);
+          localStorage.setItem('pikam_header_data', JSON.stringify(headerSetting.data));
+        }
+
+        const footerSetting = cloudSettings.find(s => s.id === 'footer_data');
+        if (footerSetting && footerSetting.data) {
+          setFooterData(footerSetting.data);
+          localStorage.setItem('pikam_footer_data', JSON.stringify(footerSetting.data));
         }
 
         const notesSetting = cloudSettings.find(s => s.id === 'admin_notes_list');
@@ -755,6 +799,26 @@ export default function App() {
     handleSaveNotesCloud(updated);
   };
 
+  const handleUpdateHeaderData = async (updatedHeader) => {
+    setHeaderData(updatedHeader);
+    localStorage.setItem('pikam_header_data', JSON.stringify(updatedHeader));
+    try {
+      await supabase.from('site_settings').upsert([{ id: 'header_data', data: updatedHeader }]);
+    } catch (err) {
+      console.log('Supabase header sync notice:', err);
+    }
+  };
+
+  const handleUpdateFooterData = async (updatedFooter) => {
+    setFooterData(updatedFooter);
+    localStorage.setItem('pikam_footer_data', JSON.stringify(updatedFooter));
+    try {
+      await supabase.from('site_settings').upsert([{ id: 'footer_data', data: updatedFooter }]);
+    } catch (err) {
+      console.log('Supabase footer sync notice:', err);
+    }
+  };
+
   const handleForcePushCloudAll = async () => {
     try {
       console.log('☁️ Pushing ALL local state to Supabase Cloud Database...');
@@ -777,7 +841,9 @@ export default function App() {
         { id: 'nav_visibility', data: navVisibility },
         { id: 'kunye_data', data: kunyeData },
         { id: 'admin_notes_list', data: adminNotesList },
-        { id: 'authors_ordered_list', data: authorsList }
+        { id: 'authors_ordered_list', data: authorsList },
+        { id: 'header_data', data: headerData },
+        { id: 'footer_data', data: footerData }
       ]);
 
       await fetchAndMergeCloudData();
@@ -829,6 +895,10 @@ export default function App() {
         onUpdateNote={handleUpdateNote}
         onToggleCompleteNote={handleToggleCompleteNote}
         onDeleteNote={handleDeleteNote}
+        headerData={headerData}
+        onUpdateHeaderData={handleUpdateHeaderData}
+        footerData={footerData}
+        onUpdateFooterData={handleUpdateFooterData}
         onForceSyncCloud={handleForcePushCloudAll}
       />
     );
@@ -843,6 +913,11 @@ export default function App() {
         onLogoutUser={handleLogoutUser}
         onOpenSearch={() => setIsSearchOpen(true)}
         onOpenKunye={() => setIsKunyeOpen(true)}
+      />
+
+      <Header 
+        headerData={headerData}
+        sectionVisibility={sectionVisibility}
       />
 
       <Navbar 
@@ -890,12 +965,12 @@ export default function App() {
         )}
       </main>
 
-      <Header />
-
       <Footer 
         onSelectCategory={(cat) => setActiveCategory(cat)}
         onOpenKunye={() => setIsKunyeOpen(true)}
         onScrollToEDergi={scrollToEDergi}
+        footerData={footerData}
+        sectionVisibility={sectionVisibility}
       />
 
       {/* MODAL OVERLAYS */}

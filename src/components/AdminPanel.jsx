@@ -15,6 +15,8 @@ export default function AdminPanel({
   kunyeData = {}, onUpdateKunye,
   allCommentsList = [], onDeleteComment,
   adminNotesList = [], onAddNote, onUpdateNote, onToggleCompleteNote, onDeleteNote,
+  headerData = {}, onUpdateHeaderData,
+  footerData = {}, onUpdateFooterData,
   onForceSyncCloud
 }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -25,6 +27,54 @@ export default function AdminPanel({
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSyncingAll, setIsSyncingAll] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Header CMS Form State
+  const [headerEmblemUrl, setHeaderEmblemUrl] = useState(headerData.emblemUrl || '/pikam_blue_emblem.png');
+  const [headerLogotypeUrl, setHeaderLogotypeUrl] = useState(headerData.logotypeUrl || '/pikam_blue_logotype.png');
+  const [headerShowEmblem, setHeaderShowEmblem] = useState(headerData.showEmblem !== false);
+  const [headerShowLogotype, setHeaderShowLogotype] = useState(headerData.showLogotype !== false);
+  const [headerTitle, setHeaderTitle] = useState(headerData.title || 'PİKAM DERGİ');
+  const [headerFullTitle, setHeaderFullTitle] = useState(headerData.fullTitle || 'Politik ve İktisadi Araştırmalar Merkezi');
+  const [headerTagline, setHeaderTagline] = useState(headerData.tagline || 'Küresel Jeopolitik, İktisadi Stratejiler ve Politika Analizleri');
+  const [headerIssn, setHeaderIssn] = useState(headerData.issn || 'ISSN 2717-9842 | Yıl: 7 | Sayı: 74 | Temmuz 2026');
+  const [headerPortalUrl, setHeaderPortalUrl] = useState(headerData.portalUrl || 'https://www.pikamtr.com/');
+  const [headerPortalLabel, setHeaderPortalLabel] = useState(headerData.portalLabel || 'pikamtr.com');
+
+  // Footer CMS Form State
+  const [footerLogoUrl, setFooterLogoUrl] = useState(footerData.logoUrl || '/pikam_logo.png');
+  const [footerTitle, setFooterTitle] = useState(footerData.title || 'PİKAM DERGİ');
+  const [footerDescription, setFooterDescription] = useState(footerData.description || 'Politik ve İktisadi Araştırmalar Merkezi (PİKAM) bağımsız, akademik ve stratejik düşünce kuruluşu dijital yayın organıdır.');
+  const [footerPortalUrl, setFooterPortalUrl] = useState(footerData.portalUrl || 'https://www.pikamtr.com/');
+  const [footerPortalLabel, setFooterPortalLabel] = useState(footerData.portalLabel || 'Merkez Portalı: www.pikamtr.com');
+  const [footerIssnText, setFooterIssnText] = useState(footerData.issnText || 'ISSN: 2717-9842 | Ankara, Türkiye');
+  const [footerCopyrightText, setFooterCopyrightText] = useState(footerData.copyrightText || '© 2026 PİKAM - Politik ve İktisadi Araştırmalar Merkezi (pikamtr.com). Tüm Hakları Saklıdır.');
+
+  useEffect(() => {
+    if (headerData) {
+      setHeaderEmblemUrl(headerData.emblemUrl || '/pikam_blue_emblem.png');
+      setHeaderLogotypeUrl(headerData.logotypeUrl || '/pikam_blue_logotype.png');
+      setHeaderShowEmblem(headerData.showEmblem !== false);
+      setHeaderShowLogotype(headerData.showLogotype !== false);
+      setHeaderTitle(headerData.title || 'PİKAM DERGİ');
+      setHeaderFullTitle(headerData.fullTitle || 'Politik ve İktisadi Araştırmalar Merkezi');
+      setHeaderTagline(headerData.tagline || 'Küresel Jeopolitik, İktisadi Stratejiler ve Politika Analizleri');
+      setHeaderIssn(headerData.issn || 'ISSN 2717-9842 | Yıl: 7 | Sayı: 74 | Temmuz 2026');
+      setHeaderPortalUrl(headerData.portalUrl || 'https://www.pikamtr.com/');
+      setHeaderPortalLabel(headerData.portalLabel || 'pikamtr.com');
+    }
+  }, [headerData]);
+
+  useEffect(() => {
+    if (footerData) {
+      setFooterLogoUrl(footerData.logoUrl || '/pikam_logo.png');
+      setFooterTitle(footerData.title || 'PİKAM DERGİ');
+      setFooterDescription(footerData.description || 'Politik ve İktisadi Araştırmalar Merkezi (PİKAM) bağımsız, akademik ve stratejik düşünce kuruluşu dijital yayın organıdır.');
+      setFooterPortalUrl(footerData.portalUrl || 'https://www.pikamtr.com/');
+      setFooterPortalLabel(footerData.portalLabel || 'Merkez Portalı: www.pikamtr.com');
+      setFooterIssnText(footerData.issnText || 'ISSN: 2717-9842 | Ankara, Türkiye');
+      setFooterCopyrightText(footerData.copyrightText || '© 2026 PİKAM - Politik ve İktisadi Araştırmalar Merkezi (pikamtr.com). Tüm Hakları Saklıdır.');
+    }
+  }, [footerData]);
 
   // Admin Notes & Todo Form State
   const [editingNoteId, setEditingNoteId] = useState(null);
@@ -753,6 +803,14 @@ export default function AdminPanel({
           </button>
 
           <button 
+            onClick={() => setActiveTab('header_footer')} 
+            style={{ background: activeTab === 'header_footer' ? '#0b132b' : '#ffffff', color: activeTab === 'header_footer' ? '#ffffff' : '#475569', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Layout size={15} color={activeTab === 'header_footer' ? '#38bdf8' : '#6366f1'} />
+            <span>Header & Footer (Üst ve Alt Yönetimi)</span>
+          </button>
+
+          <button 
             onClick={() => { setActiveTab('makale'); cancelEditArticle(); }} 
             style={{ background: activeTab === 'makale' ? '#0b132b' : '#ffffff', color: activeTab === 'makale' ? '#ffffff' : '#475569', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
@@ -760,6 +818,383 @@ export default function AdminPanel({
             <span>Yeni Makale Ekle</span>
           </button>
         </div>
+
+        {/* TAB: HEADER & FOOTER YÖNETİMİ (ÜST VE ALT ALAN DÜZENLEME & GİZLEME) */}
+        {activeTab === 'header_footer' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            
+            {/* 1. KISIM: ÜST HEADER BÖLÜMÜ YÖNETİMİ */}
+            <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid #f1f5f9' }}>
+                <div>
+                  <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0b132b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Layout size={22} color="#0284c7" />
+                    <span>SİTE ÜSTÜ (HEADER) LOGO VE METİN YÖNETİMİ</span>
+                  </h2>
+                  <p style={{ color: '#64748b', fontSize: '0.88rem', margin: '4px 0 0 0' }}>
+                    Web sitenizin en üstündeki amblem logosunu, tipografi logosunu, yazıları ve görünürlük ayarlarını buradan yönetebilirsiniz.
+                  </p>
+                </div>
+
+                {/* SHOW/HIDE HEADER TOGGLE SWITCH */}
+                <button 
+                  onClick={() => {
+                    const newStatus = sectionVisibility.showSiteHeader === false ? true : false;
+                    if (onToggleSection) onToggleSection('showSiteHeader');
+                    setSuccessMsg(`Site Üst Header Bölümü ${newStatus ? 'GÖSTERİLDİ' : 'GİZLENDİ'}`);
+                    setTimeout(() => setSuccessMsg(''), 5000);
+                  }}
+                  style={{ background: sectionVisibility.showSiteHeader !== false ? '#dcfce7' : '#fef2f2', color: sectionVisibility.showSiteHeader !== false ? '#15803d' : '#dc2626', border: `1px solid ${sectionVisibility.showSiteHeader !== false ? '#86efac' : '#fca5a5'}`, padding: '10px 18px', borderRadius: '6px', fontSize: '0.88rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  {sectionVisibility.showSiteHeader !== false ? <Eye size={16} /> : <EyeOff size={16} />}
+                  <span>{sectionVisibility.showSiteHeader !== false ? 'HEADER SİTEDE YAYINDA (GİZLE)' : 'HEADER SİTEDE GİZLİ (GÖSTER)'}</span>
+                </button>
+              </div>
+
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (onUpdateHeaderData) {
+                  await onUpdateHeaderData({
+                    showSiteHeader: sectionVisibility.showSiteHeader !== false,
+                    emblemUrl: headerEmblemUrl,
+                    logotypeUrl: headerLogotypeUrl,
+                    showEmblem: headerShowEmblem,
+                    showLogotype: headerShowLogotype,
+                    title: headerTitle,
+                    fullTitle: headerFullTitle,
+                    tagline: headerTagline,
+                    issn: headerIssn,
+                    portalUrl: headerPortalUrl,
+                    portalLabel: headerPortalLabel
+                  });
+                }
+                setSuccessMsg('✓ Site Üst Header Logo ve Metin Ayarları başarıyla buluta kaydedildi!');
+                setTimeout(() => setSuccessMsg(''), 5000);
+              }} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                
+                {/* LOGO GÖRSELLERİ VE GÖRÜNÜRLÜK */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  
+                  {/* EMBLEM LOGO */}
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>1. SOL AMBLEM LOGO GÖRSELİ</label>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      {headerEmblemUrl && <img src={headerEmblemUrl} alt="Emblem Preview" style={{ width: '50px', height: '50px', objectFit: 'contain', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '4px' }} />}
+                      <input 
+                        type="text" 
+                        value={headerEmblemUrl} 
+                        onChange={(e) => setHeaderEmblemUrl(e.target.value)} 
+                        placeholder="/pikam_blue_emblem.png veya görsel URL adresi"
+                        style={{ flex: 1, padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                      />
+                    </div>
+                    
+                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const url = await processPermanentImage(file);
+                            if (url) setHeaderEmblemUrl(url);
+                          }
+                        }}
+                        id="emblem-upload"
+                        style={{ display: 'none' }}
+                      />
+                      <label htmlFor="emblem-upload" style={{ background: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd', padding: '6px 12px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                        <Upload size={13} /> Bilgisayardan Yeni Amblem Yükle
+                      </label>
+
+                      <label style={{ fontSize: '0.82rem', color: '#334155', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <input type="checkbox" checked={headerShowEmblem} onChange={(e) => setHeaderShowEmblem(e.target.checked)} />
+                        <span>Amblemi Göster</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* LOGOTYPE LOGO */}
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>2. ORTA TİPOGRAFİ LOGO GÖRSELİ</label>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      {headerLogotypeUrl && <img src={headerLogotypeUrl} alt="Logotype Preview" style={{ maxHeight: '50px', maxWidth: '120px', objectFit: 'contain', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '4px' }} />}
+                      <input 
+                        type="text" 
+                        value={headerLogotypeUrl} 
+                        onChange={(e) => setHeaderLogotypeUrl(e.target.value)} 
+                        placeholder="/pikam_blue_logotype.png veya görsel URL adresi"
+                        style={{ flex: 1, padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const url = await processPermanentImage(file);
+                            if (url) setHeaderLogotypeUrl(url);
+                          }
+                        }}
+                        id="logotype-upload"
+                        style={{ display: 'none' }}
+                      />
+                      <label htmlFor="logotype-upload" style={{ background: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd', padding: '6px 12px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                        <Upload size={13} /> Bilgisayardan Tipografi Logo Yükle
+                      </label>
+
+                      <label style={{ fontSize: '0.82rem', color: '#334155', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <input type="checkbox" checked={headerShowLogotype} onChange={(e) => setHeaderShowLogotype(e.target.checked)} />
+                        <span>Tipografi Logoyu Göster</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* YAZILAR VE BAŞLIKLAR */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>SİTE BAŞLIĞI</label>
+                    <input 
+                      type="text" 
+                      value={headerTitle} 
+                      onChange={(e) => setHeaderTitle(e.target.value)} 
+                      placeholder="PİKAM DERGİ" 
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>KURUMSAL İSİM / ALT BAŞLIK</label>
+                    <input 
+                      type="text" 
+                      value={headerFullTitle} 
+                      onChange={(e) => setHeaderFullTitle(e.target.value)} 
+                      placeholder="Politik ve İktisadi Araştırmalar Merkezi" 
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>YAYIN SLOGANI / MOTTO</label>
+                    <input 
+                      type="text" 
+                      value={headerTagline} 
+                      onChange={(e) => setHeaderTagline(e.target.value)} 
+                      placeholder="Küresel Jeopolitik, İktisadi Stratejiler ve Politika Analizleri" 
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>ISSN VEYA YAYIN BİLGİSİ</label>
+                    <input 
+                      type="text" 
+                      value={headerIssn} 
+                      onChange={(e) => setHeaderIssn(e.target.value)} 
+                      placeholder="ISSN 2717-9842 | Yıl: 7 | Sayı: 74 | Temmuz 2026" 
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>PORTAL LİNKİ (URL)</label>
+                    <input 
+                      type="url" 
+                      value={headerPortalUrl} 
+                      onChange={(e) => setHeaderPortalUrl(e.target.value)} 
+                      placeholder="https://www.pikamtr.com/" 
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>PORTAL BUTON ETİKETİ</label>
+                    <input 
+                      type="text" 
+                      value={headerPortalLabel} 
+                      onChange={(e) => setHeaderPortalLabel(e.target.value)} 
+                      placeholder="pikamtr.com" 
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  type="submit" 
+                  style={{ background: '#0284c7', color: 'white', padding: '12px 24px', borderRadius: '6px', fontWeight: '700', fontSize: '0.9rem', border: 'none', cursor: 'pointer', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <CheckCircle2 size={16} />
+                  <span>ÜST HEADER AYARLARINI KAYDET VE BULUTA İŞLE</span>
+                </button>
+              </form>
+            </div>
+
+
+            {/* 2. KISIM: ALT FOOTER BÖLÜMÜ YÖNETİMİ */}
+            <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid #f1f5f9' }}>
+                <div>
+                  <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0b132b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Layout size={22} color="#0f172a" />
+                    <span>SİTE ALTI (FOOTER) LOGO VE METİN YÖNETİMİ</span>
+                  </h2>
+                  <p style={{ color: '#64748b', fontSize: '0.88rem', margin: '4px 0 0 0' }}>
+                    Web sitenizin alt kısmındaki logo, hakkımızda metni, portal linkleri ve telif hakkı yazılarını buradan düzenleyebilirsiniz.
+                  </p>
+                </div>
+
+                {/* SHOW/HIDE FOOTER TOGGLE SWITCH */}
+                <button 
+                  onClick={() => {
+                    const newStatus = sectionVisibility.showSiteFooter === false ? true : false;
+                    if (onToggleSection) onToggleSection('showSiteFooter');
+                    setSuccessMsg(`Site Alt Footer Bölümü ${newStatus ? 'GÖSTERİLDİ' : 'GİZLENDİ'}`);
+                    setTimeout(() => setSuccessMsg(''), 5000);
+                  }}
+                  style={{ background: sectionVisibility.showSiteFooter !== false ? '#dcfce7' : '#fef2f2', color: sectionVisibility.showSiteFooter !== false ? '#15803d' : '#dc2626', border: `1px solid ${sectionVisibility.showSiteFooter !== false ? '#86efac' : '#fca5a5'}`, padding: '10px 18px', borderRadius: '6px', fontSize: '0.88rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  {sectionVisibility.showSiteFooter !== false ? <Eye size={16} /> : <EyeOff size={16} />}
+                  <span>{sectionVisibility.showSiteFooter !== false ? 'FOOTER SİTEDE YAYINDA (GİZLE)' : 'FOOTER SİTEDE GİZLİ (GÖSTER)'}</span>
+                </button>
+              </div>
+
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (onUpdateFooterData) {
+                  await onUpdateFooterData({
+                    showSiteFooter: sectionVisibility.showSiteFooter !== false,
+                    logoUrl: footerLogoUrl,
+                    title: footerTitle,
+                    description: footerDescription,
+                    portalUrl: footerPortalUrl,
+                    portalLabel: footerPortalLabel,
+                    issnText: footerIssnText,
+                    copyrightText: footerCopyrightText
+                  });
+                }
+                setSuccessMsg('✓ Site Alt Footer Logo ve Metin Ayarları başarıyla buluta kaydedildi!');
+                setTimeout(() => setSuccessMsg(''), 5000);
+              }} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                {/* FOOTER LOGO */}
+                <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>FOOTER AMBLEM / LOGO GÖRSELİ</label>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    {footerLogoUrl && <img src={footerLogoUrl} alt="Footer Logo Preview" style={{ width: '48px', height: '48px', objectFit: 'contain', background: '#0b132b', borderRadius: '6px', padding: '4px' }} />}
+                    <input 
+                      type="text" 
+                      value={footerLogoUrl} 
+                      onChange={(e) => setFooterLogoUrl(e.target.value)} 
+                      placeholder="/pikam_logo.png veya görsel URL adresi"
+                      style={{ flex: 1, padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    />
+                  </div>
+
+                  <div style={{ marginTop: '8px' }}>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const url = await processPermanentImage(file);
+                          if (url) setFooterLogoUrl(url);
+                        }
+                      }}
+                      id="footer-logo-upload"
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="footer-logo-upload" style={{ background: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd', padding: '6px 12px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                      <Upload size={13} /> Bilgisayardan Footer Logosu Yükle
+                    </label>
+                  </div>
+                </div>
+
+                {/* METİNLER */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>FOOTER BAŞLIĞI</label>
+                    <input 
+                      type="text" 
+                      value={footerTitle} 
+                      onChange={(e) => setFooterTitle(e.target.value)} 
+                      placeholder="PİKAM DERGİ" 
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>MERKEZ PORTALI LİNKİ (URL)</label>
+                    <input 
+                      type="url" 
+                      value={footerPortalUrl} 
+                      onChange={(e) => setFooterPortalUrl(e.target.value)} 
+                      placeholder="https://www.pikamtr.com/" 
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>PORTAL LİNK ETİKETİ</label>
+                    <input 
+                      type="text" 
+                      value={footerPortalLabel} 
+                      onChange={(e) => setFooterPortalLabel(e.target.value)} 
+                      placeholder="Merkez Portalı: www.pikamtr.com" 
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>ISSN & YERLEŞKE METNİ</label>
+                    <input 
+                      type="text" 
+                      value={footerIssnText} 
+                      onChange={(e) => setFooterIssnText(e.target.value)} 
+                      placeholder="ISSN: 2717-9842 | Ankara, Türkiye" 
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>FOOTER TANITIM / HAKKINDA METNİ</label>
+                  <textarea 
+                    rows="3" 
+                    value={footerDescription} 
+                    onChange={(e) => setFooterDescription(e.target.value)} 
+                    placeholder="Politik ve İktisadi Araştırmalar Merkezi..."
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem', fontFamily: 'inherit' }}
+                  ></textarea>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>EN ALT TELİF HAKKI (COPYRIGHT) YAZISI</label>
+                  <input 
+                    type="text" 
+                    value={footerCopyrightText} 
+                    onChange={(e) => setFooterCopyrightText(e.target.value)} 
+                    placeholder="© 2026 PİKAM - Tüm Hakları Saklıdır." 
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                </div>
+
+                <button 
+                  type="submit" 
+                  style={{ background: '#0b132b', color: 'white', padding: '12px 24px', borderRadius: '6px', fontWeight: '700', fontSize: '0.9rem', border: 'none', cursor: 'pointer', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <CheckCircle2 size={16} />
+                  <span>ALT FOOTER AYARLARINI KAYDET VE BULUTA İŞLE</span>
+                </button>
+              </form>
+            </div>
+
+          </div>
+        )}
 
         {/* TAB: YÖNETİCİ NOTLARI & YAPILACAKLAR */}
         {activeTab === 'notlar' && (
