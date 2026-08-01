@@ -225,6 +225,12 @@ export default function App() {
     };
   });
 
+  // Newsletter Subscribers State
+  const [newsletterSubscribers, setNewsletterSubscribers] = useState(() => {
+    const saved = localStorage.getItem('pikam_newsletter_subscribers');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [isAdmin, setIsAdmin] = useState(false);
 
   // REAL-TIME INSTANT SYNCHRONIZATION FUNCTION (SUPABASE CLOUD AS SINGLE SOURCE OF TRUTH)
@@ -322,6 +328,12 @@ export default function App() {
         if (notesSetting && notesSetting.data) {
           setAdminNotesList(notesSetting.data);
           localStorage.setItem('pikam_admin_notes', JSON.stringify(notesSetting.data));
+        }
+
+        const subSetting = cloudSettings.find(s => s.id === 'newsletter_subscribers');
+        if (subSetting && Array.isArray(subSetting.data)) {
+          setNewsletterSubscribers(subSetting.data);
+          localStorage.setItem('pikam_newsletter_subscribers', JSON.stringify(subSetting.data));
         }
       }
 
@@ -819,6 +831,39 @@ export default function App() {
     }
   };
 
+  const handleSubscribeNewsletter = async (email) => {
+    if (!email || !email.includes('@')) return false;
+    const cleanEmail = email.trim();
+    const existing = newsletterSubscribers.find(s => s.email.toLowerCase() === cleanEmail.toLowerCase());
+    if (existing) return true;
+
+    const newSub = {
+      id: `sub-${Date.now()}`,
+      email: cleanEmail,
+      subscribedAt: new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    };
+    const updated = [newSub, ...newsletterSubscribers];
+    setNewsletterSubscribers(updated);
+    localStorage.setItem('pikam_newsletter_subscribers', JSON.stringify(updated));
+    try {
+      await supabase.from('site_settings').upsert([{ id: 'newsletter_subscribers', data: updated }]);
+    } catch (err) {
+      console.log('Newsletter cloud sync notice:', err);
+    }
+    return true;
+  };
+
+  const handleDeleteSubscriber = async (subId) => {
+    const updated = newsletterSubscribers.filter(s => s.id !== subId);
+    setNewsletterSubscribers(updated);
+    localStorage.setItem('pikam_newsletter_subscribers', JSON.stringify(updated));
+    try {
+      await supabase.from('site_settings').upsert([{ id: 'newsletter_subscribers', data: updated }]);
+    } catch (err) {
+      console.log('Newsletter cloud sync notice:', err);
+    }
+  };
+
   const handleForcePushCloudAll = async () => {
     try {
       console.log('☁️ Pushing ALL local state to Supabase Cloud Database...');
@@ -843,7 +888,8 @@ export default function App() {
         { id: 'admin_notes_list', data: adminNotesList },
         { id: 'authors_ordered_list', data: authorsList },
         { id: 'header_data', data: headerData },
-        { id: 'footer_data', data: footerData }
+        { id: 'footer_data', data: footerData },
+        { id: 'newsletter_subscribers', data: newsletterSubscribers }
       ]);
 
       await fetchAndMergeCloudData();
@@ -899,6 +945,8 @@ export default function App() {
         onUpdateHeaderData={handleUpdateHeaderData}
         footerData={footerData}
         onUpdateFooterData={handleUpdateFooterData}
+        newsletterSubscribers={newsletterSubscribers}
+        onDeleteSubscriber={handleDeleteSubscriber}
         onForceSyncCloud={handleForcePushCloudAll}
       />
     );
@@ -971,6 +1019,7 @@ export default function App() {
         onScrollToEDergi={scrollToEDergi}
         footerData={footerData}
         sectionVisibility={sectionVisibility}
+        onSubscribeNewsletter={handleSubscribeNewsletter}
       />
 
       {/* MODAL OVERLAYS */}

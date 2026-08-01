@@ -17,6 +17,7 @@ export default function AdminPanel({
   adminNotesList = [], onAddNote, onUpdateNote, onToggleCompleteNote, onDeleteNote,
   headerData = {}, onUpdateHeaderData,
   footerData = {}, onUpdateFooterData,
+  newsletterSubscribers = [], onDeleteSubscriber,
   onForceSyncCloud
 }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -831,6 +832,14 @@ export default function AdminPanel({
           </button>
 
           <button 
+            onClick={() => setActiveTab('bulten_aboneleri')} 
+            style={{ background: activeTab === 'bulten_aboneleri' ? '#0b132b' : '#ffffff', color: activeTab === 'bulten_aboneleri' ? '#ffffff' : '#475569', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Mail size={15} color={activeTab === 'bulten_aboneleri' ? '#38bdf8' : '#0284c7'} />
+            <span>E-Bülten Aboneleri ({newsletterSubscribers.length})</span>
+          </button>
+
+          <button 
             onClick={() => { setActiveTab('makale'); cancelEditArticle(); }} 
             style={{ background: activeTab === 'makale' ? '#0b132b' : '#ffffff', color: activeTab === 'makale' ? '#ffffff' : '#475569', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
@@ -838,6 +847,89 @@ export default function AdminPanel({
             <span>Yeni Makale Ekle</span>
           </button>
         </div>
+
+        {/* TAB: E-BÜLTEN ABONELERİ (MAIL LİSTESİ) */}
+        {activeTab === 'bulten_aboneleri' && (
+          <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px', paddingBottom: '16px', borderBottom: '1px solid #f1f5f9' }}>
+              <div>
+                <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0b132b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Mail size={22} color="#0284c7" />
+                  <span>HAFTALIK E-BÜLTEN ABONE LİSTESİ ({newsletterSubscribers.length})</span>
+                </h2>
+                <p style={{ color: '#64748b', fontSize: '0.88rem', margin: '4px 0 0 0' }}>
+                  Web sitenizin altındaki E-Bülten formundan kayıt olan tüm okuyucuların e-posta adresleri burada listelenir.
+                </p>
+              </div>
+
+              {newsletterSubscribers.length > 0 && (
+                <button 
+                  onClick={() => {
+                    const allEmails = newsletterSubscribers.map(s => s.email).join(', ');
+                    navigator.clipboard.writeText(allEmails);
+                    setSuccessMsg('✓ Tüm E-Bülten e-posta adresleri panoya kopyalandı!');
+                    setTimeout(() => setSuccessMsg(''), 4000);
+                  }}
+                  style={{ background: '#0284c7', color: 'white', border: 'none', padding: '10px 18px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <Download size={15} />
+                  <span>TÜM MAİLLERİ KOPYALA ({newsletterSubscribers.length})</span>
+                </button>
+              )}
+            </div>
+
+            {newsletterSubscribers.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 20px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                <Mail size={40} color="#cbd5e1" style={{ marginBottom: '12px' }} />
+                <h3 style={{ fontSize: '1.1rem', color: '#475569', margin: '0 0 6px 0' }}>Henüz E-Bülten abonesi bulunmuyor</h3>
+                <p style={{ fontSize: '0.88rem', color: '#94a3b8', margin: 0 }}>Web sitenizdeki "HAFTALIK E-BÜLTEN" formundan kayıt olanların mailleri anında buraya eklenecektir.</p>
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+                  <thead>
+                    <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1', textAlign: 'left' }}>
+                      <th style={{ padding: '12px 16px', color: '#1e293b', fontWeight: '800' }}>#</th>
+                      <th style={{ padding: '12px 16px', color: '#1e293b', fontWeight: '800' }}>ABONE E-POSTA ADRESİ</th>
+                      <th style={{ padding: '12px 16px', color: '#1e293b', fontWeight: '800' }}>KAYIT TARİHİ</th>
+                      <th style={{ padding: '12px 16px', color: '#1e293b', fontWeight: '800', textAlign: 'right' }}>İŞLEM</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {newsletterSubscribers.map((sub, idx) => (
+                      <tr key={sub.id || idx} style={{ borderBottom: '1px solid #e2e8f0', background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: '700', color: '#64748b' }}>{idx + 1}</td>
+                        <td style={{ padding: '12px 16px', fontWeight: '700', color: '#0f172a' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#e0f2fe', color: '#0369a1', padding: '4px 12px', borderRadius: '4px' }}>
+                            <Mail size={14} /> {sub.email}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 16px', color: '#475569', fontWeight: '600' }}>
+                          {sub.subscribedAt || 'Bilinmiyor'}
+                        </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                          <button 
+                            onClick={async () => {
+                              if (window.confirm(`${sub.email} adresini bülten listesinden silmek istediğinize emin misiniz?`)) {
+                                if (onDeleteSubscriber) await onDeleteSubscriber(sub.id);
+                                setSuccessMsg('✓ Abone e-posta adresi listeden silindi.');
+                                setTimeout(() => setSuccessMsg(''), 4000);
+                              }
+                            }}
+                            style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '6px 12px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <Trash2 size={13} />
+                            <span>Sil</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* TAB: HEADER & FOOTER YÖNETİMİ (ÜST VE ALT ALAN DÜZENLEME & GİZLEME) */}
         {activeTab === 'header_footer' && (
