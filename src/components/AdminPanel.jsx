@@ -33,6 +33,9 @@ export default function AdminPanel({
   const [headerLogotypeUrl, setHeaderLogotypeUrl] = useState(headerData.logotypeUrl || '/pikam_blue_logotype.png');
   const [headerShowEmblem, setHeaderShowEmblem] = useState(headerData.showEmblem !== false);
   const [headerShowLogotype, setHeaderShowLogotype] = useState(headerData.showLogotype !== false);
+  const [headerShowPortalBadge, setHeaderShowPortalBadge] = useState(headerData.showPortalBadge !== false);
+  const [headerShowIssn, setHeaderShowIssn] = useState(headerData.showIssn !== false);
+  const [headerShowTagline, setHeaderShowTagline] = useState(headerData.showTagline !== false);
   const [headerTitle, setHeaderTitle] = useState(headerData.title || 'PİKAM DERGİ');
   const [headerFullTitle, setHeaderFullTitle] = useState(headerData.fullTitle || 'Politik ve İktisadi Araştırmalar Merkezi');
   const [headerTagline, setHeaderTagline] = useState(headerData.tagline || 'Küresel Jeopolitik, İktisadi Stratejiler ve Politika Analizleri');
@@ -55,6 +58,9 @@ export default function AdminPanel({
       setHeaderLogotypeUrl(headerData.logotypeUrl || '/pikam_blue_logotype.png');
       setHeaderShowEmblem(headerData.showEmblem !== false);
       setHeaderShowLogotype(headerData.showLogotype !== false);
+      setHeaderShowPortalBadge(headerData.showPortalBadge !== false);
+      setHeaderShowIssn(headerData.showIssn !== false);
+      setHeaderShowTagline(headerData.showTagline !== false);
       setHeaderTitle(headerData.title || 'PİKAM DERGİ');
       setHeaderFullTitle(headerData.fullTitle || 'Politik ve İktisadi Araştırmalar Merkezi');
       setHeaderTagline(headerData.tagline || 'Küresel Jeopolitik, İktisadi Stratejiler ve Politika Analizleri');
@@ -874,6 +880,9 @@ export default function AdminPanel({
                     logotypeUrl: headerLogotypeUrl,
                     showEmblem: headerShowEmblem,
                     showLogotype: headerShowLogotype,
+                    showPortalBadge: headerShowPortalBadge,
+                    showIssn: headerShowIssn,
+                    showTagline: headerShowTagline,
                     title: headerTitle,
                     fullTitle: headerFullTitle,
                     tagline: headerTagline,
@@ -882,7 +891,7 @@ export default function AdminPanel({
                     portalLabel: headerPortalLabel
                   });
                 }
-                setSuccessMsg('✓ Site Üst Header Logo ve Metin Ayarları başarıyla buluta kaydedildi!');
+                setSuccessMsg('✓ Site Kurumsal Logo ve Metin Ayarları başarıyla buluta kaydedildi!');
                 setTimeout(() => setSuccessMsg(''), 5000);
               }} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 
@@ -920,6 +929,9 @@ export default function AdminPanel({
                                 logotypeUrl: headerLogotypeUrl,
                                 showEmblem: headerShowEmblem,
                                 showLogotype: headerShowLogotype,
+                                showPortalBadge: headerShowPortalBadge,
+                                showIssn: headerShowIssn,
+                                showTagline: headerShowTagline,
                                 title: headerTitle,
                                 fullTitle: headerFullTitle,
                                 tagline: headerTagline,
@@ -979,6 +991,9 @@ export default function AdminPanel({
                                 logotypeUrl: url,
                                 showEmblem: headerShowEmblem,
                                 showLogotype: headerShowLogotype,
+                                showPortalBadge: headerShowPortalBadge,
+                                showIssn: headerShowIssn,
+                                showTagline: headerShowTagline,
                                 title: headerTitle,
                                 fullTitle: headerFullTitle,
                                 tagline: headerTagline,
@@ -1006,6 +1021,26 @@ export default function AdminPanel({
                       </label>
                     </div>
                   </div>
+                </div>
+
+                {/* ÖZEL ELEMAN GİZLEME / GÖSTERME SEÇENEKLERİ (PORTAL BUTONU, ISSN, SLOGAN) */}
+                <div style={{ background: '#e0f2fe', padding: '16px 20px', borderRadius: '8px', border: '1px solid #bae6fd', display: 'flex', gap: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.88rem', fontWeight: '800', color: '#0369a1' }}>ÖZEL ELEMAN GÖRÜNÜRLÜKLERİ:</span>
+
+                  <label style={{ fontSize: '0.85rem', color: '#0f172a', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <input type="checkbox" checked={headerShowPortalBadge} onChange={(e) => setHeaderShowPortalBadge(e.target.checked)} />
+                    <span>PİKAM Kurumsal / Portal Butonunu Göster (Sitedeki Mavi Buton)</span>
+                  </label>
+
+                  <label style={{ fontSize: '0.85rem', color: '#0f172a', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <input type="checkbox" checked={headerShowIssn} onChange={(e) => setHeaderShowIssn(e.target.checked)} />
+                    <span>ISSN ve Yayın Tarihi Bilgisini Göster</span>
+                  </label>
+
+                  <label style={{ fontSize: '0.85rem', color: '#0f172a', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <input type="checkbox" checked={headerShowTagline} onChange={(e) => setHeaderShowTagline(e.target.checked)} />
+                    <span>Slogan / Motto Yazısını Göster</span>
+                  </label>
                 </div>
 
                 {/* YAZILAR VE BAŞLIKLAR */}
@@ -1071,7 +1106,7 @@ export default function AdminPanel({
                       type="text" 
                       value={headerPortalLabel} 
                       onChange={(e) => setHeaderPortalLabel(e.target.value)} 
-                      placeholder="pikamtr.com" 
+                      placeholder="PİKAM Kurumsal" 
                       style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
                     />
                   </div>
@@ -1082,7 +1117,7 @@ export default function AdminPanel({
                   style={{ background: '#0284c7', color: 'white', padding: '12px 24px', borderRadius: '6px', fontWeight: '700', fontSize: '0.9rem', border: 'none', cursor: 'pointer', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
                   <CheckCircle2 size={16} />
-                  <span>ÜST HEADER AYARLARINI KAYDET VE BULUTA İŞLE</span>
+                  <span>KURUMSAL ALAN AYARLARINI KAYDET VE BULUTA İŞLE</span>
                 </button>
               </form>
             </div>

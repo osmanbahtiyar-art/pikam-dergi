@@ -915,11 +915,6 @@ export default function App() {
         onOpenKunye={() => setIsKunyeOpen(true)}
       />
 
-      <Header 
-        headerData={headerData}
-        sectionVisibility={sectionVisibility}
-      />
-
       <Navbar 
         activeCategory={activeCategory}
         onSelectCategory={(cat) => setActiveCategory(cat)}
@@ -964,6 +959,11 @@ export default function App() {
           />
         )}
       </main>
+
+      <Header 
+        headerData={headerData}
+        sectionVisibility={sectionVisibility}
+      />
 
       <Footer 
         onSelectCategory={(cat) => setActiveCategory(cat)}
