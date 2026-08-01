@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download, Image as ImageIcon, Newspaper, Feather, EyeOff, Settings, Edit3, Layout, X, ArrowUp, ArrowDown, MessageSquare, Compass, Info, AlignLeft, StickyNote, CheckSquare, Square, AlertCircle, Tag } from 'lucide-react';
+import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download, Image as ImageIcon, Newspaper, Feather, EyeOff, Settings, Edit3, Layout, X, ArrowUp, ArrowDown, MessageSquare, Compass, Info, AlignLeft, StickyNote, CheckSquare, Square, AlertCircle, Tag, Mail, Phone, MapPin, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 import { processPdfFile } from '../lib/pdfHelper';
