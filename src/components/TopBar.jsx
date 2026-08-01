@@ -49,11 +49,6 @@ export default function TopBar({ currentUser, onOpenAuthModal, onLogoutUser, onO
             <span>Künye & Kurumsal</span>
           </button>
 
-          <a href="/admin" className="top-auth-btn" style={{ color: '#94a3b8', textDecoration: 'none' }} title="PİKAM Dergi Yönetici Paneli Girişi">
-            <Lock size={13} />
-            <span>Yönetici Girişi</span>
-          </a>
-
           {/* USER AUTH BUTTON / PROFILE BADGE */}
           {currentUser ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '20px' }}>

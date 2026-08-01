@@ -113,9 +113,8 @@ export default function Footer({ onSelectCategory, onOpenKunye, onScrollToEDergi
         </div>
 
         {/* BOTTOM COPYRIGHT */}
-        <div style={{ paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.08)', textAlign: 'center', fontSize: '0.82rem', color: '#64748b', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+        <div style={{ paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.08)', textAlign: 'center', fontSize: '0.82rem', color: '#64748b' }}>
           <p style={{ margin: 0 }}>{fData.copyrightText || '© 2026 PİKAM - Politik ve İktisadi Araştırmalar Merkezi (pikamtr.com). Tüm Hakları Saklıdır.'}</p>
-          <a href="/admin" style={{ color: '#475569', textDecoration: 'underline', fontWeight: '600' }}>⚙️ Yönetici Paneli Girişi</a>
         </div>
       </div>
     </footer>
