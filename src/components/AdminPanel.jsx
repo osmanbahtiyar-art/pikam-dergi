@@ -2581,31 +2581,11 @@ export default function AdminPanel({
                 </div>
               </div>
 
-              {/* GOOGLE DRIVE LINK INPUT (PRIMARY & FASTEST) */}
-              <div style={{ background: '#e0f2fe', padding: '18px', borderRadius: '8px', border: '1px solid #bae6fd' }}>
-                <label style={{ fontSize: '0.9rem', fontWeight: '800', color: '#0369a1', display: 'block', marginBottom: '6px' }}>
-                  🌐 GOOGLE DRIVE DERGİ PDF LİNKİ (ÖNERİLEN KOLAY YÖNTEM) *
-                </label>
-                <input 
-                  type="text" 
-                  placeholder="Örn: https://drive.google.com/file/d/1Oz8iKf9qIGmYt4iIzm7-BSEcGOpyBq88/view?usp=sharing" 
-                  value={pdfDataUrl} 
-                  onChange={(e) => {
-                    setPdfDataUrl(e.target.value);
-                    if (!pdfFileName) setPdfFileName('Google Drive Dergi PDF');
-                  }} 
-                  style={{ width: '100%', padding: '12px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', background: '#ffffff', fontWeight: '600' }}
-                />
-                <span style={{ fontSize: '0.78rem', color: '#0284c7', marginTop: '6px', display: 'block' }}>
-                  Google Drive linkini buraya yapıştırın. Okuyucular websitenizde kapak fotoğrafına tıkladığında doğrudan Google Drive'da açılacaktır.
-                </span>
-              </div>
-
               <div>
                 <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>
-                  VEYA BİLGİSAYARDAN KENDİ PDF DOSYANIZI YÜKLEYİN (OPSİYONEL)
+                  DERGİ PDF DOSYASI (BİLGİSAYARINIZDAN SEÇİN) *
                 </label>
-                <div style={{ border: '2px dashed #cbd5e1', padding: '16px', borderRadius: '8px', background: '#f8fafc', textAlign: 'center' }}>
+                <div style={{ border: '2px dashed #cbd5e1', padding: '20px', borderRadius: '8px', background: '#f8fafc', textAlign: 'center' }}>
                   <input 
                     type="file" 
                     accept=".pdf" 
@@ -2636,10 +2616,11 @@ export default function AdminPanel({
                     id="pdf-upload"
                   />
                   <label htmlFor="pdf-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                    {isPdfProcessing ? <Loader2 size={24} className="animate-spin" color="#0284c7" /> : <Upload size={24} color="#0284c7" />}
-                    <span style={{ fontWeight: '700', color: '#0f172a', fontSize: '0.88rem' }}>
-                      {isPdfProcessing ? 'PDF Sayfaları İşleniyor...' : pdfFileName ? `Seçilen Dosya: ${pdfFileName}` : 'Bilgisayardan PDF Seçmek İçin Tıklayın'}
+                    {isPdfProcessing ? <Loader2 size={32} className="animate-spin" color="#0284c7" /> : <Upload size={32} color="#0284c7" />}
+                    <span style={{ fontWeight: '700', color: '#0f172a', fontSize: '0.95rem' }}>
+                      {isPdfProcessing ? 'PDF Sayfaları İşleniyor ve İlk Sayfa Kapak Olarak Ayarlanıyor...' : pdfFileName ? `Seçilen Dosya: ${pdfFileName}` : 'PDF Dosyası Yüklemek İçin Tıklayın (500MB Dosyalar Desteklenir)'}
                     </span>
+                    <span style={{ fontSize: '0.78rem', color: '#64748b' }}>PDF'in ilk sayfası otomatik kapak görseli yapılır ve tüm sayfalar interaktif okuyucuya aktarılır.</span>
                   </label>
                 </div>
               </div>

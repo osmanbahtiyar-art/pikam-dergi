@@ -69,24 +69,12 @@ export default function EDergiSection({ id, eDergiList, onOpenEDergiModal }) {
         <div className="e-dergi-grid">
           {issuesToDisplay.map((issue) => {
             const coverUrl = issue.coverImage || issue.coverimage || fallbackCover;
-            const pdfUrl = issue.pdfUrl || issue.pdfurl;
-            const isExternalPdf = pdfUrl && (pdfUrl.startsWith('http://') || pdfUrl.startsWith('https://'));
-
-            const handleCardClick = () => {
-              if (isExternalPdf) {
-                window.open(pdfUrl, '_blank');
-              } else {
-                onOpenEDergiModal(issue);
-              }
-            };
-
             return (
               <div 
                 key={issue.id} 
                 className="e-dergi-card"
-                onClick={handleCardClick}
+                onClick={() => onOpenEDergiModal(issue)}
                 style={{ cursor: 'pointer' }}
-                title={`${issue.monthYear} - Google Drive'da Oku / İndir`}
               >
                 <div className="e-dergi-cover-wrap">
                   <img 
@@ -100,8 +88,8 @@ export default function EDergiSection({ id, eDergiList, onOpenEDergiModal }) {
                   />
                   <div className="e-dergi-overlay">
                     <Eye size={28} />
-                    <span>{isExternalPdf ? 'DRIVE\'DA OKU / İNDİR ↗' : 'DİJİTAL SAYIYI OKU'}</span>
-                    <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>({issue.pageCount || 'PDF'} Sayfa)</span>
+                    <span>DİJİTAL SAYIYI OKU</span>
+                    <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>({issue.pageCount} Sayfa PDF)</span>
                   </div>
                 </div>
 
@@ -113,18 +101,11 @@ export default function EDergiSection({ id, eDergiList, onOpenEDergiModal }) {
                   </div>
 
                   <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (pdfUrl && pdfUrl !== '#') {
-                        window.open(pdfUrl, '_blank');
-                      } else {
-                        alert('Dergi PDF / Google Drive bağlantısı henüz yüklenmemiştir.');
-                      }
-                    }}
-                    style={{ marginTop: '12px', background: '#0284c7', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '4px', fontSize: '0.82rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%' }}
+                    onClick={(e) => handleDownloadPdf(e, issue)}
+                    style={{ marginTop: '12px', background: '#0f172a', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%' }}
                   >
-                    <Download size={14} color="#ffffff" />
-                    <span>{isExternalPdf ? 'Drive\'da İndir / Oku ↗' : 'PDF İndir'}</span>
+                    <Download size={13} color="#38bdf8" />
+                    <span>PDF İndir</span>
                   </button>
                 </div>
               </div>
