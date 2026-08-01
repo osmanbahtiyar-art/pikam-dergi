@@ -240,28 +240,42 @@ export default function AdminPanel({
 
   const processPermanentImage = async (file) => {
     if (!file) return null;
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `uploads/${fileName}`;
-
-      const { data, error } = await supabase.storage.from('pikam-images').upload(filePath, file);
-
-      if (!error && data) {
-        const { data: urlData } = supabase.storage.from('pikam-images').getPublicUrl(filePath);
-        if (urlData && urlData.publicUrl) {
-          return urlData.publicUrl;
-        }
-      }
-    } catch (err) {
-      console.log('Supabase storage fallback to Base64 Data URL:', err);
-    }
-
     return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = Math.round((width * MAX_HEIGHT) / height);
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/png', 0.9);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = () => {
+          resolve(e.target.result);
+        };
+        img.src = e.target.result;
       };
+      reader.onerror = () => resolve(null);
       reader.readAsDataURL(file);
     });
   };
@@ -896,15 +910,35 @@ export default function AdminPanel({
                         onChange={async (e) => {
                           const file = e.target.files[0];
                           if (file) {
+                            setIsPublishing(true);
                             const url = await processPermanentImage(file);
-                            if (url) setHeaderEmblemUrl(url);
+                            if (url) {
+                              setHeaderEmblemUrl(url);
+                              const updatedHeader = {
+                                showSiteHeader: sectionVisibility.showSiteHeader !== false,
+                                emblemUrl: url,
+                                logotypeUrl: headerLogotypeUrl,
+                                showEmblem: headerShowEmblem,
+                                showLogotype: headerShowLogotype,
+                                title: headerTitle,
+                                fullTitle: headerFullTitle,
+                                tagline: headerTagline,
+                                issn: headerIssn,
+                                portalUrl: headerPortalUrl,
+                                portalLabel: headerPortalLabel
+                              };
+                              if (onUpdateHeaderData) await onUpdateHeaderData(updatedHeader);
+                              setSuccessMsg('✓ Yeni Amblem Logosu başarıyla yüklendi ve buluta kaydedildi!');
+                              setTimeout(() => setSuccessMsg(''), 5000);
+                            }
+                            setIsPublishing(false);
                           }
                         }}
                         id="emblem-upload"
                         style={{ display: 'none' }}
                       />
                       <label htmlFor="emblem-upload" style={{ background: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd', padding: '6px 12px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                        <Upload size={13} /> Bilgisayardan Yeni Amblem Yükle
+                        <Upload size={13} /> {isPublishing ? 'Fotoğraf Yükleniyor...' : 'Bilgisayardan Yeni Amblem Yükle'}
                       </label>
 
                       <label style={{ fontSize: '0.82rem', color: '#334155', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -935,15 +969,35 @@ export default function AdminPanel({
                         onChange={async (e) => {
                           const file = e.target.files[0];
                           if (file) {
+                            setIsPublishing(true);
                             const url = await processPermanentImage(file);
-                            if (url) setHeaderLogotypeUrl(url);
+                            if (url) {
+                              setHeaderLogotypeUrl(url);
+                              const updatedHeader = {
+                                showSiteHeader: sectionVisibility.showSiteHeader !== false,
+                                emblemUrl: headerEmblemUrl,
+                                logotypeUrl: url,
+                                showEmblem: headerShowEmblem,
+                                showLogotype: headerShowLogotype,
+                                title: headerTitle,
+                                fullTitle: headerFullTitle,
+                                tagline: headerTagline,
+                                issn: headerIssn,
+                                portalUrl: headerPortalUrl,
+                                portalLabel: headerPortalLabel
+                              };
+                              if (onUpdateHeaderData) await onUpdateHeaderData(updatedHeader);
+                              setSuccessMsg('✓ Yeni Tipografi Logosu başarıyla yüklendi ve buluta kaydedildi!');
+                              setTimeout(() => setSuccessMsg(''), 5000);
+                            }
+                            setIsPublishing(false);
                           }
                         }}
                         id="logotype-upload"
                         style={{ display: 'none' }}
                       />
                       <label htmlFor="logotype-upload" style={{ background: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd', padding: '6px 12px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                        <Upload size={13} /> Bilgisayardan Tipografi Logo Yükle
+                        <Upload size={13} /> {isPublishing ? 'Fotoğraf Yükleniyor...' : 'Bilgisayardan Tipografi Logo Yükle'}
                       </label>
 
                       <label style={{ fontSize: '0.82rem', color: '#334155', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -1101,15 +1155,32 @@ export default function AdminPanel({
                       onChange={async (e) => {
                         const file = e.target.files[0];
                         if (file) {
+                          setIsPublishing(true);
                           const url = await processPermanentImage(file);
-                          if (url) setFooterLogoUrl(url);
+                          if (url) {
+                            setFooterLogoUrl(url);
+                            const updatedFooter = {
+                              showSiteFooter: sectionVisibility.showSiteFooter !== false,
+                              logoUrl: url,
+                              title: footerTitle,
+                              description: footerDescription,
+                              portalUrl: footerPortalUrl,
+                              portalLabel: footerPortalLabel,
+                              issnText: footerIssnText,
+                              copyrightText: footerCopyrightText
+                            };
+                            if (onUpdateFooterData) await onUpdateFooterData(updatedFooter);
+                            setSuccessMsg('✓ Yeni Footer Logosu başarıyla yüklendi ve buluta kaydedildi!');
+                            setTimeout(() => setSuccessMsg(''), 5000);
+                          }
+                          setIsPublishing(false);
                         }
                       }}
                       id="footer-logo-upload"
                       style={{ display: 'none' }}
                     />
                     <label htmlFor="footer-logo-upload" style={{ background: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd', padding: '6px 12px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                      <Upload size={13} /> Bilgisayardan Footer Logosu Yükle
+                      <Upload size={13} /> {isPublishing ? 'Fotoğraf Yükleniyor...' : 'Bilgisayardan Footer Logosu Yükle'}
                     </label>
                   </div>
                 </div>
