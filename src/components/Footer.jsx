@@ -56,29 +56,7 @@ export default function Footer({ onSelectCategory, onOpenKunye, onScrollToEDergi
             )}
           </div>
 
-          {/* KATEGORİLER */}
-          <div className="footer-links">
-            <h4>KATEGORİLER</h4>
-            <ul>
-              <li><button onClick={() => onSelectCategory('DÜNYA')}>DÜNYA</button></li>
-              <li><button onClick={() => onSelectCategory('EKONOMİ')}>EKONOMİ</button></li>
-              <li><button onClick={() => onSelectCategory('POLİTİKA')}>POLİTİKA</button></li>
-              <li><button onClick={() => onSelectCategory('STRATEJİ')}>STRATEJİ</button></li>
-              <li><button onClick={() => onSelectCategory('TEKNOLOJİ')}>TEKNOLOJİ</button></li>
-            </ul>
-          </div>
 
-          {/* KURUMSAL */}
-          <div className="footer-links">
-            <h4>KURUMSAL</h4>
-            <ul>
-              <li><a href={fData.portalUrl || "https://www.pikamtr.com/"} target="_blank" rel="noreferrer" style={{ color: '#38bdf8', fontWeight: '700' }}>PİKAM ANA WEB SİTESİ ↗</a></li>
-              <li><button onClick={onOpenKunye}>KÜNYE VE YAYIN KURULU</button></li>
-              <li><button onClick={onScrollToEDergi}>E-DERGİ ARŞİVİ</button></li>
-              <li><button onClick={onOpenKunye}>AKADEMİK HAKEM SÜRECİ</button></li>
-              <li><button onClick={onOpenKunye}>İLETİŞİM & YERLEŞKE</button></li>
-            </ul>
-          </div>
 
           {/* BÜLTEN ABONELİĞİ */}
           <div className="footer-subscribe">
