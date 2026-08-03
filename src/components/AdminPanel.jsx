@@ -43,9 +43,11 @@ export default function AdminPanel({
   const [headerShowPortalBadge, setHeaderShowPortalBadge] = useState(headerData.showPortalBadge !== false);
   const [headerShowIssn, setHeaderShowIssn] = useState(headerData.showIssn !== false);
   const [headerShowTagline, setHeaderShowTagline] = useState(headerData.showTagline !== false);
+  const [headerShowAbout, setHeaderShowAbout] = useState(headerData.showAbout !== false);
   const [headerTitle, setHeaderTitle] = useState(headerData.title || 'PİKAM DERGİ');
   const [headerFullTitle, setHeaderFullTitle] = useState(headerData.fullTitle || 'Politik ve İktisadi Araştırmalar Merkezi');
-  const [headerTagline, setHeaderTagline] = useState(headerData.tagline || 'Küresel Jeopolitik, İktisadi Stratejiler ve Politika Analizleri');
+  const [headerTagline, setHeaderTagline] = useState(headerData.tagline || 'Türkiye\'nin politik ve iktisadi geleceğine yön veren düşünce merkezi.');
+  const [headerAboutText, setHeaderAboutText] = useState(headerData.aboutText || 'PİKAM Dergi; Politik ve İktisadi Araştırmalar Merkezi bünyesinde yayınlanan, küresel jeopolitik, iktisadi stratejiler ve kamu politikaları alanında bağımsız ve akademik analizler sunan dijital yayın organıdır.');
   const [headerIssn, setHeaderIssn] = useState(headerData.issn || 'ISSN 2717-9842 | Yıl: 7 | Sayı: 74 | Temmuz 2026');
   const [headerPortalUrl, setHeaderPortalUrl] = useState(headerData.portalUrl || 'https://www.pikamtr.com/');
   const [headerPortalLabel, setHeaderPortalLabel] = useState(headerData.portalLabel || 'pikamtr.com');
@@ -68,9 +70,11 @@ export default function AdminPanel({
       setHeaderShowPortalBadge(headerData.showPortalBadge !== false);
       setHeaderShowIssn(headerData.showIssn !== false);
       setHeaderShowTagline(headerData.showTagline !== false);
+      setHeaderShowAbout(headerData.showAbout !== false);
       setHeaderTitle(headerData.title || 'PİKAM DERGİ');
       setHeaderFullTitle(headerData.fullTitle || 'Politik ve İktisadi Araştırmalar Merkezi');
-      setHeaderTagline(headerData.tagline || 'Küresel Jeopolitik, İktisadi Stratejiler ve Politika Analizleri');
+      setHeaderTagline(headerData.tagline || 'Türkiye\'nin politik ve iktisadi geleceğine yön veren düşünce merkezi.');
+      setHeaderAboutText(headerData.aboutText || 'PİKAM Dergi; Politik ve İktisadi Araştırmalar Merkezi bünyesinde yayınlanan, küresel jeopolitik, iktisadi stratejiler ve kamu politikaları alanında bağımsız ve akademik analizler sunan dijital yayın organıdır.');
       setHeaderIssn(headerData.issn || 'ISSN 2717-9842 | Yıl: 7 | Sayı: 74 | Temmuz 2026');
       setHeaderPortalUrl(headerData.portalUrl || 'https://www.pikamtr.com/');
       setHeaderPortalLabel(headerData.portalLabel || 'pikamtr.com');
@@ -1041,9 +1045,11 @@ export default function AdminPanel({
                     showPortalBadge: headerShowPortalBadge,
                     showIssn: headerShowIssn,
                     showTagline: headerShowTagline,
+                    showAbout: headerShowAbout,
                     title: headerTitle,
                     fullTitle: headerFullTitle,
                     tagline: headerTagline,
+                    aboutText: headerAboutText,
                     issn: headerIssn,
                     portalUrl: headerPortalUrl,
                     portalLabel: headerPortalLabel
@@ -1090,9 +1096,11 @@ export default function AdminPanel({
                                 showPortalBadge: headerShowPortalBadge,
                                 showIssn: headerShowIssn,
                                 showTagline: headerShowTagline,
+                                showAbout: headerShowAbout,
                                 title: headerTitle,
                                 fullTitle: headerFullTitle,
                                 tagline: headerTagline,
+                                aboutText: headerAboutText,
                                 issn: headerIssn,
                                 portalUrl: headerPortalUrl,
                                 portalLabel: headerPortalLabel
@@ -1152,9 +1160,11 @@ export default function AdminPanel({
                                 showPortalBadge: headerShowPortalBadge,
                                 showIssn: headerShowIssn,
                                 showTagline: headerShowTagline,
+                                showAbout: headerShowAbout,
                                 title: headerTitle,
                                 fullTitle: headerFullTitle,
                                 tagline: headerTagline,
+                                aboutText: headerAboutText,
                                 issn: headerIssn,
                                 portalUrl: headerPortalUrl,
                                 portalLabel: headerPortalLabel
@@ -1181,7 +1191,7 @@ export default function AdminPanel({
                   </div>
                 </div>
 
-                {/* ÖZEL ELEMAN GİZLEME / GÖSTERME SEÇENEKLERİ (PORTAL BUTONU, ISSN, SLOGAN) */}
+                {/* ÖZEL ELEMAN GİZLEME / GÖSTERME SEÇENEKLERİ (PORTAL BUTONU, ISSN, SLOGAN, HAKKIMIZDA) */}
                 <div style={{ background: '#e0f2fe', padding: '16px 20px', borderRadius: '8px', border: '1px solid #bae6fd', display: 'flex', gap: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.88rem', fontWeight: '800', color: '#0369a1' }}>ÖZEL ELEMAN GÖRÜNÜRLÜKLERİ:</span>
 
@@ -1198,6 +1208,11 @@ export default function AdminPanel({
                   <label style={{ fontSize: '0.85rem', color: '#0f172a', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <input type="checkbox" checked={headerShowTagline} onChange={(e) => setHeaderShowTagline(e.target.checked)} />
                     <span>Slogan / Motto Yazısını Göster</span>
+                  </label>
+
+                  <label style={{ fontSize: '0.85rem', color: '#0f172a', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <input type="checkbox" checked={headerShowAbout} onChange={(e) => setHeaderShowAbout(e.target.checked)} />
+                    <span>Hakkımızda / PİKAM Dergi Nedir? Açıklama Kutusu Göster</span>
                   </label>
                 </div>
 
@@ -1231,7 +1246,7 @@ export default function AdminPanel({
                       type="text" 
                       value={headerTagline} 
                       onChange={(e) => setHeaderTagline(e.target.value)} 
-                      placeholder="Küresel Jeopolitik, İktisadi Stratejiler ve Politika Analizleri" 
+                      placeholder="Türkiye'nin politik ve iktisadi geleceğine yön veren düşünce merkezi." 
                       style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
                     />
                   </div>
@@ -1245,6 +1260,17 @@ export default function AdminPanel({
                       placeholder="ISSN 2717-9842 | Yıl: 7 | Sayı: 74 | Temmuz 2026" 
                       style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
                     />
+                  </div>
+
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>HAKKIMIZDA / PİKAM DERGİ NEDİR? TANITIM METNİ</label>
+                    <textarea 
+                      rows="3"
+                      value={headerAboutText} 
+                      onChange={(e) => setHeaderAboutText(e.target.value)} 
+                      placeholder="PİKAM Dergi hakkında kısa tanıtım ve açıklama metni..." 
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem', fontFamily: 'inherit' }}
+                    ></textarea>
                   </div>
 
                   <div>
@@ -1264,7 +1290,7 @@ export default function AdminPanel({
                       type="text" 
                       value={headerPortalLabel} 
                       onChange={(e) => setHeaderPortalLabel(e.target.value)} 
-                      placeholder="PİKAM Kurumsal" 
+                      placeholder="pikamtr.com" 
                       style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
                     />
                   </div>

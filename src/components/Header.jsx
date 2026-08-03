@@ -78,6 +78,13 @@ export default function Header({ headerData, sectionVisibility = {} }) {
               {hData.tagline}
             </div>
           )}
+
+          {hData.showAbout !== false && hData.aboutText && (
+            <div className="logo-about" style={{ fontSize: '0.85rem', color: '#475569', fontWeight: '500', marginTop: '10px', lineHeight: '1.6', maxWidth: '680px', background: '#f8fafc', padding: '10px 14px', borderRadius: '6px', borderLeft: '3px solid #0284c7' }}>
+              <strong style={{ color: '#0b132b', display: 'block', marginBottom: '3px', fontSize: '0.8rem', letterSpacing: '0.5px' }}>HAKKIMIZDA / PİKAM DERGİ NEDİR?</strong>
+              {hData.aboutText}
+            </div>
+          )}
         </div>
       </div>
     </div>
