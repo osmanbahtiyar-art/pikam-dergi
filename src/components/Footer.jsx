@@ -112,11 +112,9 @@ export default function Footer({ onSelectCategory, onOpenKunye, onScrollToEDergi
 
         </div>
 
-        {/* FOOTER SOCIAL MEDIA BAR (TAKİP EDİN) */}
+        {/* FOOTER SOCIAL MEDIA BAR */}
         {headerData?.showSocials !== false && (
           <div className="footer-socials-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', marginBottom: '24px', flexWrap: 'wrap', background: 'rgba(255,255,255,0.03)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: '800', letterSpacing: '0.5px' }}>TAKİP EDİN:</span>
-            
             {headerData?.linkedinUrl && (
               <a href={headerData.linkedinUrl} target="_blank" rel="noreferrer" title="LinkedIn" style={{ color: '#38bdf8', background: 'rgba(255,255,255,0.08)', padding: '8px 10px', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: '600', textDecoration: 'none' }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
