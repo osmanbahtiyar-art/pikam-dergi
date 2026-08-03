@@ -44,6 +44,11 @@ export default function AdminPanel({
   const [headerShowIssn, setHeaderShowIssn] = useState(headerData.showIssn !== false);
   const [headerShowTagline, setHeaderShowTagline] = useState(headerData.showTagline !== false);
   const [headerShowAbout, setHeaderShowAbout] = useState(headerData.showAbout !== false);
+  const [headerShowSocials, setHeaderShowSocials] = useState(headerData.showSocials !== false);
+  const [headerLinkedinUrl, setHeaderLinkedinUrl] = useState(headerData.linkedinUrl || 'https://linkedin.com');
+  const [headerTwitterUrl, setHeaderTwitterUrl] = useState(headerData.twitterUrl || 'https://x.com');
+  const [headerInstagramUrl, setHeaderInstagramUrl] = useState(headerData.instagramUrl || 'https://instagram.com');
+  const [headerYoutubeUrl, setHeaderYoutubeUrl] = useState(headerData.youtubeUrl || 'https://youtube.com');
   const [headerTitle, setHeaderTitle] = useState(headerData.title || 'PİKAM DERGİ');
   const [headerFullTitle, setHeaderFullTitle] = useState(headerData.fullTitle || 'Politik ve İktisadi Araştırmalar Merkezi');
   const [headerTagline, setHeaderTagline] = useState(headerData.tagline || 'Türkiye\'nin politik ve iktisadi geleceğine yön veren düşünce merkezi.');
@@ -71,6 +76,11 @@ export default function AdminPanel({
       setHeaderShowIssn(headerData.showIssn !== false);
       setHeaderShowTagline(headerData.showTagline !== false);
       setHeaderShowAbout(headerData.showAbout !== false);
+      setHeaderShowSocials(headerData.showSocials !== false);
+      setHeaderLinkedinUrl(headerData.linkedinUrl || 'https://linkedin.com');
+      setHeaderTwitterUrl(headerData.twitterUrl || 'https://x.com');
+      setHeaderInstagramUrl(headerData.instagramUrl || 'https://instagram.com');
+      setHeaderYoutubeUrl(headerData.youtubeUrl || 'https://youtube.com');
       setHeaderTitle(headerData.title || 'PİKAM DERGİ');
       setHeaderFullTitle(headerData.fullTitle || 'Politik ve İktisadi Araştırmalar Merkezi');
       setHeaderTagline(headerData.tagline || 'Türkiye\'nin politik ve iktisadi geleceğine yön veren düşünce merkezi.');
@@ -1046,6 +1056,11 @@ export default function AdminPanel({
                     showIssn: headerShowIssn,
                     showTagline: headerShowTagline,
                     showAbout: headerShowAbout,
+                    showSocials: headerShowSocials,
+                    linkedinUrl: headerLinkedinUrl,
+                    twitterUrl: headerTwitterUrl,
+                    instagramUrl: headerInstagramUrl,
+                    youtubeUrl: headerYoutubeUrl,
                     title: headerTitle,
                     fullTitle: headerFullTitle,
                     tagline: headerTagline,
@@ -1055,7 +1070,7 @@ export default function AdminPanel({
                     portalLabel: headerPortalLabel
                   });
                 }
-                setSuccessMsg('✓ Site Kurumsal Logo ve Metin Ayarları başarıyla buluta kaydedildi!');
+                setSuccessMsg('✓ Site Kurumsal Logo, Metin ve Sosyal Medya Ayarları başarıyla buluta kaydedildi!');
                 setTimeout(() => setSuccessMsg(''), 5000);
               }} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 
@@ -1097,6 +1112,11 @@ export default function AdminPanel({
                                 showIssn: headerShowIssn,
                                 showTagline: headerShowTagline,
                                 showAbout: headerShowAbout,
+                                showSocials: headerShowSocials,
+                                linkedinUrl: headerLinkedinUrl,
+                                twitterUrl: headerTwitterUrl,
+                                instagramUrl: headerInstagramUrl,
+                                youtubeUrl: headerYoutubeUrl,
                                 title: headerTitle,
                                 fullTitle: headerFullTitle,
                                 tagline: headerTagline,
@@ -1161,6 +1181,11 @@ export default function AdminPanel({
                                 showIssn: headerShowIssn,
                                 showTagline: headerShowTagline,
                                 showAbout: headerShowAbout,
+                                showSocials: headerShowSocials,
+                                linkedinUrl: headerLinkedinUrl,
+                                twitterUrl: headerTwitterUrl,
+                                instagramUrl: headerInstagramUrl,
+                                youtubeUrl: headerYoutubeUrl,
                                 title: headerTitle,
                                 fullTitle: headerFullTitle,
                                 tagline: headerTagline,
@@ -1191,7 +1216,7 @@ export default function AdminPanel({
                   </div>
                 </div>
 
-                {/* ÖZEL ELEMAN GİZLEME / GÖSTERME SEÇENEKLERİ (PORTAL BUTONU, ISSN, SLOGAN, HAKKIMIZDA) */}
+                {/* ÖZEL ELEMAN GİZLEME / GÖSTERME SEÇENEKLERİ (PORTAL BUTONU, ISSN, SLOGAN, HAKKIMIZDA, SOSYAL MEDYA) */}
                 <div style={{ background: '#e0f2fe', padding: '16px 20px', borderRadius: '8px', border: '1px solid #bae6fd', display: 'flex', gap: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.88rem', fontWeight: '800', color: '#0369a1' }}>ÖZEL ELEMAN GÖRÜNÜRLÜKLERİ:</span>
 
@@ -1212,8 +1237,63 @@ export default function AdminPanel({
 
                   <label style={{ fontSize: '0.85rem', color: '#0f172a', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <input type="checkbox" checked={headerShowAbout} onChange={(e) => setHeaderShowAbout(e.target.checked)} />
-                    <span>Hakkımızda / PİKAM Dergi Nedir? Açıklama Kutusu Göster</span>
+                    <span>Hakkımızda Açıklama Kutusu Göster</span>
                   </label>
+
+                  <label style={{ fontSize: '0.85rem', color: '#0f172a', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <input type="checkbox" checked={headerShowSocials} onChange={(e) => setHeaderShowSocials(e.target.checked)} />
+                    <span>Takip Edin / Sosyal Medya İkonlarını Göster</span>
+                  </label>
+                </div>
+
+                {/* SOSYAL MEDYA TAKİP BAĞLANTILARI (LINKEDIN, TWITTER, INSTAGRAM, YOUTUBE) */}
+                <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <label style={{ fontSize: '0.9rem', fontWeight: '800', color: '#0b132b', display: 'block', marginBottom: '12px' }}>TAKİP EDİN: SOSYAL MEDYA YÖNLENDİRME LİNKLERİ</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#0284c7', display: 'block', marginBottom: '4px' }}>LINKEDIN HESAP LİNKİ (URL)</label>
+                      <input 
+                        type="url" 
+                        value={headerLinkedinUrl} 
+                        onChange={(e) => setHeaderLinkedinUrl(e.target.value)} 
+                        placeholder="https://linkedin.com/company/pikam" 
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#0f172a', display: 'block', marginBottom: '4px' }}>X (TWITTER) HESAP LİNKİ (URL)</label>
+                      <input 
+                        type="url" 
+                        value={headerTwitterUrl} 
+                        onChange={(e) => setHeaderTwitterUrl(e.target.value)} 
+                        placeholder="https://x.com/pikam" 
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#e11d48', display: 'block', marginBottom: '4px' }}>INSTAGRAM HESAP LİNKİ (URL)</label>
+                      <input 
+                        type="url" 
+                        value={headerInstagramUrl} 
+                        onChange={(e) => setHeaderInstagramUrl(e.target.value)} 
+                        placeholder="https://instagram.com/pikam" 
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#dc2626', display: 'block', marginBottom: '4px' }}>YOUTUBE HESAP LİNKİ (URL)</label>
+                      <input 
+                        type="url" 
+                        value={headerYoutubeUrl} 
+                        onChange={(e) => setHeaderYoutubeUrl(e.target.value)} 
+                        placeholder="https://youtube.com/@pikam" 
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* YAZILAR VE BAŞLIKLAR */}

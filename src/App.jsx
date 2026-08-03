@@ -206,6 +206,11 @@ export default function App() {
       showIssn: true,
       showTagline: true,
       showAbout: true,
+      showSocials: true,
+      linkedinUrl: 'https://linkedin.com',
+      twitterUrl: 'https://x.com',
+      instagramUrl: 'https://instagram.com',
+      youtubeUrl: 'https://youtube.com',
       title: 'PİKAM DERGİ',
       fullTitle: 'Politik ve İktisadi Araştırmalar Merkezi',
       tagline: 'Türkiye\'nin politik ve iktisadi geleceğine yön veren düşünce merkezi.',
@@ -967,6 +972,10 @@ export default function App() {
         onScrollToEDergi={scrollToEDergi}
         onScrollToYazarlar={scrollToYazarlar}
         navVisibility={navVisibility}
+        currentUser={currentUser}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onLogoutUser={handleLogoutUser}
+        onOpenSearch={() => setIsSearchOpen(true)}
       />
 
       <Header 
@@ -1009,14 +1018,6 @@ export default function App() {
           />
         )}
       </main>
-
-      <TopBar 
-        currentUser={currentUser}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
-        onLogoutUser={handleLogoutUser}
-        onOpenSearch={() => setIsSearchOpen(true)}
-        onOpenKunye={() => setIsKunyeOpen(true)}
-      />
 
       <Footer 
         onSelectCategory={(cat) => setActiveCategory(cat)}
