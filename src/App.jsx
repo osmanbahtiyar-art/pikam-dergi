@@ -1024,6 +1024,7 @@ export default function App() {
         onOpenKunye={() => setIsKunyeOpen(true)}
         onScrollToEDergi={scrollToEDergi}
         footerData={footerData}
+        headerData={headerData}
         sectionVisibility={sectionVisibility}
         onSubscribeNewsletter={handleSubscribeNewsletter}
       />
