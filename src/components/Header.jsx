@@ -24,28 +24,30 @@ export default function Header({ headerData, sectionVisibility = {} }) {
   };
 
   return (
-    <div className="site-header" style={{ background: '#ffffff', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '26px 0 22px 0' }}>
-      <div className="container header-brand-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '32px', flexWrap: 'wrap' }}>
-        {/* LOGO 1: Modern Blue 'P' Emblem Icon */}
-        {hData.showEmblem !== false && (
-          <a href={hData.portalUrl || "https://www.pikamtr.com/"} target="_blank" rel="noreferrer" title="PİKAM Ana Web Sitesine Git" style={{ display: 'flex', alignItems: 'center' }}>
-            <img 
-              src={hData.emblemUrl || "/pikam_blue_emblem.png"} 
-              alt="PİKAM Amblem" 
-              className="header-logo-img"
-              style={{ width: '90px', height: '90px', objectFit: 'contain', transition: 'transform 0.3s ease' }}
-            />
-          </a>
-        )}
+    <div className="site-header" style={{ background: '#ffffff', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '28px 0 24px 0' }}>
+      <div className="container header-brand-inner" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '14px', maxWidth: '900px', margin: '0 auto' }}>
+        
+        {/* LOGO CONTAINER (EMBLEM & LOGOTYPE CENTERED) */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+          {/* LOGO 1: Modern Blue 'P' Emblem Icon */}
+          {hData.showEmblem !== false && (
+            <a href={hData.portalUrl || "https://www.pikamtr.com/"} target="_blank" rel="noreferrer" title="PİKAM Ana Web Sitesine Git" style={{ display: 'inline-flex', alignItems: 'center' }}>
+              <img 
+                src={hData.emblemUrl || "/pikam_blue_emblem.png"} 
+                alt="PİKAM Amblem" 
+                className="header-logo-img"
+                style={{ width: '80px', height: '80px', objectFit: 'contain', transition: 'transform 0.3s ease' }}
+              />
+            </a>
+          )}
 
-        {/* LOGO 2: Official Corporate Typography Logotype & Info Block */}
-        <div className="header-text-block" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+          {/* LOGO 2: Official Corporate Typography Logotype */}
           {hData.showLogotype !== false && hData.logotypeUrl ? (
-            <a href={hData.portalUrl || "https://www.pikamtr.com/"} target="_blank" rel="noreferrer">
+            <a href={hData.portalUrl || "https://www.pikamtr.com/"} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center' }}>
               <img 
                 src={hData.logotypeUrl} 
                 alt="PİKAM Logotype" 
-                style={{ maxHeight: '80px', width: 'auto', objectFit: 'contain', marginBottom: '6px' }}
+                style={{ maxHeight: '75px', width: 'auto', objectFit: 'contain' }}
               />
             </a>
           ) : (
@@ -54,8 +56,13 @@ export default function Header({ headerData, sectionVisibility = {} }) {
               <div className="logo-subtitle" style={{ fontSize: '0.95rem', color: '#475569', fontWeight: '600' }}>{hData.fullTitle}</div>
             </div>
           )}
+        </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '4px' }}>
+        {/* INFO & TAGLINE & DESCRIPTION BLOCK */}
+        <div className="header-text-block" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '100%' }}>
+          
+          {/* BADGE & ISSN */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '2px' }}>
             {hData.showPortalBadge !== false && (
               <a 
                 href={hData.portalUrl || "https://www.pikamtr.com/"} 
@@ -73,15 +80,16 @@ export default function Header({ headerData, sectionVisibility = {} }) {
             )}
           </div>
 
+          {/* SLOGAN / MOTTO */}
           {hData.showTagline !== false && hData.tagline && (
-            <div className="logo-tagline" style={{ fontSize: '0.88rem', color: '#334155', fontWeight: '600', marginTop: '6px' }}>
+            <div className="logo-tagline" style={{ fontSize: '0.9rem', color: '#334155', fontWeight: '600', marginTop: '8px', fontStyle: 'italic' }}>
               {hData.tagline}
             </div>
           )}
 
+          {/* ABOUT DESCRIPTION BOX (CENTERED & PROPORTIONAL ON PC & MOBILE) */}
           {hData.showAbout !== false && hData.aboutText && (
-            <div className="logo-about" style={{ fontSize: '0.85rem', color: '#475569', fontWeight: '500', marginTop: '10px', lineHeight: '1.6', maxWidth: '680px', background: '#f8fafc', padding: '10px 14px', borderRadius: '6px', borderLeft: '3px solid #0284c7' }}>
-              <strong style={{ color: '#0b132b', display: 'block', marginBottom: '3px', fontSize: '0.8rem', letterSpacing: '0.5px' }}>HAKKIMIZDA / PİKAM DERGİ NEDİR?</strong>
+            <div className="logo-about" style={{ fontSize: '0.88rem', color: '#475569', fontWeight: '500', marginTop: '12px', lineHeight: '1.65', width: '100%', maxWidth: '720px', background: '#f8fafc', padding: '14px 20px', borderRadius: '8px', border: '1px solid #e2e8f0', borderTop: '3px solid #0284c7', textAlign: 'center', marginLeft: 'auto', marginRight: 'auto', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
               {hData.aboutText}
             </div>
           )}
