@@ -960,19 +960,6 @@ export default function App() {
   // MAIN WEBSITE INTERFACE
   return (
     <div className="app-root">
-      <TopBar 
-        currentUser={currentUser}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
-        onLogoutUser={handleLogoutUser}
-        onOpenSearch={() => setIsSearchOpen(true)}
-        onOpenKunye={() => setIsKunyeOpen(true)}
-      />
-
-      <Header 
-        headerData={headerData}
-        sectionVisibility={sectionVisibility}
-      />
-
       <Navbar 
         activeCategory={activeCategory}
         onSelectCategory={(cat) => setActiveCategory(cat)}
@@ -980,6 +967,11 @@ export default function App() {
         onScrollToEDergi={scrollToEDergi}
         onScrollToYazarlar={scrollToYazarlar}
         navVisibility={navVisibility}
+      />
+
+      <Header 
+        headerData={headerData}
+        sectionVisibility={sectionVisibility}
       />
 
       {sectionVisibility.showTicker && (
@@ -1017,6 +1009,14 @@ export default function App() {
           />
         )}
       </main>
+
+      <TopBar 
+        currentUser={currentUser}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onLogoutUser={handleLogoutUser}
+        onOpenSearch={() => setIsSearchOpen(true)}
+        onOpenKunye={() => setIsKunyeOpen(true)}
+      />
 
       <Footer 
         onSelectCategory={(cat) => setActiveCategory(cat)}
