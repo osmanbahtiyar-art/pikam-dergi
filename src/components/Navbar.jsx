@@ -37,14 +37,17 @@ export default function Navbar({
   });
 
   return (
-    <nav className="main-nav">
-      <div className="container nav-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-        <ul className="nav-menu" style={{ margin: 0, padding: 0 }}>
+    <nav className="main-nav" style={{ padding: '6px 0' }}>
+      <div className="container nav-inner" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '8px', margin: '0 auto', width: '100%' }}>
+        
+        {/* CENTERED CATEGORY NAVIGATION MENU */}
+        <ul className="nav-menu" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '4px', margin: 0, padding: 0, width: 'auto' }}>
           {visibleCategories.map((cat) => (
             <li className="nav-item" key={cat.id}>
               <button
                 className={`nav-link ${activeCategory === cat.id ? 'active' : ''}`}
                 onClick={() => handleClick(cat.id)}
+                style={{ textAlign: 'center' }}
               >
                 {cat.label}
               </button>
@@ -52,8 +55,8 @@ export default function Navbar({
           ))}
         </ul>
 
-        {/* TOP UTILITY ACTION BUTTONS (SİTEDE ARA, KÜNYE & KURUMSAL, GİRİŞ YAP) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        {/* CENTERED TOP UTILITY ACTION BUTTONS (SİTEDE ARA, KÜNYE & KURUMSAL, GİRİŞ YAP) */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap', margin: '2px 0 4px 0' }}>
           <button className="top-search-btn" onClick={onOpenSearch} style={{ cursor: 'pointer' }}>
             <Search size={13} />
             <span>Sitede Ara...</span>
@@ -66,7 +69,7 @@ export default function Navbar({
 
           {/* USER AUTH BUTTON / PROFILE BADGE */}
           {currentUser ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.1)', padding: '4px 10px', borderRadius: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: '20px' }}>
               <span style={{ fontSize: '0.82rem', color: '#38bdf8', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <User size={13} /> {currentUser.fullName}
               </span>
