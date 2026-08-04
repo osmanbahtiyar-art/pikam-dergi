@@ -55,16 +55,11 @@ export default function Navbar({
           ))}
         </ul>
 
-        {/* CENTERED TOP UTILITY ACTION BUTTONS (SİTEDE ARA, KÜNYE & KURUMSAL, GİRİŞ YAP) */}
+        {/* CENTERED TOP UTILITY ACTION BUTTONS (SİTEDE ARA, GİRİŞ YAP) */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap', margin: '2px 0 4px 0' }}>
           <button className="top-search-btn" onClick={onOpenSearch} style={{ cursor: 'pointer' }}>
             <Search size={13} />
             <span>Sitede Ara...</span>
-          </button>
-          
-          <button className="top-auth-btn" onClick={onOpenKunye} title="PİKAM Yayın Kurulu & Künye" style={{ cursor: 'pointer', fontSize: '0.82rem' }}>
-            <FileText size={14} />
-            <span>Künye & Kurumsal</span>
           </button>
 
           {/* USER AUTH BUTTON / PROFILE BADGE */}
