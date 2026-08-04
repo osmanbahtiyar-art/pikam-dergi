@@ -1053,8 +1053,12 @@ export default function App() {
 
       {isSearchOpen && (
         <SearchModal 
+          articlesList={articlesList}
+          eDergiList={eDergiList}
+          authorsList={authorsList}
           onClose={() => setIsSearchOpen(false)}
           onSelectArticle={handleOpenArticle}
+          onSelectEDergi={(issue) => setSelectedEDergi(issue)}
         />
       )}
 
