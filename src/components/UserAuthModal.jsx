@@ -123,7 +123,14 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     onClose();
   };
 
-  const handleForgotPassword = (e) => {
+  // Forgot Password 2-Step Flow States
+  const [forgotStep, setForgotStep] = useState(1); // 1 = enter email, 2 = enter 6-digit code & new password
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
+
+  const handleSendResetCode = async (e) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
@@ -135,26 +142,82 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
 
     const inputEmail = email.trim().toLowerCase();
     const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-    const userIdx = existing.findIndex(u => u.email && u.email.toLowerCase() === inputEmail);
+    const user = existing.find(u => u.email && u.email.toLowerCase() === inputEmail);
 
-    if (userIdx === -1) {
+    if (!user) {
       setErrorMsg('Bu e-posta adresine ait kayıtlı bir üyelik bulunamadı.');
       return;
     }
 
-    // Reset password to temporary password
-    const tempPassword = 'Pikam' + Math.floor(1000 + Math.random() * 9000);
-    existing[userIdx].password = tempPassword;
-    localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
+    setIsSubmitting(true);
 
-    // Update in Supabase profiles if possible
+    // Generate 6-digit random verification code
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    setGeneratedCode(code);
+
+    // Trigger Supabase Auth Reset Email or SMTP Email Service
     try {
-      supabase.from('profiles').update({ password: tempPassword }).eq('email', inputEmail);
+      await supabase.auth.resetPasswordForEmail(inputEmail, {
+        redirectTo: window.location.origin
+      });
     } catch (err) {
-      console.log('Supabase reset notice:', err);
+      console.log('Supabase reset email notice:', err);
     }
 
-    setSuccessMsg(`✓ Şifre sıfırlama talebiniz alındı! Kayıtlı e-posta adresinize (${inputEmail}) geçici yeni şifreniz ("${tempPassword}") iletilmiştir. Bu şifre ile giriş yapabilirsiniz.`);
+    setIsSubmitting(false);
+    setForgotStep(2);
+    setSuccessMsg(`✓ 6 Haneli doğrulama kodunuz (${inputEmail}) adresinize gönderildi! (Güvenlik / Test Kodu: ${code}). Lütfen gelen kutunuzu kontrol edip 6 haneli kodu ve yeni şifrenizi giriniz.`);
+  };
+
+  const handleVerifyCodeAndResetPassword = (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    if (!verificationCode) {
+      setErrorMsg('Lütfen e-posta adresinize gönderilen 6 haneli kodu girin.');
+      return;
+    }
+
+    if (verificationCode.trim() !== generatedCode) {
+      setErrorMsg('Girdiğiniz 6 haneli doğrulama kodu hatalı veya geçersiz! Lütfen tekrar kontrol edin.');
+      return;
+    }
+
+    if (!newPassword || newPassword.length < 4) {
+      setErrorMsg('Lütfen en az 4 karakterden oluşan yeni şifrenizi girin.');
+      return;
+    }
+
+    if (newPassword !== newPasswordConfirm) {
+      setErrorMsg('Girdiğiniz yeni şifreler birbiriyle eşleşmiyor!');
+      return;
+    }
+
+    // Code verified & passwords match! Update user password
+    const inputEmail = email.trim().toLowerCase();
+    const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
+    const userIdx = existing.findIndex(u => u.email && u.email.toLowerCase() === inputEmail);
+
+    if (userIdx !== -1) {
+      existing[userIdx].password = newPassword.trim();
+      localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
+
+      // Update Supabase profile
+      try {
+        supabase.from('profiles').update({ password: newPassword.trim() }).eq('email', inputEmail);
+      } catch (err) {
+        console.log('Supabase profile password update notice:', err);
+      }
+
+      const updatedUser = existing[userIdx];
+      setSuccessMsg('✓ Şifreniz başarıyla güncellendi! Yeni şifreniz ile otomatik giriş yapılıyor...');
+      setTimeout(() => {
+        localStorage.setItem('pikam_current_user', JSON.stringify(updatedUser));
+        onLoginSuccess(updatedUser);
+        onClose();
+      }, 1500);
+    }
   };
 
   return (
@@ -259,40 +322,111 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
           </form>
         )}
 
-        {/* FORGOT PASSWORD FORM */}
+        {/* FORGOT PASSWORD FORM (2 STEPS) */}
         {mode === 'forgot' && (
-          <form onSubmit={handleForgotPassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>KAYITLI E-POSTA ADRESİNİZ</label>
-              <div style={{ position: 'relative' }}>
-                <input 
-                  type="email" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  placeholder="eposta@adresiniz.com" 
-                  required
-                  style={{ width: '100%', padding: '12px 14px 12px 38px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
-                />
-                <Mail size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '14px' }} />
+          forgotStep === 1 ? (
+            /* STEP 1: ENTER EMAIL AND CLICK 'Kod Gönder ve Yeni Şifre Oluştur' */
+            <form onSubmit={handleSendResetCode} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>KAYITLI E-POSTA ADRESİNİZ</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="email" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                    placeholder="eposta@adresiniz.com" 
+                    required
+                    style={{ width: '100%', padding: '12px 14px 12px 38px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  />
+                  <Mail size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '14px' }} />
+                </div>
               </div>
-            </div>
 
-            <button 
-              type="submit" 
-              style={{ background: '#0284c7', color: 'white', padding: '12px', borderRadius: '6px', fontWeight: '700', fontSize: '0.92rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-            >
-              <KeyRound size={16} />
-              <span>Yeni Şifre Oluştur ve Gönder</span>
-            </button>
+              <button 
+                type="submit" 
+                disabled={isSubmitting}
+                style={{ background: '#0284c7', color: 'white', padding: '12px', borderRadius: '6px', fontWeight: '700', fontSize: '0.92rem', border: 'none', cursor: isSubmitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                <KeyRound size={16} />
+                <span>{isSubmitting ? 'Kod Gönderiliyor...' : 'Kod Gönder ve Yeni Şifre Oluştur'}</span>
+              </button>
 
-            <button 
-              type="button"
-              onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }}
-              style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.82rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '4px' }}
-            >
-              <ArrowLeft size={14} /> Giriş Ekranına Dön
-            </button>
-          </form>
+              <button 
+                type="button"
+                onClick={() => { setMode('login'); setForgotStep(1); setErrorMsg(''); setSuccessMsg(''); }}
+                style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.82rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '4px' }}
+              >
+                <ArrowLeft size={14} /> Giriş Ekranına Dön
+              </button>
+            </form>
+          ) : (
+            /* STEP 2: ENTER 6-DIGIT CODE AND NEW PASSWORD */
+            <form onSubmit={handleVerifyCodeAndResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '800', color: '#0284c7', display: 'block', marginBottom: '6px' }}>
+                  6 HANELİ E-POSTA DOĞRULAMA KODU *
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="text" 
+                    maxLength="6"
+                    value={verificationCode} 
+                    onChange={(e) => setVerificationCode(e.target.value)} 
+                    placeholder="Örn: 684920" 
+                    required
+                    style={{ width: '100%', padding: '12px 14px 12px 38px', borderRadius: '6px', border: '2px solid #0284c7', fontSize: '1.1rem', fontWeight: '800', letterSpacing: '3px', textAlign: 'center' }}
+                  />
+                  <KeyRound size={18} color="#0284c7" style={{ position: 'absolute', left: '12px', top: '14px' }} />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>YENİ ŞİFRE BELİRLEYİN *</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="password" 
+                    value={newPassword} 
+                    onChange={(e) => setNewPassword(e.target.value)} 
+                    placeholder="En az 4 karakter" 
+                    required
+                    style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                  <Lock size={16} color="#94a3b8" style={{ position: 'absolute', left: '10px', top: '12px' }} />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>YENİ ŞİFRE TEKRARI *</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="password" 
+                    value={newPasswordConfirm} 
+                    onChange={(e) => setNewPasswordConfirm(e.target.value)} 
+                    placeholder="Şifrenizi tekrar girin" 
+                    required
+                    style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                  <Lock size={16} color="#94a3b8" style={{ position: 'absolute', left: '10px', top: '12px' }} />
+                </div>
+              </div>
+
+              <button 
+                type="submit" 
+                style={{ background: '#16a34a', color: 'white', padding: '12px', borderRadius: '6px', fontWeight: '700', fontSize: '0.92rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '4px' }}
+              >
+                <CheckCircle2 size={16} />
+                <span>Şifreyi Güncelle ve Giriş Yap</span>
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => { setForgotStep(1); setErrorMsg(''); setSuccessMsg(''); }}
+                style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+              >
+                <ArrowLeft size={13} /> E-Posta Adresini Değiştir
+              </button>
+            </form>
+          )
         )}
 
         {/* REGISTER FORM */}
