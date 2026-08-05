@@ -86,6 +86,26 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
 
     setDraftRegisterUser(draft);
 
+    // Save unverified user draft immediately so Admin Panel sees 🟡 BEKLEMEDE in real time
+    const updatedUsers = [draft, ...existing.filter(u => u.email && u.email.toLowerCase() !== cleanEmail)];
+    localStorage.setItem('pikam_registered_users', JSON.stringify(updatedUsers));
+
+    try {
+      await supabase.from('profiles').upsert([{
+        id: draft.id,
+        full_name: draft.fullName,
+        email: draft.email,
+        phone: draft.phone,
+        password: draft.password,
+        interests: draft.interests,
+        registered_at: draft.registeredAt,
+        is_verified: false
+      }]);
+      await supabase.from('site_settings').upsert([{ id: 'registered_users_list', data: updatedUsers }]);
+    } catch (sErr) {
+      console.log('Unverified profile sync notice:', sErr);
+    }
+
     // Generate 6-digit random verification code & store persistently
     const code = String(Math.floor(100000 + Math.random() * 900000));
     localStorage.setItem(`pikam_reg_otp_${cleanEmail}`, code);

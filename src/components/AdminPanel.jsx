@@ -82,6 +82,20 @@ export default function AdminPanel({
     }
   };
 
+  // AUTOMATIC REAL-TIME USER POLLING TIMER FOR ADMIN PANEL
+  useEffect(() => {
+    let timer;
+    if (activeTab === 'uyeler') {
+      fetchLiveUsersFromCloud();
+      timer = setInterval(() => {
+        fetchLiveUsersFromCloud();
+      }, 3000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [activeTab]);
+
   // Header CMS Form State
   const [headerEmblemUrl, setHeaderEmblemUrl] = useState(headerData.emblemUrl || '/pikam_blue_emblem.png');
   const [headerLogotypeUrl, setHeaderLogotypeUrl] = useState(headerData.logotypeUrl || '/pikam_blue_logotype.png');
