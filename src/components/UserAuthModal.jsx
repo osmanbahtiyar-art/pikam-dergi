@@ -67,8 +67,19 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     const updatedUsers = [newUser, ...existing.filter(u => u.email.toLowerCase() !== newUser.email)];
     localStorage.setItem('pikam_registered_users', JSON.stringify(updatedUsers));
 
-    // Fail-safe Sync to Supabase Cloud Database Table 'profiles'
+    // Fail-safe Sync to Supabase Cloud Database Table 'profiles' & Supabase Auth System
     try {
+      await supabase.auth.signUp({
+        email: newUser.email,
+        password: password.trim(),
+        options: {
+          data: {
+            full_name: fullName,
+            phone: phone
+          }
+        }
+      });
+
       await supabase.from('profiles').upsert([{
         id: newUser.id,
         full_name: fullName,
@@ -155,10 +166,10 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     setGeneratedCode(code);
 
-    // Trigger Supabase Auth Reset Email or SMTP Email Service
+    // Trigger Supabase Auth System Password Reset Mail (Option 2 - Supabase Auth Mailer)
     try {
       await supabase.auth.resetPasswordForEmail(inputEmail, {
-        redirectTo: window.location.origin
+        redirectTo: `${window.location.origin}/#reset-password`
       });
     } catch (err) {
       console.log('Supabase reset email notice:', err);
@@ -166,7 +177,7 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
 
     setIsSubmitting(false);
     setForgotStep(2);
-    setSuccessMsg(`✓ 6 Haneli doğrulama kodunuz (${inputEmail}) adresinize gönderildi! (Güvenlik / Test Kodu: ${code}). Lütfen gelen kutunuzu kontrol edip 6 haneli kodu ve yeni şifrenizi giriniz.`);
+    setSuccessMsg(`✓ Supabase E-Posta Servisi üzerinden 6 Haneli doğrulama kodunuz ve şifre sıfırlama yönergeleri "${inputEmail}" adresinize gönderildi! (Test/Yedek Kodu: ${code}). Lütfen gelen kutunuzu kontrol edip 6 haneli kodu ve yeni şifrenizi giriniz.`);
   };
 
   const handleVerifyCodeAndResetPassword = (e) => {
