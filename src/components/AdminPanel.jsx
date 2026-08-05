@@ -376,7 +376,7 @@ export default function AdminPanel({
       }
       setLoginError('');
     } else {
-      setLoginError('Hatalı kullanıcı adı veya şifre! (Varsayılan: admin / pikam2026)');
+      setLoginError('Hatalı kullanıcı adı veya şifre! Lütfen bilgilerinizi kontrol ediniz.');
     }
   };
 
@@ -724,7 +724,7 @@ export default function AdminPanel({
                 type="text" 
                 value={username} 
                 onChange={(e) => setUsername(e.target.value)} 
-                placeholder="admin" 
+                placeholder="Kullanıcı adınızı giriniz" 
                 required
                 style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', outline: 'none' }}
               />
@@ -736,7 +736,7 @@ export default function AdminPanel({
                 type="password" 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
-                placeholder="••••••••" 
+                placeholder="Şifrenizi giriniz" 
                 required
                 style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', outline: 'none' }}
               />
@@ -750,10 +750,6 @@ export default function AdminPanel({
               <span>Giriş Yap</span>
             </button>
           </form>
-
-          <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '0.78rem', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
-            Varsayılan Giriş: <strong>admin</strong> / <strong>pikam2026</strong>
-          </div>
         </div>
       </div>
     );
