@@ -177,7 +177,7 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
 
     setIsSubmitting(false);
     setForgotStep(2);
-    setSuccessMsg(`✓ "iletisim@pikamdergi.com" kurumsal adresimiz üzerinden 6 Haneli doğrulama kodunuz ve şifre sıfırlama yönergeleri "${inputEmail}" adresinize gönderildi! (Güvenlik / Test Kodu: ${code}). Lütfen gelen kutunuzu kontrol edip 6 haneli kodu ve yeni şifrenizi giriniz.`);
+    setSuccessMsg(`🔑 6 HANELİ ŞİFRE SIFIRLAMA KODUNUZ: ${code}\n\n(iletisim@pikamdergi.com adresimiz üzerinden "${inputEmail}" hesabınıza e-posta yönlendirmesi sağlandı). Lütfen yukarıdaki 6 haneli kodu aşağıdaki kutucuğa yazıp yeni şifrenizi belirleyiniz.`);
   };
 
   const handleVerifyCodeAndResetPassword = (e) => {
@@ -277,7 +277,7 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
         )}
 
         {successMsg && (
-          <div style={{ background: '#f0fdf4', color: '#16a34a', padding: '12px 14px', borderRadius: '6px', fontSize: '0.84rem', marginBottom: '16px', borderLeft: '4px solid #16a34a', lineHeight: '1.5' }}>
+          <div style={{ background: '#f0fdf4', color: '#16a34a', padding: '12px 14px', borderRadius: '6px', fontSize: '0.84rem', marginBottom: '16px', borderLeft: '4px solid #16a34a', lineHeight: '1.5', whiteSpace: 'pre-line' }}>
             {successMsg}
           </div>
         )}
