@@ -603,12 +603,18 @@ button {
   transform: translateY(-4px);
 }
 .yazar-avatar {
-  width: 75px;
-  height: 75px;
+  width: 105px;
+  height: 105px;
   border-radius: 50%;
   object-fit: cover;
-  margin: 0 auto 12px auto;
+  margin: 0 auto 14px auto;
   border: 3px solid #38bdf8;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+.yazar-card:hover .yazar-avatar {
+  transform: scale(1.05);
+  border-color: #7dd3fc;
 }
 .yazar-name {
   font-family: var(--font-serif);
