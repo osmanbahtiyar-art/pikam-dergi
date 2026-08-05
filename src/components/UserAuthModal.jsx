@@ -166,18 +166,8 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     setGeneratedCode(code);
 
-    // Trigger Supabase Real Email System (Both OTP and Password Reset Mailers)
+    // Trigger Supabase Auth Reset Password Email
     try {
-      // 1. Send OTP Code Email via Supabase Auth
-      await supabase.auth.signInWithOtp({
-        email: inputEmail
-      });
-    } catch (otpErr) {
-      console.log('Supabase OTP email notice:', otpErr);
-    }
-
-    try {
-      // 2. Fallback Reset Email via Supabase Auth
       await supabase.auth.resetPasswordForEmail(inputEmail, {
         redirectTo: `${window.location.origin}/#reset-password`
       });
