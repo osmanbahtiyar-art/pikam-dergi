@@ -316,8 +316,9 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
       console.log('Supabase verifyOtp notice:', vErr);
     }
 
-    if (verificationCode.trim() !== generatedCode && verificationCode.trim().length !== 6) {
-      setErrorMsg('Girdiğiniz 6 haneli doğrulama kodu hatalı veya geçersiz! Lütfen e-postanıza gelen 6 haneli kodu giriniz.');
+    const inputCode = verificationCode.trim();
+    if (!generatedCode || inputCode !== generatedCode) {
+      setErrorMsg('Girdiğiniz 6 haneli doğrulama kodu hatalı! Lütfen e-postanıza gönderilen 6 haneli kodu eksiksiz giriniz.');
       return;
     }
 
