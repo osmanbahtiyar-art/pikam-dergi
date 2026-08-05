@@ -34,6 +34,53 @@ export default function AdminPanel({
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSyncingAll, setIsSyncingAll] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [liveUsersList, setLiveUsersList] = useState(registeredUsersList);
+
+  useEffect(() => {
+    setLiveUsersList(registeredUsersList);
+  }, [registeredUsersList]);
+
+  const fetchLiveUsersFromCloud = async () => {
+    try {
+      const userMap = new Map();
+      (registeredUsersList || []).forEach(u => u && u.email && userMap.set(u.email.trim().toLowerCase(), u));
+
+      const { data: cloudProfiles } = await supabase.from('profiles').select('*');
+      if (cloudProfiles && cloudProfiles.length > 0) {
+        cloudProfiles.forEach(p => {
+          if (p && p.email) {
+            const key = p.email.trim().toLowerCase();
+            const existing = userMap.get(key) || {};
+            userMap.set(key, {
+              id: p.id || existing.id || `usr-${Date.now()}`,
+              fullName: p.full_name || existing.fullName || 'PİKAM Okuru',
+              email: p.email,
+              password: p.password || existing.password || '',
+              phone: p.phone || existing.phone || '',
+              interests: p.interests || existing.interests || 'POLİTİKA, EKONOMİ',
+              registeredAt: p.registered_at || existing.registeredAt || new Date().toLocaleDateString('tr-TR')
+            });
+          }
+        });
+      }
+
+      const { data: cloudSettings } = await supabase.from('site_settings').select('*').eq('id', 'registered_users_list').maybeSingle();
+      if (cloudSettings && Array.isArray(cloudSettings.data)) {
+        cloudSettings.data.forEach(u => {
+          if (u && u.email) {
+            const key = u.email.trim().toLowerCase();
+            if (!userMap.has(key)) userMap.set(key, u);
+          }
+        });
+      }
+
+      const finalLive = Array.from(userMap.values());
+      setLiveUsersList(finalLive);
+      localStorage.setItem('pikam_registered_users', JSON.stringify(finalLive));
+    } catch (err) {
+      console.log('Admin live users fetch notice:', err);
+    }
+  };
 
   // Header CMS Form State
   const [headerEmblemUrl, setHeaderEmblemUrl] = useState(headerData.emblemUrl || '/pikam_blue_emblem.png');
