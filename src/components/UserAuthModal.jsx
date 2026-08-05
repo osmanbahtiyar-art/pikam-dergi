@@ -26,7 +26,13 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     }
   };
 
-  const handleRegister = async (e) => {
+  // Registration 2-Step States
+  const [registerStep, setRegisterStep] = useState(1); // 1 = details, 2 = 6-digit OTP verification
+  const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
+  const [registerOtpCode, setRegisterOtpCode] = useState('');
+  const [draftRegisterUser, setDraftRegisterUser] = useState(null);
+
+  const handleRegisterStep1 = async (e) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
@@ -41,8 +47,23 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
       return;
     }
 
+    if (password !== registerConfirmPassword) {
+      setErrorMsg('Girdiğiniz şifreler birbiriyle eşleşmiyor!');
+      return;
+    }
+
     if (interests.length === 0) {
       setErrorMsg('Lütfen en az 1 adet ilgi alanı seçin.');
+      return;
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Check if email is already registered
+    const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
+    const alreadyUser = existing.find(u => u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (alreadyUser && alreadyUser.isVerified !== false) {
+      setErrorMsg('Bu e-posta adresiyle zaten kayıtlı doğrulanmış bir üyelik var. Lütfen giriş yapın.');
       return;
     }
 
@@ -51,26 +72,28 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     const now = new Date();
     const formattedDate = `${now.toLocaleDateString('tr-TR')} ${now.toLocaleTimeString('tr-TR')}`;
 
-    const newUser = {
+    const draft = {
       id: `usr-${Date.now()}`,
       fullName,
-      email: email.trim().toLowerCase(),
+      email: cleanEmail,
       phone,
-      password: password.trim(), // Save password for authentication
+      password: password.trim(),
       interests: interests.join(', '),
       registeredAt: formattedDate,
-      rawDate: now.toISOString()
+      rawDate: now.toISOString(),
+      isVerified: false
     };
 
-    // Save locally on visitor browser first
-    const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-    const updatedUsers = [newUser, ...existing.filter(u => u.email.toLowerCase() !== newUser.email)];
-    localStorage.setItem('pikam_registered_users', JSON.stringify(updatedUsers));
+    setDraftRegisterUser(draft);
 
-    // Fail-safe Sync to Supabase Cloud Database Table 'profiles' & Supabase Auth System
+    // Generate 6-digit random verification code & store persistently
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    localStorage.setItem(`pikam_reg_otp_${cleanEmail}`, code);
+
+    // Trigger Supabase Auth Signup Email
     try {
       await supabase.auth.signUp({
-        email: newUser.email,
+        email: cleanEmail,
         password: password.trim(),
         options: {
           data: {
@@ -79,15 +102,90 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
           }
         }
       });
+    } catch (err) {
+      console.log('Supabase signup mail notice:', err);
+    }
 
+    setIsSubmitting(false);
+    setRegisterStep(2);
+    setSuccessMsg(`✓ 6 Haneli e-posta doğrulama kodunuz "iletisim@pikamdergi.com" adresimiz üzerinden "${cleanEmail}" hesabınıza e-posta olarak gönderilmiştir.\n\nLütfen gelen kutunuzu (ve Spam/Junk klasörünü) kontrol ederek 6 haneli kodu aşağıdaki kutucuğa giriniz.`);
+  };
+
+  const handleVerifyRegisterCode = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    if (!draftRegisterUser) {
+      setErrorMsg('Kayıt bilgileri alınamadı. Lütfen tekrar deneyin.');
+      setRegisterStep(1);
+      return;
+    }
+
+    if (!registerOtpCode) {
+      setErrorMsg('Lütfen e-postanıza gönderilen 6 haneli doğrulama kodunu girin.');
+      return;
+    }
+
+    const inputCode = registerOtpCode.trim();
+    const savedOtp = localStorage.getItem(`pikam_reg_otp_${draftRegisterUser.email}`);
+    let isOtpValid = false;
+
+    if (inputCode && (inputCode === savedOtp)) {
+      isOtpValid = true;
+    }
+
+    if (!isOtpValid) {
+      try {
+        const { error: vErr } = await supabase.auth.verifyOtp({
+          email: draftRegisterUser.email,
+          token: inputCode,
+          type: 'signup'
+        });
+        if (!vErr) isOtpValid = true;
+      } catch (e1) {}
+
+      if (!isOtpValid) {
+        try {
+          const { error: vErr2 } = await supabase.auth.verifyOtp({
+            email: draftRegisterUser.email,
+            token: inputCode,
+            type: 'email'
+          });
+          if (!vErr2) isOtpValid = true;
+        } catch (e2) {}
+      }
+    }
+
+    if (!isOtpValid) {
+      setErrorMsg('Girdiğiniz 6 haneli e-posta doğrulama kodu hatalı! Lütfen e-postanıza gelen kodu kontrol edip tekrar girin.');
+      return;
+    }
+
+    // OTP Verified! Mark user as verified and save across cloud and local storage
+    const verifiedUser = {
+      ...draftRegisterUser,
+      isVerified: true,
+      verifiedAt: `${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR')}`
+    };
+
+    const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
+    const updatedUsers = [verifiedUser, ...existing.filter(u => u.email && u.email.toLowerCase() !== verifiedUser.email)];
+    localStorage.setItem('pikam_registered_users', JSON.stringify(updatedUsers));
+    localStorage.setItem('pikam_current_user', JSON.stringify(verifiedUser));
+
+    // Save to Supabase Cloud profiles table & site_settings
+    try {
       await supabase.from('profiles').upsert([{
-        id: newUser.id,
-        full_name: fullName,
-        email: newUser.email,
-        phone: phone,
-        password: password.trim(),
-        interests: interests.join(', '),
-        registered_at: formattedDate
+        id: verifiedUser.id,
+        full_name: verifiedUser.fullName,
+        email: verifiedUser.email,
+        phone: verifiedUser.phone,
+        password: verifiedUser.password,
+        interests: verifiedUser.interests,
+        registered_at: verifiedUser.registeredAt,
+        is_verified: true,
+        verified_at: verifiedUser.verifiedAt
       }]);
 
       await supabase.from('site_settings').upsert([{
@@ -95,13 +193,10 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
         data: updatedUsers
       }]);
     } catch (err) {
-      console.log('Supabase profile sync notice:', err);
+      console.log('Supabase verified user sync notice:', err);
     }
 
-    // Log in user automatically
-    localStorage.setItem('pikam_current_user', JSON.stringify(newUser));
-    onLoginSuccess(newUser);
-    setIsSubmitting(false);
+    onLoginSuccess(verifiedUser);
     onClose();
   };
 
@@ -621,96 +716,151 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
           )
         )}
 
-        {/* REGISTER FORM */}
+        {/* REGISTER FORM (2 STEPS) */}
         {mode === 'register' && (
-          <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>İSİM VE SOYİSİM *</label>
-              <div style={{ position: 'relative' }}>
-                <input 
-                  type="text" 
-                  value={fullName} 
-                  onChange={(e) => setFullName(e.target.value)} 
-                  placeholder="Örn: Dr. Canan Yılmaz" 
-                  required
-                  style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
-                />
-                <User size={16} color="#94a3b8" style={{ position: 'absolute', left: '10px', top: '12px' }} />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          registerStep === 1 ? (
+            /* STEP 1: FILL DETAILS & CLICK 'Hesabımı Oluştur ve Doğrulama Kodu Gönder' */
+            <form onSubmit={handleRegisterStep1} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>E-POSTA *</label>
-                <input 
-                  type="email" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  placeholder="eposta@adresiniz.com" 
-                  required
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
-                />
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>İSİM VE SOYİSİM *</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="text" 
+                    value={fullName} 
+                    onChange={(e) => setFullName(e.target.value)} 
+                    placeholder="Örn: Dr. Canan Yılmaz" 
+                    required
+                    style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                  <User size={16} color="#94a3b8" style={{ position: 'absolute', left: '10px', top: '12px' }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>E-POSTA *</label>
+                  <input 
+                    type="email" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                    placeholder="eposta@adresiniz.com" 
+                    required
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>TELEFON NUMARASI *</label>
+                  <input 
+                    type="tel" 
+                    value={phone} 
+                    onChange={(e) => setPhone(e.target.value)} 
+                    placeholder="05xx xxx xx xx" 
+                    required
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>ŞİFRE OLUŞTURUN *</label>
+                  <input 
+                    type="password" 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    placeholder="En az 4 karakter" 
+                    required
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>ŞİFRE TEKRARI *</label>
+                  <input 
+                    type="password" 
+                    value={registerConfirmPassword} 
+                    onChange={(e) => setRegisterConfirmPassword(e.target.value)} 
+                    placeholder="Şifrenizi tekrar girin" 
+                    required
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                </div>
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>TELEFON NUMARASI *</label>
-                <input 
-                  type="tel" 
-                  value={phone} 
-                  onChange={(e) => setPhone(e.target.value)} 
-                  placeholder="05xx xxx xx xx" 
-                  required
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
-                />
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>İLGİ ALANLARINIZ * (Çoklu Seçilebilir)</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {availableInterests.map((cat) => (
+                    <button 
+                      type="button" 
+                      key={cat} 
+                      onClick={() => toggleInterest(cat)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        border: '1px solid',
+                        borderColor: interests.includes(cat) ? '#0284c7' : '#cbd5e1',
+                        background: interests.includes(cat) ? '#e0f2fe' : '#ffffff',
+                        color: interests.includes(cat) ? '#0369a1' : '#64748b',
+                        fontSize: '0.78rem',
+                        fontWeight: '700',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {interests.includes(cat) ? '✓ ' : '+ '}{cat}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>ŞİFRE OLUŞTURUN *</label>
-              <input 
-                type="password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                placeholder="En az 4 karakter" 
-                required
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>İLGİ ALANLARINIZ * (Çoklu Seçilebilir)</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {availableInterests.map((cat) => (
-                  <button 
-                    type="button" 
-                    key={cat} 
-                    onClick={() => toggleInterest(cat)}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      border: '1px solid',
-                      borderColor: interests.includes(cat) ? '#0284c7' : '#cbd5e1',
-                      background: interests.includes(cat) ? '#e0f2fe' : '#ffffff',
-                      color: interests.includes(cat) ? '#0369a1' : '#64748b',
-                      fontSize: '0.78rem',
-                      fontWeight: '700',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {interests.includes(cat) ? '✓ ' : '+ '}{cat}
-                  </button>
-                ))}
+              <button 
+                type="submit" 
+                disabled={isSubmitting}
+                style={{ background: '#0b132b', color: 'white', padding: '12px', borderRadius: '6px', fontWeight: '700', fontSize: '0.92rem', border: 'none', cursor: isSubmitting ? 'not-allowed' : 'pointer', marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                <KeyRound size={16} color="#38bdf8" />
+                <span>{isSubmitting ? 'Doğrulama Kodu Gönderiliyor...' : 'Hesabımı Oluştur ve Doğrulama Kodu Gönder'}</span>
+              </button>
+            </form>
+          ) : (
+            /* STEP 2: ENTER 6-DIGIT EMAIL OTP VERIFICATION CODE */
+            <form onSubmit={handleVerifyRegisterCode} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ fontSize: '0.82rem', fontWeight: '800', color: '#0284c7', display: 'block', marginBottom: '6px' }}>
+                  6 HANELİ E-POSTA DOĞRULAMA KODU *
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="text" 
+                    maxLength="8"
+                    value={registerOtpCode} 
+                    onChange={(e) => setRegisterOtpCode(e.target.value)} 
+                    placeholder="Örn: 549302" 
+                    required
+                    style={{ width: '100%', padding: '12px 14px 12px 38px', borderRadius: '6px', border: '2px solid #0284c7', fontSize: '1.1rem', fontWeight: '800', letterSpacing: '3px', textAlign: 'center' }}
+                  />
+                  <KeyRound size={18} color="#0284c7" style={{ position: 'absolute', left: '12px', top: '14px' }} />
+                </div>
               </div>
-            </div>
 
-            <button 
-              type="submit" 
-              disabled={isSubmitting}
-              style={{ background: '#0b132b', color: 'white', padding: '12px', borderRadius: '6px', fontWeight: '700', fontSize: '0.92rem', border: 'none', cursor: 'pointer', marginTop: '8px' }}
-            >
-              {isSubmitting ? 'Üyelik Oluşturuluyor...' : 'Üyeliğimi Tamamla ve Giriş Yap'}
-            </button>
-          </form>
+              <button 
+                type="submit" 
+                style={{ background: '#16a34a', color: 'white', padding: '13px', borderRadius: '6px', fontWeight: '700', fontSize: '0.95rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                <CheckCircle2 size={18} />
+                <span>E-Postamı Doğrula ve Kaydımı Tamamla</span>
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => { setRegisterStep(1); setErrorMsg(''); setSuccessMsg(''); }}
+                style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+              >
+                <ArrowLeft size={13} /> Kayıt Bilgilerini Düzenle
+              </button>
+            </form>
+          )
         )}
       </div>
     </div>

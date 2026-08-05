@@ -2493,6 +2493,7 @@ export default function AdminPanel({
                     <tr style={{ background: '#0b132b', color: 'white', fontSize: '0.82rem' }}>
                       <th style={{ padding: '12px 16px' }}>AD SOYAD</th>
                       <th style={{ padding: '12px 16px' }}>E-POSTA ADRESİ</th>
+                      <th style={{ padding: '12px 16px' }}>DOĞRULAMA DURUMU</th>
                       <th style={{ padding: '12px 16px' }}>TELEFON NUMARASI</th>
                       <th style={{ padding: '12px 16px' }}>İLGİ ALANLARI</th>
                       <th style={{ padding: '12px 16px' }}>KAYIT TARİHİ VE SAATİ</th>
@@ -2504,6 +2505,17 @@ export default function AdminPanel({
                       <tr key={user.id || idx} style={{ borderBottom: '1px solid #e2e8f0', fontSize: '0.88rem', background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
                         <td style={{ padding: '14px 16px', fontWeight: '700', color: '#0f172a' }}>{user.fullName}</td>
                         <td style={{ padding: '14px 16px', color: '#0284c7', fontWeight: '700' }}>{user.email}</td>
+                        <td style={{ padding: '14px 16px' }}>
+                          {user.isVerified !== false ? (
+                            <span style={{ background: '#dcfce7', color: '#15803d', border: '1px solid #86efac', padding: '4px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <CheckCircle2 size={13} /> DOĞRULANMIŞ ÜYE
+                            </span>
+                          ) : (
+                            <span style={{ background: '#fefce8', color: '#a16207', border: '1px solid #fef08a', padding: '4px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              🟡 BEKLEMEDE (KOD GÖNDERİLDİ)
+                            </span>
+                          )}
+                        </td>
                         <td style={{ padding: '14px 16px', color: '#475569' }}>{user.phone}</td>
                         <td style={{ padding: '14px 16px' }}>
                           <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '700' }}>
