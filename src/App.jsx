@@ -388,6 +388,13 @@ export default function App() {
       
       if (path.includes('admin') || hash.includes('admin') || search.includes('admin')) {
         setIsAdmin(true);
+      }
+
+      if (hash.includes('reset-password') || hash.includes('access_token') || hash.includes('type=recovery')) {
+        setIsAuthModalOpen(true);
+      }
+
+      if (path.includes('admin') || hash.includes('admin') || search.includes('admin')) {
         fetchAndMergeCloudData(); // Re-sync immediately on entering admin panel
       } else {
         setIsAdmin(false);
