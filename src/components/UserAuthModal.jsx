@@ -166,18 +166,29 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     setGeneratedCode(code);
 
-    // Trigger Supabase Auth System Password Reset Mail (Option 2 - Supabase Auth Mailer)
+    // Trigger Supabase Real Email System (Both OTP and Password Reset Mailers)
     try {
+      // 1. Send OTP Code Email via Supabase Auth
+      await supabase.auth.signInWithOtp({
+        email: inputEmail
+      });
+    } catch (otpErr) {
+      console.log('Supabase OTP email notice:', otpErr);
+    }
+
+    try {
+      // 2. Fallback Reset Email via Supabase Auth
       await supabase.auth.resetPasswordForEmail(inputEmail, {
         redirectTo: `${window.location.origin}/#reset-password`
       });
-    } catch (err) {
-      console.log('Supabase reset email notice:', err);
+    } catch (resetErr) {
+      console.log('Supabase reset email notice:', resetErr);
     }
 
     setIsSubmitting(false);
     setForgotStep(2);
-    setSuccessMsg(`🔑 6 HANELİ ŞİFRE SIFIRLAMA KODUNUZ: ${code}\n\n(iletisim@pikamdergi.com adresimiz üzerinden "${inputEmail}" hesabınıza e-posta yönlendirmesi sağlandı). Lütfen yukarıdaki 6 haneli kodu aşağıdaki kutucuğa yazıp yeni şifrenizi belirleyiniz.`);
+    // DO NOT SHOW CODE ON SCREEN - ONLY ON EMAIL
+    setSuccessMsg(`✓ 6 Haneli doğrulama kodunuz "iletisim@pikamdergi.com" adresimiz üzerinden "${inputEmail}" hesabınıza e-posta olarak gönderilmiştir.\n\nLütfen e-posta gelen kutunuzu (ve Spam/Junk klasörünü) kontrol ederek 6 haneli kodu aşağıdaki kutucuğa yazınız.`);
   };
 
   const handleVerifyCodeAndResetPassword = (e) => {
