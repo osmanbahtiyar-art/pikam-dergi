@@ -268,9 +268,10 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
 
     setIsSubmitting(true);
 
-    // Generate 6-digit random verification code
+    // Save OTP persistently to localStorage so it survives hash changes and page refreshes
     const code = String(Math.floor(100000 + Math.random() * 900000));
     setGeneratedCode(code);
+    localStorage.setItem(`pikam_otp_${inputEmail}`, code);
 
     // Trigger Supabase Auth Reset Password Email
     try {
@@ -305,19 +306,39 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
       return;
     }
 
-    // Try Supabase OTP verification if available
-    try {
-      await supabase.auth.verifyOtp({
-        email: targetEmail,
-        token: verificationCode.trim(),
-        type: 'email'
-      });
-    } catch (vErr) {
-      console.log('Supabase verifyOtp notice:', vErr);
+    const inputCode = verificationCode.trim();
+    let isOtpValid = false;
+
+    // 1. Check persistent localStorage OTP or in-memory generatedCode
+    const savedOtp = localStorage.getItem(`pikam_otp_${targetEmail}`);
+    if (inputCode && (inputCode === generatedCode || inputCode === savedOtp)) {
+      isOtpValid = true;
     }
 
-    const inputCode = verificationCode.trim();
-    if (!generatedCode || inputCode !== generatedCode) {
+    // 2. Try Supabase Auth verifyOtp if type is recovery or email
+    if (!isOtpValid) {
+      try {
+        const { error: vErr } = await supabase.auth.verifyOtp({
+          email: targetEmail,
+          token: inputCode,
+          type: 'recovery'
+        });
+        if (!vErr) isOtpValid = true;
+      } catch (e1) {}
+
+      if (!isOtpValid) {
+        try {
+          const { error: vErr2 } = await supabase.auth.verifyOtp({
+            email: targetEmail,
+            token: inputCode,
+            type: 'email'
+          });
+          if (!vErr2) isOtpValid = true;
+        } catch (e2) {}
+      }
+    }
+
+    if (!isOtpValid) {
       setErrorMsg('Girdiğiniz 6 haneli doğrulama kodu hatalı! Lütfen e-postanıza gönderilen 6 haneli kodu eksiksiz giriniz.');
       return;
     }
