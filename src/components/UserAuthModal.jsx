@@ -177,7 +177,7 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
 
     setIsSubmitting(false);
     setForgotStep(2);
-    setSuccessMsg(`✓ Supabase E-Posta Servisi üzerinden 6 Haneli doğrulama kodunuz ve şifre sıfırlama yönergeleri "${inputEmail}" adresinize gönderildi! (Test/Yedek Kodu: ${code}). Lütfen gelen kutunuzu kontrol edip 6 haneli kodu ve yeni şifrenizi giriniz.`);
+    setSuccessMsg(`✓ "iletisim@pikamdergi.com" kurumsal adresimiz üzerinden 6 Haneli doğrulama kodunuz ve şifre sıfırlama yönergeleri "${inputEmail}" adresinize gönderildi! (Güvenlik / Test Kodu: ${code}). Lütfen gelen kutunuzu kontrol edip 6 haneli kodu ve yeni şifrenizi giriniz.`);
   };
 
   const handleVerifyCodeAndResetPassword = (e) => {

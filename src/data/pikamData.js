@@ -259,7 +259,7 @@ export const PIKAM_DATA = {
     iletisim: {
       adres: "Çankaya Akademik Araştırmalar Yerleşkesi No: 42, Ankara",
       telefon: "+90 (312) 440 20 26",
-      eposta: "iletisim@pikamdergi.org.tr",
+      eposta: "iletisim@pikamdergi.com",
       web: "www.pikamtr.com"
     }
   }
