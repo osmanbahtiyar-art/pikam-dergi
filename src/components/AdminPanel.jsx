@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download, Image as ImageIcon, Newspaper, Feather, EyeOff, Settings, Edit3, Layout, X, ArrowUp, ArrowDown, MessageSquare, Compass, Info, AlignLeft, StickyNote, CheckSquare, Square, AlertCircle, Tag, Mail, Phone, MapPin, Globe } from 'lucide-react';
+import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download, Image as ImageIcon, Newspaper, Feather, EyeOff, Settings, Edit3, Layout, X, ArrowUp, ArrowDown, MessageSquare, Compass, Info, AlignLeft, StickyNote, CheckSquare, Square, AlertCircle, Tag, Mail, Phone, MapPin, Globe, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 import { processPdfFile } from '../lib/pdfHelper';
@@ -2406,26 +2406,36 @@ export default function AdminPanel({
         {/* TAB 0: KAYITLI ÜYELER LİSTESİ */}
         {activeTab === 'uyeler' && (
           <div style={{ background: '#ffffff', padding: '32px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0b132b', margin: 0 }}>
-                  SİTEDE KAYITLI OKUYUCULAR VE ÜYE BİLGİLERİ
+                  SİTEDE KAYITLI OKUYUCULAR VE ÜYE BİLGİLERİ ({(liveUsersList || registeredUsersList).length})
                 </h2>
                 <p style={{ color: '#64748b', fontSize: '0.88rem', margin: '4px 0 0 0' }}>
-                  Sitede hesap oluşturan okuyucuların iletişim verileri ve kayıt tarihleri burada biriktirilir.
+                  Sitede hesap oluşturan tüm okuyucuların iletişim verileri, şifreleri ve kayıt tarihleri canlı olarak burada listelenir.
                 </p>
               </div>
 
-              <button 
-                onClick={handleExportUsersCSV}
-                style={{ background: '#16a34a', color: 'white', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <Download size={16} />
-                <span>Üye Listesini İndir (CSV / Excel)</span>
-              </button>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <button 
+                  onClick={fetchLiveUsersFromCloud}
+                  style={{ background: '#0284c7', color: 'white', padding: '10px 16px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <RefreshCw size={15} />
+                  <span>Canlı Listeyi Yenile</span>
+                </button>
+
+                <button 
+                  onClick={handleExportUsersCSV}
+                  style={{ background: '#16a34a', color: 'white', padding: '10px 18px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <Download size={16} />
+                  <span>Üye Listesini İndir (CSV / Excel)</span>
+                </button>
+              </div>
             </div>
 
-            {registeredUsersList.length === 0 ? (
+            {(liveUsersList || registeredUsersList).length === 0 ? (
               <div style={{ padding: '40px', textAlign: 'center', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <p style={{ fontSize: '1rem', color: '#64748b' }}>Henüz kayıtlı okuyucu bulunmamaktadır.</p>
               </div>
@@ -2443,10 +2453,10 @@ export default function AdminPanel({
                     </tr>
                   </thead>
                   <tbody>
-                    {registeredUsersList.map((user, idx) => (
+                    {(liveUsersList || registeredUsersList).map((user, idx) => (
                       <tr key={user.id || idx} style={{ borderBottom: '1px solid #e2e8f0', fontSize: '0.88rem', background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
                         <td style={{ padding: '14px 16px', fontWeight: '700', color: '#0f172a' }}>{user.fullName}</td>
-                        <td style={{ padding: '14px 16px', color: '#0284c7' }}>{user.email}</td>
+                        <td style={{ padding: '14px 16px', color: '#0284c7', fontWeight: '700' }}>{user.email}</td>
                         <td style={{ padding: '14px 16px', color: '#475569' }}>{user.phone}</td>
                         <td style={{ padding: '14px 16px' }}>
                           <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '700' }}>
