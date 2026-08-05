@@ -117,35 +117,25 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
     let found = existing.find(u => u.email && u.email.toLowerCase() === inputEmail);
 
-    // If local user has a password matching inputPassword, prioritize it!
-    if (found && found.password && found.password === inputPassword) {
-      localStorage.setItem('pikam_current_user', JSON.stringify(found));
-      onLoginSuccess(found);
-      onClose();
-      return;
-    }
-
-    // Otherwise check Supabase Cloud Table 'profiles'
+    // Fetch cloud profile from Supabase
+    let cloudPassword = null;
     try {
       const { data: cloudUser } = await supabase.from('profiles').select('*').eq('email', inputEmail).maybeSingle();
-      if (cloudUser && cloudUser.password) {
-        if (found) {
-          // Only update if local password was empty
-          if (!found.password) found.password = cloudUser.password;
-          found.fullName = cloudUser.full_name || found.fullName;
-        } else {
+      if (cloudUser) {
+        cloudPassword = cloudUser.password;
+        if (!found) {
           found = {
             id: cloudUser.id || `usr-${Date.now()}`,
             fullName: cloudUser.full_name || inputEmail.split('@')[0].toUpperCase(),
             email: cloudUser.email,
-            password: cloudUser.password,
+            password: cloudUser.password || inputPassword,
             phone: cloudUser.phone || '',
             interests: cloudUser.interests || 'POLİTİKA, EKONOMİ',
             registeredAt: cloudUser.registered_at || new Date().toLocaleDateString('tr-TR')
           };
           existing.unshift(found);
+          localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
         }
-        localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
       }
     } catch (err) {
       console.log('Supabase profile fetch notice:', err);
@@ -156,13 +146,33 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
       return;
     }
 
-    // STRICT PASSWORD CHECK FOR ALL ACCOUNTS
-    if (!found.password || found.password !== inputPassword) {
-      setErrorMsg('E-posta adresiniz veya şifreniz yanlış. Lütfen aşağıdan "Şifremi Unuttum?" butonuna basarak yeni bir şifre oluşturunuz.');
-      return;
+    // MATCH CHECK: Local password OR Cloud password OR Supabase Auth
+    const isPasswordMatch = 
+      (found.password && found.password.trim() === inputPassword) ||
+      (cloudPassword && cloudPassword.trim() === inputPassword);
+
+    if (!isPasswordMatch) {
+      // Also attempt Supabase Auth sign-in as fail-safe fallback
+      try {
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: inputEmail,
+          password: inputPassword
+        });
+
+        if (authError) {
+          setErrorMsg('E-posta adresiniz veya şifreniz yanlış. Lütfen aşağıdan "Şifremi Unuttum?" butonuna basarak yeni bir şifre oluşturunuz.');
+          return;
+        }
+      } catch (authErr) {
+        setErrorMsg('E-posta adresiniz veya şifreniz yanlış. Lütfen aşağıdan "Şifremi Unuttum?" butonuna basarak yeni bir şifre oluşturunuz.');
+        return;
+      }
     }
 
-    // Login Clean Success
+    // Login Clean Success - Update current password in memory & local storage
+    found.password = inputPassword;
+    const updatedUsers = [found, ...existing.filter(u => u.email.toLowerCase() !== inputEmail)];
+    localStorage.setItem('pikam_registered_users', JSON.stringify(updatedUsers));
     localStorage.setItem('pikam_current_user', JSON.stringify(found));
     onLoginSuccess(found);
     onClose();
