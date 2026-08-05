@@ -434,7 +434,7 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
                 <div style={{ position: 'relative' }}>
                   <input 
                     type="text" 
-                    maxLength="6"
+                    maxLength="8"
                     value={verificationCode} 
                     onChange={(e) => setVerificationCode(e.target.value)} 
                     placeholder="Örn: 684920" 
