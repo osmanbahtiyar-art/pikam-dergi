@@ -247,10 +247,7 @@ export default function SearchModal({
                   <User size={24} color="#8b5cf6" />
                 )}
                 <div>
-                  <span style={{ background: '#8b5cf6', color: 'white', fontSize: '0.68rem', fontWeight: '800', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>
-                    YAZAR / YAZAR KADROSU
-                  </span>
-                  <h4 style={{ fontFamily: 'Playfair Display, serif', fontSize: '0.95rem', color: '#0f172a', margin: '3px 0 0 0', fontWeight: '700' }}>
+                  <h4 style={{ fontFamily: 'Playfair Display, serif', fontSize: '0.98rem', color: '#0f172a', margin: '0 0 2px 0', fontWeight: '700' }}>
                     {auth.name}
                   </h4>
                   <span style={{ fontSize: '0.76rem', color: '#64748b' }}>{auth.role || auth.affiliation}</span>
