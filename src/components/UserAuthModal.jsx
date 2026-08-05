@@ -117,12 +117,21 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
     let found = existing.find(u => u.email && u.email.toLowerCase() === inputEmail);
 
-    // Always fetch latest cloud profile from Supabase Cloud Table 'profiles'
+    // If local user has a password matching inputPassword, prioritize it!
+    if (found && found.password && found.password === inputPassword) {
+      localStorage.setItem('pikam_current_user', JSON.stringify(found));
+      onLoginSuccess(found);
+      onClose();
+      return;
+    }
+
+    // Otherwise check Supabase Cloud Table 'profiles'
     try {
       const { data: cloudUser } = await supabase.from('profiles').select('*').eq('email', inputEmail).maybeSingle();
       if (cloudUser && cloudUser.password) {
         if (found) {
-          found.password = cloudUser.password;
+          // Only update if local password was empty
+          if (!found.password) found.password = cloudUser.password;
           found.fullName = cloudUser.full_name || found.fullName;
         } else {
           found = {
