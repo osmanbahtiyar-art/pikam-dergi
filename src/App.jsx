@@ -283,28 +283,29 @@ export default function App() {
         localStorage.setItem('pikam_article_comments', JSON.stringify(mappedComments));
       }
 
-      // 2.5 Profiles / Registered Users Cloud Sync (Ensures all registered readers sync to Admin Panel)
+      // 2.5 Master Merged Registered Users (Combines local storage, Supabase profiles, & site_settings so no user ever disappears)
+      const localUsers = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
+      const userMap = new Map();
+      localUsers.forEach(u => u && u.email && userMap.set(u.email.trim().toLowerCase(), u));
+
       try {
         const { data: cloudProfiles } = await supabase.from('profiles').select('*');
         if (cloudProfiles && cloudProfiles.length > 0) {
-          const mappedUsers = cloudProfiles.map(p => ({
-            id: p.id,
-            fullName: p.full_name || p.fullName || 'PİKAM Okuru',
-            email: p.email,
-            password: p.password,
-            phone: p.phone || '',
-            interests: p.interests || 'POLİTİKA, EKONOMİ',
-            registeredAt: p.registered_at || p.registeredAt || new Date().toLocaleDateString('tr-TR')
-          }));
-
-          const localUsers = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-          const userMap = new Map();
-          localUsers.forEach(u => u.email && userMap.set(u.email.toLowerCase(), u));
-          mappedUsers.forEach(u => u.email && userMap.set(u.email.toLowerCase(), u));
-
-          const mergedUsers = Array.from(userMap.values());
-          setRegisteredUsersList(mergedUsers);
-          localStorage.setItem('pikam_registered_users', JSON.stringify(mergedUsers));
+          cloudProfiles.forEach(p => {
+            if (p && p.email) {
+              const key = p.email.trim().toLowerCase();
+              const existing = userMap.get(key) || {};
+              userMap.set(key, {
+                id: p.id || existing.id || `usr-${Date.now()}`,
+                fullName: p.full_name || existing.fullName || 'PİKAM Okuru',
+                email: p.email,
+                password: p.password || existing.password || '',
+                phone: p.phone || existing.phone || '',
+                interests: p.interests || existing.interests || 'POLİTİKA, EKONOMİ',
+                registeredAt: p.registered_at || existing.registeredAt || new Date().toLocaleDateString('tr-TR')
+              });
+            }
+          });
         }
       } catch (profErr) {
         console.log('Supabase profiles sync notice:', profErr);
@@ -381,14 +382,26 @@ export default function App() {
 
         const usersSetting = cloudSettings.find(s => s.id === 'registered_users_list');
         if (usersSetting && Array.isArray(usersSetting.data) && usersSetting.data.length > 0) {
-          const localUsers = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-          const userMap = new Map();
-          localUsers.forEach(u => u.email && userMap.set(u.email.toLowerCase(), u));
-          usersSetting.data.forEach(u => u.email && userMap.set(u.email.toLowerCase(), u));
-          const mergedUsers = Array.from(userMap.values());
-          setRegisteredUsersList(mergedUsers);
-          localStorage.setItem('pikam_registered_users', JSON.stringify(mergedUsers));
+          usersSetting.data.forEach(u => {
+            if (u && u.email) {
+              const key = u.email.trim().toLowerCase();
+              if (!userMap.has(key)) {
+                userMap.set(key, u);
+              } else {
+                const existing = userMap.get(key);
+                userMap.set(key, {
+                  ...existing,
+                  password: existing.password || u.password,
+                  fullName: existing.fullName || u.fullName
+                });
+              }
+            }
+          });
         }
+
+        const finalUsers = Array.from(userMap.values());
+        setRegisteredUsersList(finalUsers);
+        localStorage.setItem('pikam_registered_users', JSON.stringify(finalUsers));
       }
 
       // 5. E-Dergi Issues
