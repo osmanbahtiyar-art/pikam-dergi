@@ -283,9 +283,16 @@ export default function App() {
         localStorage.setItem('pikam_article_comments', JSON.stringify(mappedComments));
       }
 
-      // 2.5 Master Merged Registered Users (Combines local storage, Supabase profiles, & site_settings so no user ever disappears)
+      // 2.5 Master Merged Registered Users (Combines state, local storage, Supabase profiles, & site_settings so no user ever flickers or disappears)
       const localUsers = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
       const userMap = new Map();
+      
+      // Preserve currently rendered users in state
+      if (Array.isArray(registeredUsersList)) {
+        registeredUsersList.forEach(u => u && u.email && userMap.set(u.email.trim().toLowerCase(), u));
+      }
+
+      // Add local storage users
       localUsers.forEach(u => u && u.email && userMap.set(u.email.trim().toLowerCase(), u));
 
       try {
@@ -402,6 +409,13 @@ export default function App() {
         const finalUsers = Array.from(userMap.values());
         setRegisteredUsersList(finalUsers);
         localStorage.setItem('pikam_registered_users', JSON.stringify(finalUsers));
+
+        // Lock merged users into cloud site_settings so stale data never overwrites them
+        try {
+          await supabase.from('site_settings').upsert([{ id: 'registered_users_list', data: finalUsers }]);
+        } catch (uErr) {
+          console.log('Site settings users lock notice:', uErr);
+        }
       }
 
       // 5. E-Dergi Issues
