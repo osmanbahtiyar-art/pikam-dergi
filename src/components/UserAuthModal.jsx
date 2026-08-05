@@ -112,13 +112,8 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     }
 
     // STRICT PASSWORD CHECK FOR ALL ACCOUNTS
-    if (!found.password) {
-      setErrorMsg('Hesabınız için kayıtlı şifre doğrulaması bulunamadı. Lütfen aşağıdan "Şifremi Unuttum?" butonuna basarak yeni bir şifre oluşturunuz.');
-      return;
-    }
-
-    if (found.password !== inputPassword) {
-      setErrorMsg('Girilen şifre hatalı! Lütfen kayıt olduğunuz doğru şifreyi giriniz veya "Şifremi Unuttum?" butonuna basınız.');
+    if (!found.password || found.password !== inputPassword) {
+      setErrorMsg('E-posta adresiniz veya şifreniz yanlış. Lütfen aşağıdan "Şifremi Unuttum?" butonuna basarak yeni bir şifre oluşturunuz.');
       return;
     }
 
