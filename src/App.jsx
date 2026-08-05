@@ -242,9 +242,15 @@ export default function App() {
   });
 
   const [isAdmin, setIsAdmin] = useState(false);
+  const lastFetchTimeRef = React.useRef(0);
 
   // REAL-TIME INSTANT SYNCHRONIZATION FUNCTION (SUPABASE CLOUD AS SINGLE SOURCE OF TRUTH)
-  const fetchAndMergeCloudData = async () => {
+  const fetchAndMergeCloudData = async (force = false) => {
+    const now = Date.now();
+    if (!force && now - lastFetchTimeRef.current < 15000) {
+      return; // Skip rapid queries within 15s to conserve Egress bandwidth
+    }
+    lastFetchTimeRef.current = now;
     try {
       // 1. Registered Users / Profiles
       const { data: cloudProfiles } = await supabase.from('profiles').select('*');
