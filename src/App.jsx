@@ -263,7 +263,7 @@ export default function App() {
 
       // 2. Reader Comments (Deletions in Admin Panel reflect instantly on all devices)
       const { data: cloudComments } = await supabase.from('article_comments').select('*');
-      if (cloudComments) {
+      if (cloudComments && cloudComments.length > 0) {
         const mappedComments = cloudComments.map(c => ({
           id: c.id,
           articleId: c.article_id || c.articleId,
@@ -275,6 +275,33 @@ export default function App() {
         }));
         setAllCommentsList(mappedComments);
         localStorage.setItem('pikam_article_comments', JSON.stringify(mappedComments));
+      }
+
+      // 2.5 Profiles / Registered Users Cloud Sync (Ensures all registered readers sync to Admin Panel)
+      try {
+        const { data: cloudProfiles } = await supabase.from('profiles').select('*');
+        if (cloudProfiles && cloudProfiles.length > 0) {
+          const mappedUsers = cloudProfiles.map(p => ({
+            id: p.id,
+            fullName: p.full_name || p.fullName || 'PİKAM Okuru',
+            email: p.email,
+            password: p.password,
+            phone: p.phone || '',
+            interests: p.interests || 'POLİTİKA, EKONOMİ',
+            registeredAt: p.registered_at || p.registeredAt || new Date().toLocaleDateString('tr-TR')
+          }));
+
+          const localUsers = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
+          const userMap = new Map();
+          localUsers.forEach(u => u.email && userMap.set(u.email.toLowerCase(), u));
+          mappedUsers.forEach(u => u.email && userMap.set(u.email.toLowerCase(), u));
+
+          const mergedUsers = Array.from(userMap.values());
+          setRegisteredUsersList(mergedUsers);
+          localStorage.setItem('pikam_registered_users', JSON.stringify(mergedUsers));
+        }
+      } catch (profErr) {
+        console.log('Supabase profiles sync notice:', profErr);
       }
 
       // 3. Authors List (Uses exact locked order from site_settings merged with all cloud authors)
@@ -344,6 +371,17 @@ export default function App() {
         if (subSetting && Array.isArray(subSetting.data)) {
           setNewsletterSubscribers(subSetting.data);
           localStorage.setItem('pikam_newsletter_subscribers', JSON.stringify(subSetting.data));
+        }
+
+        const usersSetting = cloudSettings.find(s => s.id === 'registered_users_list');
+        if (usersSetting && Array.isArray(usersSetting.data) && usersSetting.data.length > 0) {
+          const localUsers = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
+          const userMap = new Map();
+          localUsers.forEach(u => u.email && userMap.set(u.email.toLowerCase(), u));
+          usersSetting.data.forEach(u => u.email && userMap.set(u.email.toLowerCase(), u));
+          const mergedUsers = Array.from(userMap.values());
+          setRegisteredUsersList(mergedUsers);
+          localStorage.setItem('pikam_registered_users', JSON.stringify(mergedUsers));
         }
       }
 

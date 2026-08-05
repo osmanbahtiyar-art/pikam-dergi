@@ -89,6 +89,11 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
         interests: interests.join(', '),
         registered_at: formattedDate
       }]);
+
+      await supabase.from('site_settings').upsert([{
+        id: 'registered_users_list',
+        data: updatedUsers
+      }]);
     } catch (err) {
       console.log('Supabase profile sync notice:', err);
     }
@@ -316,7 +321,7 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
     localStorage.setItem('pikam_current_user', JSON.stringify(mainUser));
 
-    // Update in Supabase Cloud Database Table 'profiles'
+    // Update in Supabase Cloud Database Table 'profiles' & site_settings fallback
     try {
       await supabase.from('profiles').upsert([{
         id: mainUser.id,
@@ -325,6 +330,12 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
         password: cleanPassword,
         registered_at: mainUser.registeredAt
       }]);
+
+      await supabase.from('site_settings').upsert([{
+        id: 'registered_users_list',
+        data: existing
+      }]);
+
       await supabase.auth.updateUser({ password: cleanPassword });
     } catch (err) {
       console.log('Supabase profile password update notice:', err);
