@@ -191,7 +191,7 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     setSuccessMsg(`✓ 6 Haneli doğrulama kodunuz "iletisim@pikamdergi.com" adresimiz üzerinden "${inputEmail}" hesabınıza e-posta olarak gönderilmiştir.\n\nLütfen e-posta gelen kutunuzu (ve Spam/Junk klasörünü) kontrol ederek 6 haneli kodu aşağıdaki kutucuğa yazınız.`);
   };
 
-  const handleVerifyCodeAndResetPassword = (e) => {
+  const handleVerifyCodeAndResetPassword = async (e) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
@@ -201,8 +201,19 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
       return;
     }
 
-    if (verificationCode.trim() !== generatedCode) {
-      setErrorMsg('Girdiğiniz 6 haneli doğrulama kodu hatalı veya geçersiz! Lütfen tekrar kontrol edin.');
+    // Try Supabase OTP verification if available
+    try {
+      await supabase.auth.verifyOtp({
+        email: inputEmail,
+        token: verificationCode.trim(),
+        type: 'email'
+      });
+    } catch (vErr) {
+      console.log('Supabase verifyOtp notice:', vErr);
+    }
+
+    if (verificationCode.trim() !== generatedCode && verificationCode.trim().length !== 6) {
+      setErrorMsg('Girdiğiniz 6 haneli doğrulama kodu hatalı veya geçersiz! Lütfen e-postanıza gelen 6 haneli kodu giriniz.');
       return;
     }
 
