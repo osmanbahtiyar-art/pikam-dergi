@@ -2200,15 +2200,15 @@ export default function AdminPanel({
                   />
                 </div>
 
-                <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>SON ANALİZ / ESER BAŞLIĞI</label>
-                  <input 
-                    type="text" 
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>HAKKINDA / ÖZGEÇMİŞ BİLGİSİ</label>
+                  <textarea 
+                    rows="3"
                     value={authorLatest} 
                     onChange={(e) => setAuthorLatest(e.target.value)} 
-                    placeholder="Doğu Akdeniz Enerji Denklemi" 
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
-                  />
+                    placeholder="Ekip üyesi hakkında biyografi veya kısa tanıtım yazısı giriniz..." 
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', fontFamily: 'inherit' }}
+                  ></textarea>
                 </div>
 
                 <div style={{ gridColumn: 'span 2' }}>
