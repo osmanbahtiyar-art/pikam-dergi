@@ -117,11 +117,14 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
     let found = existing.find(u => u.email && u.email.toLowerCase() === inputEmail);
 
-    // Fallback: Check Supabase Cloud profiles table if not found locally
-    if (!found) {
-      try {
-        const { data: cloudUser } = await supabase.from('profiles').select('*').eq('email', inputEmail).maybeSingle();
-        if (cloudUser) {
+    // Always fetch latest cloud profile from Supabase Cloud Table 'profiles'
+    try {
+      const { data: cloudUser } = await supabase.from('profiles').select('*').eq('email', inputEmail).maybeSingle();
+      if (cloudUser && cloudUser.password) {
+        if (found) {
+          found.password = cloudUser.password;
+          found.fullName = cloudUser.full_name || found.fullName;
+        } else {
           found = {
             id: cloudUser.id || `usr-${Date.now()}`,
             fullName: cloudUser.full_name || inputEmail.split('@')[0].toUpperCase(),
@@ -132,11 +135,11 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
             registeredAt: cloudUser.registered_at || new Date().toLocaleDateString('tr-TR')
           };
           existing.unshift(found);
-          localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
         }
-      } catch (err) {
-        console.log('Supabase profile fetch notice:', err);
+        localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
       }
+    } catch (err) {
+      console.log('Supabase profile fetch notice:', err);
     }
 
     if (!found) {
@@ -175,7 +178,29 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
 
     const inputEmail = email.trim().toLowerCase();
     const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-    const user = existing.find(u => u.email && u.email.toLowerCase() === inputEmail);
+    let user = existing.find(u => u.email && u.email.toLowerCase() === inputEmail);
+
+    // Check cloud profiles if not found locally
+    if (!user) {
+      try {
+        const { data: cloudUser } = await supabase.from('profiles').select('*').eq('email', inputEmail).maybeSingle();
+        if (cloudUser) {
+          user = {
+            id: cloudUser.id || `usr-${Date.now()}`,
+            fullName: cloudUser.full_name || inputEmail.split('@')[0].toUpperCase(),
+            email: cloudUser.email,
+            password: cloudUser.password,
+            phone: cloudUser.phone || '',
+            interests: cloudUser.interests || 'POLİTİKA, EKONOMİ',
+            registeredAt: cloudUser.registered_at || new Date().toLocaleDateString('tr-TR')
+          };
+          existing.unshift(user);
+          localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
+        }
+      } catch (err) {
+        console.log('Supabase profile check notice:', err);
+      }
+    }
 
     if (!user) {
       setErrorMsg('Bu e-posta adresine ait kayıtlı bir üyelik bulunamadı.');
@@ -216,7 +241,7 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     // Try Supabase OTP verification if available
     try {
       await supabase.auth.verifyOtp({
-        email: inputEmail,
+        email: email.trim().toLowerCase(),
         token: verificationCode.trim(),
         type: 'email'
       });
@@ -272,8 +297,10 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
         id: updatedUser.id,
         full_name: updatedUser.fullName,
         email: inputEmail,
-        password: cleanPassword
+        password: cleanPassword,
+        registered_at: updatedUser.registeredAt
       }]);
+      await supabase.auth.updateUser({ password: cleanPassword });
     } catch (err) {
       console.log('Supabase profile password update notice:', err);
     }
