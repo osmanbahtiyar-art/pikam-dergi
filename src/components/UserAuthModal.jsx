@@ -107,13 +107,18 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     const found = existing.find(u => u.email && u.email.toLowerCase() === inputEmail);
 
     if (!found) {
-      setErrorMsg('Bu e-posta adresiyle kayıtlı üye bulunamadı. Lütfen "Yeni Üye Ol" butonundan kayıt olun.');
+      setErrorMsg('Bu e-posta adresiyle kayıtlı üye bulunamadı. Lütfen "Yeni Üye Ol" sekmesinden kayıt olun.');
       return;
     }
 
-    // STRICT PASSWORD CHECK
-    if (found.password && found.password !== inputPassword) {
-      setErrorMsg('Girilen şifre hatalı! Lütfen kayıtlı şifrenizi giriniz veya "Şifremi Unuttum" seçeneğini kullanınız.');
+    // STRICT PASSWORD CHECK FOR ALL ACCOUNTS
+    if (!found.password) {
+      setErrorMsg('Hesabınız için kayıtlı şifre doğrulaması bulunamadı. Lütfen aşağıdan "Şifremi Unuttum?" butonuna basarak yeni bir şifre oluşturunuz.');
+      return;
+    }
+
+    if (found.password !== inputPassword) {
+      setErrorMsg('Girilen şifre hatalı! Lütfen kayıt olduğunuz doğru şifreyi giriniz veya "Şifremi Unuttum?" butonuna basınız.');
       return;
     }
 
