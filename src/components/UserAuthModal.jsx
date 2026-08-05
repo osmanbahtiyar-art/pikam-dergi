@@ -113,73 +113,64 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     const inputEmail = email.trim().toLowerCase();
     const inputPassword = password.trim();
 
-    // Check registered users in local storage first
+    // 1. Check registered users in local storage first
     const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-    let found = existing.find(u => u.email && u.email.toLowerCase() === inputEmail);
+    let found = existing.find(u => u.email && u.email.trim().toLowerCase() === inputEmail);
 
-    // Fetch cloud profile from Supabase
-    let cloudPassword = null;
+    // 2. Fetch cloud profile from Supabase profiles table
+    let cloudUser = null;
     try {
-      const { data: cloudUser } = await supabase.from('profiles').select('*').eq('email', inputEmail).maybeSingle();
-      if (cloudUser) {
-        cloudPassword = cloudUser.password;
-        if (!found) {
-          found = {
-            id: cloudUser.id || `usr-${Date.now()}`,
-            fullName: cloudUser.full_name || inputEmail.split('@')[0].toUpperCase(),
-            email: cloudUser.email,
-            password: cloudUser.password || inputPassword,
-            phone: cloudUser.phone || '',
-            interests: cloudUser.interests || 'POLİTİKA, EKONOMİ',
-            registeredAt: cloudUser.registered_at || new Date().toLocaleDateString('tr-TR')
-          };
-          existing.unshift(found);
-          localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
-        }
+      const { data: cUser } = await supabase.from('profiles').select('*').eq('email', inputEmail).maybeSingle();
+      if (cUser) {
+        cloudUser = cUser;
       }
     } catch (err) {
       console.log('Supabase profile fetch notice:', err);
     }
 
-    if (!found) {
+    if (!found && cloudUser) {
+      found = {
+        id: cloudUser.id || `usr-${Date.now()}`,
+        fullName: cloudUser.full_name || inputEmail.split('@')[0].toUpperCase(),
+        email: cloudUser.email,
+        password: cloudUser.password || inputPassword,
+        phone: cloudUser.phone || '',
+        interests: cloudUser.interests || 'POLİTİKA, EKONOMİ',
+        registeredAt: cloudUser.registered_at || new Date().toLocaleDateString('tr-TR')
+      };
+      existing.unshift(found);
+      localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
+    }
+
+    if (!found && !cloudUser) {
       setErrorMsg('Bu e-posta adresiyle kayıtlı üye bulunamadı. Lütfen "Yeni Üye Ol" sekmesinden kayıt olun.');
       return;
     }
 
-    // MATCH CHECK: Local password OR Cloud password OR Supabase Auth
-    const isPasswordMatch = 
-      (found.password && found.password.trim() === inputPassword) ||
-      (cloudPassword && cloudPassword.trim() === inputPassword);
+    // MATCH CHECK: Compare against local password OR cloud password
+    const localPass = found ? (found.password || '').trim() : '';
+    const cloudPass = cloudUser ? (cloudUser.password || '').trim() : '';
 
-    if (!isPasswordMatch) {
-      // Also attempt Supabase Auth sign-in as fail-safe fallback
-      try {
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: inputEmail,
-          password: inputPassword
-        });
+    const isMatch = (localPass && localPass === inputPassword) || (cloudPass && cloudPass === inputPassword);
 
-        if (authError) {
-          setErrorMsg('E-posta adresiniz veya şifreniz yanlış. Lütfen aşağıdan "Şifremi Unuttum?" butonuna basarak yeni bir şifre oluşturunuz.');
-          return;
-        }
-      } catch (authErr) {
-        setErrorMsg('E-posta adresiniz veya şifreniz yanlış. Lütfen aşağıdan "Şifremi Unuttum?" butonuna basarak yeni bir şifre oluşturunuz.');
-        return;
-      }
+    if (!isMatch) {
+      setErrorMsg('E-posta adresiniz veya şifreniz yanlış. Lütfen aşağıdan "Şifremi Unuttum?" butonuna basarak yeni bir şifre oluşturunuz.');
+      return;
     }
 
     // Login Clean Success - Update current password in memory & local storage
-    found.password = inputPassword;
-    const updatedUsers = [found, ...existing.filter(u => u.email.toLowerCase() !== inputEmail)];
-    localStorage.setItem('pikam_registered_users', JSON.stringify(updatedUsers));
-    localStorage.setItem('pikam_current_user', JSON.stringify(found));
-    onLoginSuccess(found);
+    if (found) {
+      found.password = inputPassword;
+    }
+    localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
+    localStorage.setItem('pikam_current_user', JSON.stringify(found || { email: inputEmail, password: inputPassword }));
+    onLoginSuccess(found || { email: inputEmail, password: inputPassword });
     onClose();
   };
 
   // Forgot Password 2-Step Flow States
   const [forgotStep, setForgotStep] = useState(1); // 1 = enter email, 2 = enter 6-digit code & new password
+  const [resetTargetEmail, setResetTargetEmail] = useState('');
   const [generatedCode, setGeneratedCode] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -196,6 +187,8 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     }
 
     const inputEmail = email.trim().toLowerCase();
+    setResetTargetEmail(inputEmail);
+
     const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
     let user = existing.find(u => u.email && u.email.toLowerCase() === inputEmail);
 
@@ -252,6 +245,14 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     setErrorMsg('');
     setSuccessMsg('');
 
+    const targetEmail = (resetTargetEmail || email || '').trim().toLowerCase();
+
+    if (!targetEmail) {
+      setErrorMsg('E-posta adresi alınamadı. Lütfen e-posta adresinizi girip tekrar deneyin.');
+      setForgotStep(1);
+      return;
+    }
+
     if (!verificationCode) {
       setErrorMsg('Lütfen e-posta adresinize gönderilen 6 haneli kodu girin.');
       return;
@@ -260,7 +261,7 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     // Try Supabase OTP verification if available
     try {
       await supabase.auth.verifyOtp({
-        email: email.trim().toLowerCase(),
+        email: targetEmail,
         token: verificationCode.trim(),
         type: 'email'
       });
@@ -284,51 +285,56 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     }
 
     // Code verified & passwords match! Update user password across localStorage and Supabase profiles
-    const inputEmail = email.trim().toLowerCase();
     const cleanPassword = newPassword.trim();
     const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-    let userIdx = existing.findIndex(u => u.email && u.email.toLowerCase() === inputEmail);
+    
+    let updatedCount = 0;
+    existing.forEach(u => {
+      if (u.email && u.email.trim().toLowerCase() === targetEmail) {
+        u.password = cleanPassword;
+        updatedCount++;
+      }
+    });
 
-    let updatedUser;
-    if (userIdx !== -1) {
-      existing[userIdx].password = cleanPassword;
-      updatedUser = existing[userIdx];
+    let mainUser;
+    if (updatedCount > 0) {
+      mainUser = existing.find(u => u.email && u.email.trim().toLowerCase() === targetEmail);
     } else {
-      updatedUser = {
+      mainUser = {
         id: `usr-${Date.now()}`,
-        fullName: inputEmail.split('@')[0].toUpperCase(),
-        email: inputEmail,
+        fullName: targetEmail.split('@')[0].toUpperCase(),
+        email: targetEmail,
         password: cleanPassword,
         phone: '+90 555 000 00 00',
         interests: 'POLİTİKA, EKONOMİ',
         registeredAt: `${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR')}`
       };
-      existing.unshift(updatedUser);
+      existing.unshift(mainUser);
     }
 
     // Save to local storage
     localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
-    localStorage.setItem('pikam_current_user', JSON.stringify(updatedUser));
+    localStorage.setItem('pikam_current_user', JSON.stringify(mainUser));
 
     // Update in Supabase Cloud Database Table 'profiles'
     try {
       await supabase.from('profiles').upsert([{
-        id: updatedUser.id,
-        full_name: updatedUser.fullName,
-        email: inputEmail,
+        id: mainUser.id,
+        full_name: mainUser.fullName,
+        email: targetEmail,
         password: cleanPassword,
-        registered_at: updatedUser.registeredAt
+        registered_at: mainUser.registeredAt
       }]);
       await supabase.auth.updateUser({ password: cleanPassword });
     } catch (err) {
       console.log('Supabase profile password update notice:', err);
     }
 
-    setSuccessMsg('✓ Şifreniz başarıyla güncellendi! Yeni şifreniz ile otomatik giriş yapılıyor...');
+    setSuccessMsg('✓ Şifreniz başarıyla güncellendi! Otomatik giriş yapılıyor...');
     setTimeout(() => {
-      onLoginSuccess(updatedUser);
+      onLoginSuccess(mainUser);
       onClose();
-    }, 1200);
+    }, 1000);
   };
 
   return (
