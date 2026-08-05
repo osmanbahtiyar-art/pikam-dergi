@@ -2962,14 +2962,29 @@ export default function AdminPanel({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>ÖZET VE İÇERİK *</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.88rem', fontWeight: '800', color: '#0b132b' }}>ÖZET VE MAKALE METNİ (GENİŞ YAZI ALANI) *</label>
+                  <span style={{ fontSize: '0.78rem', color: '#0284c7', fontWeight: '600' }}>💡 Çift Enter ile yeni paragraf oluşturabilirsiniz</span>
+                </div>
                 <textarea 
-                  rows="4" 
+                  rows="16" 
                   value={artExcerpt} 
                   onChange={(e) => setArtExcerpt(e.target.value)} 
-                  placeholder="Makalenin ana özet metnini buraya girin..." 
+                  placeholder="Makalenizin tüm özet ve detay metnini buraya girin veya düzenleyin..." 
                   required
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem', fontFamily: 'inherit' }}
+                  style={{ 
+                    width: '100%', 
+                    minHeight: '380px', 
+                    padding: '14px 18px', 
+                    borderRadius: '8px', 
+                    border: '2px solid #0284c7', 
+                    fontSize: '0.95rem', 
+                    lineHeight: '1.65', 
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    resize: 'vertical',
+                    boxShadow: '0 2px 8px rgba(2, 132, 199, 0.08)'
+                  }}
                 ></textarea>
               </div>
 
