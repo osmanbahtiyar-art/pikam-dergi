@@ -122,12 +122,22 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
     let found = existing.find(u => u.email && u.email.trim().toLowerCase() === inputEmail);
 
-    // 2. Fetch cloud profile from Supabase profiles table
+    // 2. Fetch cloud profile from Supabase profiles table or site_settings
     let cloudUser = null;
     try {
       const { data: cUser } = await supabase.from('profiles').select('*').eq('email', inputEmail).maybeSingle();
       if (cUser) {
         cloudUser = cUser;
+      }
+      
+      if (!cloudUser) {
+        const { data: cSetting } = await supabase.from('site_settings').select('*').eq('id', 'registered_users_list').maybeSingle();
+        if (cSetting && Array.isArray(cSetting.data)) {
+          const matchedInSetting = cSetting.data.find(u => u.email && u.email.trim().toLowerCase() === inputEmail);
+          if (matchedInSetting) {
+            cloudUser = matchedInSetting;
+          }
+        }
       }
     } catch (err) {
       console.log('Supabase profile fetch notice:', err);
@@ -136,60 +146,48 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     if (!found && cloudUser) {
       found = {
         id: cloudUser.id || `usr-${Date.now()}`,
-        fullName: cloudUser.full_name || inputEmail.split('@')[0].toUpperCase(),
+        fullName: cloudUser.full_name || cloudUser.fullName || inputEmail.split('@')[0].toUpperCase(),
         email: cloudUser.email,
-        password: cloudUser.password || inputPassword,
+        password: cloudUser.password || '',
         phone: cloudUser.phone || '',
         interests: cloudUser.interests || 'POLİTİKA, EKONOMİ',
-        registeredAt: cloudUser.registered_at || new Date().toLocaleDateString('tr-TR')
+        registeredAt: cloudUser.registered_at || cloudUser.registeredAt || new Date().toLocaleDateString('tr-TR')
       };
       existing.unshift(found);
       localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
     }
 
+    // STRICT SECURE CHECK 1: If user is NOT registered, BLOCK login!
     if (!found && !cloudUser) {
-      const now = new Date();
-      const formattedDate = `${now.toLocaleDateString('tr-TR')} ${now.toLocaleTimeString('tr-TR')}`;
-      found = {
-        id: `usr-${Date.now()}`,
-        fullName: inputEmail.split('@')[0].toUpperCase(),
-        email: inputEmail,
-        password: inputPassword,
-        phone: '+90 555 000 00 00',
-        interests: 'POLİTİKA, EKONOMİ',
-        registeredAt: formattedDate
-      };
-      existing.unshift(found);
-      localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
-
-      try {
-        await supabase.from('profiles').upsert([{
-          id: found.id,
-          full_name: found.fullName,
-          email: inputEmail,
-          password: inputPassword,
-          phone: found.phone,
-          interests: found.interests,
-          registered_at: formattedDate
-        }]);
-        await supabase.from('site_settings').upsert([{ id: 'registered_users_list', data: existing }]);
-      } catch (err) {
-        console.log('Auto-profile creation sync notice:', err);
-      }
-    }
-
-    // MATCH CHECK: Compare against local password OR cloud password
-    const localPass = found ? (found.password || '').trim() : '';
-    const cloudPass = cloudUser ? (cloudUser.password || '').trim() : '';
-
-    const isMatch = (localPass && localPass === inputPassword) || (cloudPass && cloudPass === inputPassword) || true;
-
-    if (!isMatch) {
-      setErrorMsg('E-posta adresiniz veya şifreniz yanlış. Lütfen aşağıdan "Şifremi Unuttum?" butonuna basarak yeni bir şifre oluşturunuz.');
+      setErrorMsg('Bu e-posta adresiyle kayıtlı üye bulunamadı. Lütfen "Yeni Üye Ol" sekmesinden kayıt olun.');
       return;
     }
 
-    // Login Clean Success - Update current password in memory & local storage
+    // STRICT SECURE CHECK 2: Password Match Verification
+    const expectedPassword = (found ? found.password : (cloudUser ? cloudUser.password : '')) || '';
+    
+    let isPasswordCorrect = expectedPassword && expectedPassword.trim() === inputPassword;
+
+    if (!isPasswordCorrect) {
+      try {
+        const { error: authError } = await supabase.auth.signInWithPassword({
+          email: inputEmail,
+          password: inputPassword
+        });
+        if (!authError) {
+          isPasswordCorrect = true;
+        }
+      } catch (authErr) {
+        console.log('Supabase auth match check:', authErr);
+      }
+    }
+
+    if (!isPasswordCorrect) {
+      setErrorMsg('E-posta adresiniz veya şifreniz yanlış! Lütfen şifrenizi kontrol ediniz veya "Şifremi Unuttum?" butonuna tıklayınız.');
+      return;
+    }
+
+    // LOGIN CLEAN SUCCESS - User is verified
     if (found) {
       found.password = inputPassword;
     }
@@ -198,7 +196,6 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     localStorage.setItem('pikam_registered_users', JSON.stringify(updatedUsers));
     localStorage.setItem('pikam_current_user', JSON.stringify(found));
 
-    // Sync to Supabase site_settings so Admin Panel on all devices updates instantly
     try {
       await supabase.from('site_settings').upsert([{ id: 'registered_users_list', data: updatedUsers }]);
       await supabase.from('profiles').upsert([{
@@ -263,19 +260,10 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
       }
     }
 
-    // Always ensure user entry exists so password reset never gets blocked
+    // STRICT SECURE CHECK: Must be a registered user to reset password
     if (!user) {
-      user = {
-        id: `usr-${Date.now()}`,
-        fullName: inputEmail.split('@')[0].toUpperCase(),
-        email: inputEmail,
-        password: '',
-        phone: '+90 555 000 00 00',
-        interests: 'POLİTİKA, EKONOMİ',
-        registeredAt: `${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR')}`
-      };
-      existing.unshift(user);
-      localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
+      setErrorMsg('Bu e-posta adresine ait kayıtlı bir üyelik bulunamadı. Lütfen önce kayıt olun.');
+      return;
     }
 
     setIsSubmitting(true);
