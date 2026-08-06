@@ -2540,11 +2540,17 @@ export default function AdminPanel({
                         <td style={{ padding: '14px 16px' }}>
                           <button 
                             onClick={() => {
-                              if (confirm(`"${user.fullName}" kullanıcısını üye listesinden kaldırmak istediğinize emin misiniz?`)) {
-                                onDeleteUser(user.id);
+                              if (confirm(`"${user.fullName || user.email}" kullanıcısını üye listesinden ve buluttan kalıcı olarak silmek istediğinize emin misiniz?`)) {
+                                const currentList = liveUsersList || registeredUsersList;
+                                const filtered = currentList.filter(u => u.email !== user.email && u.id !== user.id);
+                                setLiveUsersList(filtered);
+                                localStorage.setItem('pikam_registered_users', JSON.stringify(filtered));
+                                if (onDeleteUser) {
+                                  onDeleteUser(user.id, user.email);
+                                }
                               }
                             }}
-                            style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
+                            style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '6px 12px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer' }}
                           >
                             Sil
                           </button>

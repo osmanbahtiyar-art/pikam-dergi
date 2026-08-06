@@ -697,9 +697,13 @@ export default function App() {
     localStorage.removeItem('pikam_current_user');
   };
 
-  const handleDeleteUser = async (userId) => {
-    const targetUser = registeredUsersList.find(u => u.id === userId);
-    const updated = registeredUsersList.filter(u => u.id !== userId);
+  const handleDeleteUser = async (userId, userEmail) => {
+    const updated = registeredUsersList.filter(u => {
+      const matchId = userId && u.id === userId;
+      const matchEmail = userEmail && u.email && u.email.trim().toLowerCase() === userEmail.trim().toLowerCase();
+      return !matchId && !matchEmail;
+    });
+
     setRegisteredUsersList(updated);
     localStorage.setItem('pikam_registered_users', JSON.stringify(updated));
 
@@ -707,8 +711,8 @@ export default function App() {
       if (userId) {
         await supabase.from('profiles').delete().eq('id', userId);
       }
-      if (targetUser && targetUser.email) {
-        await supabase.from('profiles').delete().eq('email', targetUser.email);
+      if (userEmail) {
+        await supabase.from('profiles').delete().eq('email', userEmail.trim().toLowerCase());
       }
       await supabase.from('site_settings').upsert([{ id: 'registered_users_list', data: updated }]);
     } catch (err) {
