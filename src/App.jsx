@@ -698,12 +698,19 @@ export default function App() {
   };
 
   const handleDeleteUser = async (userId) => {
+    const targetUser = registeredUsersList.find(u => u.id === userId);
     const updated = registeredUsersList.filter(u => u.id !== userId);
     setRegisteredUsersList(updated);
     localStorage.setItem('pikam_registered_users', JSON.stringify(updated));
 
     try {
-      await supabase.from('profiles').delete().eq('id', userId);
+      if (userId) {
+        await supabase.from('profiles').delete().eq('id', userId);
+      }
+      if (targetUser && targetUser.email) {
+        await supabase.from('profiles').delete().eq('email', targetUser.email);
+      }
+      await supabase.from('site_settings').upsert([{ id: 'registered_users_list', data: updated }]);
     } catch (err) {
       console.log('Supabase profile delete notice:', err);
     }
