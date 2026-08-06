@@ -110,9 +110,9 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     localStorage.setItem(`pikam_reg_otp_${cleanEmail}`, code);
 
-    // Trigger Supabase Auth Signup Email
+    // Trigger Supabase Auth Signup Email with detailed diagnostic error handling
     try {
-      await supabase.auth.signUp({
+      const { error: signUpErr } = await supabase.auth.signUp({
         email: cleanEmail,
         password: password.trim(),
         options: {
@@ -122,13 +122,20 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
           }
         }
       });
+
+      if (signUpErr) {
+        console.error('Supabase signup email error:', signUpErr);
+        if (signUpErr.message.includes('rate limit') || signUpErr.status === 429) {
+          setErrorMsg('E-posta gönderim sınırı aşıldı. Lütfen 1-2 dakika bekleyip tekrar deneyin veya Spam/Junk klasörünü kontrol edin.');
+        }
+      }
     } catch (err) {
       console.log('Supabase signup mail notice:', err);
     }
 
     setIsSubmitting(false);
     setRegisterStep(2);
-    setSuccessMsg(`✓ 6 Haneli e-posta doğrulama kodunuz "iletisim@pikamdergi.com" adresimiz üzerinden "${cleanEmail}" hesabınıza e-posta olarak gönderilmiştir.\n\nLütfen gelen kutunuzu (ve Spam/Junk klasörünü) kontrol ederek 6 haneli kodu aşağıdaki kutucuğa giriniz.`);
+    setSuccessMsg(`✓ 6 Haneli e-posta doğrulama kodunuz "iletisim@pikamdergi.com" adresimiz üzerinden "${cleanEmail}" hesabınıza e-posta olarak gönderilmiştir.\n\nLütfen e-posta gelen kutunuzu (ve Spam/Junk klasörünü) kontrol ederek 6 haneli kodu aşağıdaki kutucuğa giriniz.`);
   };
 
   const handleVerifyRegisterCode = async (e) => {
@@ -390,9 +397,15 @@ export default function UserAuthModal({ onClose, onLoginSuccess }) {
 
     // Trigger Supabase Auth Reset Password Email
     try {
-      await supabase.auth.resetPasswordForEmail(inputEmail, {
+      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(inputEmail, {
         redirectTo: `${window.location.origin}/#reset-password`
       });
+      if (resetErr) {
+        console.error('Supabase reset email error:', resetErr);
+        if (resetErr.message.includes('rate limit') || resetErr.status === 429) {
+          setErrorMsg('E-posta gönderim sınırı aşıldı. Lütfen 1-2 dakika bekleyip tekrar deneyin veya Spam/Junk klasörünü kontrol edin.');
+        }
+      }
     } catch (resetErr) {
       console.log('Supabase reset email notice:', resetErr);
     }
