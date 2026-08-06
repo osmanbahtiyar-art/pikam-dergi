@@ -426,10 +426,27 @@ export default function App() {
         localStorage.setItem('pikam_edergi_list', JSON.stringify(mappedIssues));
       }
 
-      // 6. Articles List
+      // 6. Articles List (Uses exact locked order from site_settings merged with cloud articles)
       const { data: cloudArticles } = await supabase.from('articles').select('*');
       if (cloudArticles && cloudArticles.length > 0) {
         const mappedArts = cloudArticles.map(mapArticleFromCloud);
+        const articlesOrderSetting = cloudSettings ? cloudSettings.find(s => s.id === 'articles_ordered_list') : null;
+
+        if (articlesOrderSetting && Array.isArray(articlesOrderSetting.data) && articlesOrderSetting.data.length > 0) {
+          const orderMap = new Map();
+          articlesOrderSetting.data.forEach((item, index) => {
+            const idKey = String(item.id || item).toLowerCase();
+            orderMap.set(idKey, index);
+          });
+          mappedArts.sort((a, b) => {
+            const indexA = orderMap.has(String(a.id).toLowerCase()) ? orderMap.get(String(a.id).toLowerCase()) : 999;
+            const indexB = orderMap.has(String(b.id).toLowerCase()) ? orderMap.get(String(b.id).toLowerCase()) : 999;
+            return indexA - indexB;
+          });
+        } else {
+          mappedArts.sort((a, b) => (a.display_order ?? 999) - (b.display_order ?? 999));
+        }
+
         setArticlesList(mappedArts);
         localStorage.setItem('pikam_articles_list', JSON.stringify(mappedArts));
       }
@@ -780,43 +797,38 @@ export default function App() {
     }
   };
 
-  const handleAddArticle = async (newArticle) => {
-    const updated = [newArticle, ...articlesList];
-    setArticlesList(updated);
-    localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
+  const handleSaveArticlesCloud = async (newList) => {
+    setArticlesList(newList);
+    localStorage.setItem('pikam_articles_list', JSON.stringify(newList));
 
     try {
-      await supabase.from('articles').upsert([mapArticleForCloud(newArticle)]);
+      await supabase.from('site_settings').upsert([{ id: 'articles_ordered_list', data: newList }]);
+      for (let i = 0; i < newList.length; i++) {
+        await supabase.from('articles').upsert([{ ...mapArticleForCloud(newList[i]), display_order: i }]);
+      }
     } catch (err) {
-      console.log('Supabase article add notice:', err);
+      console.log('Supabase article order sync notice:', err);
     }
+  };
+
+  const handleAddArticle = async (newArticle) => {
+    const updated = [newArticle, ...articlesList];
+    handleSaveArticlesCloud(updated);
   };
 
   const handleUpdateArticle = async (updatedArticle) => {
     const updated = articlesList.map(a => a.id === updatedArticle.id ? updatedArticle : a);
-    setArticlesList(updated);
-    localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
-
-    try {
-      await supabase.from('articles').upsert([mapArticleForCloud(updatedArticle)]);
-    } catch (err) {
-      console.log('Supabase article update notice:', err);
-    }
+    handleSaveArticlesCloud(updated);
   };
 
   const handleToggleHideArticle = async (articleId) => {
     const updated = articlesList.map(a => {
       if (a.id === articleId) {
-        const newArt = { ...a, hidden: !a.hidden };
-        try {
-          supabase.from('articles').upsert([mapArticleForCloud(newArt)]);
-        } catch (err) {}
-        return newArt;
+        return { ...a, hidden: !a.hidden };
       }
       return a;
     });
-    setArticlesList(updated);
-    localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
+    handleSaveArticlesCloud(updated);
   };
 
   const handleMoveArticleUp = async (index) => {
@@ -825,12 +837,7 @@ export default function App() {
     const temp = updated[index];
     updated[index] = updated[index - 1];
     updated[index - 1] = temp;
-    setArticlesList(updated);
-    localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
-
-    try {
-      await supabase.from('articles').upsert(updated.map(mapArticleForCloud));
-    } catch (err) {}
+    handleSaveArticlesCloud(updated);
   };
 
   const handleMoveArticleDown = async (index) => {
@@ -839,12 +846,7 @@ export default function App() {
     const temp = updated[index];
     updated[index] = updated[index + 1];
     updated[index + 1] = temp;
-    setArticlesList(updated);
-    localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
-
-    try {
-      await supabase.from('articles').upsert(updated.map(mapArticleForCloud));
-    } catch (err) {}
+    handleSaveArticlesCloud(updated);
   };
 
   const handleDeleteArticle = async (id) => {
@@ -854,6 +856,7 @@ export default function App() {
 
     try {
       await supabase.from('articles').delete().eq('id', id);
+      await supabase.from('site_settings').upsert([{ id: 'articles_ordered_list', data: updated }]);
     } catch (err) {
       console.log('Supabase article delete notice:', err);
     }
