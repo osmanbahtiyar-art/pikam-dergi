@@ -979,33 +979,33 @@ export default function App() {
 
   const handleForcePushCloudAll = async () => {
     try {
-      console.log('☁️ Pushing ALL local state to Supabase Cloud Database...');
+      console.log('☁️ Fast Parallel Batch Pushing ALL local state to Supabase Cloud Database...');
 
-      for (const issue of eDergiList) {
-        await supabase.from('e_dergi_issues').upsert([mapIssueForCloud(issue)]);
-      }
-
-      for (const article of articlesList) {
-        await supabase.from('articles').upsert([mapArticleForCloud(article)]);
-      }
-
-      for (const author of authorsList) {
-        await supabase.from('authors').upsert([mapAuthorForCloud(author)]);
-      }
-
-      await supabase.from('site_settings').upsert([
-        { id: 'hero_featured', data: heroFeatured },
-        { id: 'section_visibility', data: sectionVisibility },
-        { id: 'nav_visibility', data: navVisibility },
-        { id: 'kunye_data', data: kunyeData },
-        { id: 'admin_notes_list', data: adminNotesList },
-        { id: 'authors_ordered_list', data: authorsList },
-        { id: 'header_data', data: headerData },
-        { id: 'footer_data', data: footerData },
-        { id: 'newsletter_subscribers', data: newsletterSubscribers }
+      await Promise.all([
+        eDergiList.length > 0 
+          ? supabase.from('e_dergi_issues').upsert(eDergiList.map(mapIssueForCloud))
+          : Promise.resolve(),
+        articlesList.length > 0 
+          ? supabase.from('articles').upsert(articlesList.map(mapArticleForCloud))
+          : Promise.resolve(),
+        authorsList.length > 0 
+          ? supabase.from('authors').upsert(authorsList.map(mapAuthorForCloud))
+          : Promise.resolve(),
+        supabase.from('site_settings').upsert([
+          { id: 'hero_featured', data: heroFeatured },
+          { id: 'section_visibility', data: sectionVisibility },
+          { id: 'nav_visibility', data: navVisibility },
+          { id: 'kunye_data', data: kunyeData },
+          { id: 'admin_notes_list', data: adminNotesList },
+          { id: 'authors_ordered_list', data: authorsList },
+          { id: 'articles_ordered_list', data: articlesList },
+          { id: 'header_data', data: headerData },
+          { id: 'footer_data', data: footerData },
+          { id: 'newsletter_subscribers', data: newsletterSubscribers }
+        ])
       ]);
 
-      await fetchAndMergeCloudData();
+      await fetchAndMergeCloudData(true);
       return true;
     } catch (err) {
       console.error('Push all cloud error:', err);
