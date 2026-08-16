@@ -416,8 +416,17 @@ export default function App() {
   useEffect(() => {
     fetchAndMergeCloudData(true);
 
-    const handleFocusSync = () => fetchAndMergeCloudData(true);
-    window.addEventListener('focus', handleFocusSync);
+    const handleSyncTrigger = () => fetchAndMergeCloudData(true);
+    const handleMobileWakeup = () => {
+      if (document.visibilityState === 'visible') {
+        fetchAndMergeCloudData(true);
+      }
+    };
+
+    window.addEventListener('focus', handleSyncTrigger);
+    window.addEventListener('online', handleSyncTrigger);
+    window.addEventListener('pageshow', handleSyncTrigger);
+    document.addEventListener('visibilitychange', handleMobileWakeup);
 
     // SUPABASE REALTIME SUBSCRIPTION FOR INSTANT CROSS-DEVICE SYNC
     const channel = supabase
@@ -441,7 +450,7 @@ export default function App() {
       }
 
       if (path.includes('admin') || hash.includes('admin') || search.includes('admin')) {
-        fetchAndMergeCloudData(); // Re-sync immediately on entering admin panel
+        fetchAndMergeCloudData(true); // Re-sync immediately on entering admin panel
       } else {
         setIsAdmin(false);
       }
@@ -452,7 +461,10 @@ export default function App() {
     window.addEventListener('hashchange', checkAdminRoute);
 
     return () => {
-      window.removeEventListener('focus', fetchAndMergeCloudData);
+      window.removeEventListener('focus', handleSyncTrigger);
+      window.removeEventListener('online', handleSyncTrigger);
+      window.removeEventListener('pageshow', handleSyncTrigger);
+      document.removeEventListener('visibilitychange', handleMobileWakeup);
       window.removeEventListener('popstate', checkAdminRoute);
       window.removeEventListener('hashchange', checkAdminRoute);
       supabase.removeChannel(channel);
