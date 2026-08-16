@@ -283,41 +283,6 @@ export default function App() {
         localStorage.setItem('pikam_article_comments', JSON.stringify(mappedComments));
       }
 
-      // 2.5 Master Merged Registered Users (Combines state, local storage, Supabase profiles, & site_settings so no user ever flickers or disappears)
-      const localUsers = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-      const userMap = new Map();
-      
-      // Preserve currently rendered users in state
-      if (Array.isArray(registeredUsersList)) {
-        registeredUsersList.forEach(u => u && u.email && userMap.set(u.email.trim().toLowerCase(), u));
-      }
-
-      // Add local storage users
-      localUsers.forEach(u => u && u.email && userMap.set(u.email.trim().toLowerCase(), u));
-
-      try {
-        const { data: cloudProfiles } = await supabase.from('profiles').select('*');
-        if (cloudProfiles && cloudProfiles.length > 0) {
-          cloudProfiles.forEach(p => {
-            if (p && p.email) {
-              const key = p.email.trim().toLowerCase();
-              const existing = userMap.get(key) || {};
-              userMap.set(key, {
-                id: p.id || existing.id || `usr-${Date.now()}`,
-                fullName: p.full_name || existing.fullName || 'PİKAM Okuru',
-                email: p.email,
-                password: p.password || existing.password || '',
-                phone: p.phone || existing.phone || '',
-                interests: p.interests || existing.interests || 'POLİTİKA, EKONOMİ',
-                registeredAt: p.registered_at || existing.registeredAt || new Date().toLocaleDateString('tr-TR')
-              });
-            }
-          });
-        }
-      } catch (profErr) {
-        console.log('Supabase profiles sync notice:', profErr);
-      }
-
       // 3. Authors List (Uses exact locked order from site_settings merged with all cloud authors)
       const { data: cloudAuthors } = await supabase.from('authors').select('*');
 
@@ -388,33 +353,21 @@ export default function App() {
         }
 
         const usersSetting = cloudSettings.find(s => s.id === 'registered_users_list');
-        if (usersSetting && Array.isArray(usersSetting.data) && usersSetting.data.length > 0) {
-          usersSetting.data.forEach(u => {
-            if (u && u.email) {
-              const key = u.email.trim().toLowerCase();
-              if (!userMap.has(key)) {
-                userMap.set(key, u);
-              } else {
-                const existing = userMap.get(key);
-                userMap.set(key, {
-                  ...existing,
-                  password: existing.password || u.password,
-                  fullName: existing.fullName || u.fullName
-                });
-              }
-            }
-          });
-        }
-
-        const finalUsers = Array.from(userMap.values());
-        setRegisteredUsersList(finalUsers);
-        localStorage.setItem('pikam_registered_users', JSON.stringify(finalUsers));
-
-        // Lock merged users into cloud site_settings so stale data never overwrites them
-        try {
-          await supabase.from('site_settings').upsert([{ id: 'registered_users_list', data: finalUsers }]);
-        } catch (uErr) {
-          console.log('Site settings users lock notice:', uErr);
+        if (usersSetting && Array.isArray(usersSetting.data)) {
+          setRegisteredUsersList(usersSetting.data);
+          localStorage.setItem('pikam_registered_users', JSON.stringify(usersSetting.data));
+        } else if (cloudProfiles && cloudProfiles.length > 0) {
+          const mappedUsers = cloudProfiles.map(p => ({
+            id: p.id,
+            fullName: p.full_name || p.fullName || 'PİKAM Okuru',
+            email: p.email,
+            password: p.password || '',
+            phone: p.phone || '',
+            interests: p.interests || 'POLİTİKA, EKONOMİ',
+            registeredAt: p.registered_at || p.registeredAt || new Date().toLocaleDateString('tr-TR')
+          }));
+          setRegisteredUsersList(mappedUsers);
+          localStorage.setItem('pikam_registered_users', JSON.stringify(mappedUsers));
         }
       }
 
