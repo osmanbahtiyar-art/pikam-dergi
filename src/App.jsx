@@ -428,6 +428,7 @@ export default function App() {
 
       // 6. Articles List (Uses exact locked order from site_settings merged with cloud articles)
       const { data: cloudArticles } = await supabase.from('articles').select('*');
+      let finalArticles = [];
       if (cloudArticles && cloudArticles.length > 0) {
         const mappedArts = cloudArticles.map(mapArticleFromCloud);
         const articlesOrderSetting = cloudSettings ? cloudSettings.find(s => s.id === 'articles_ordered_list') : null;
@@ -447,9 +448,13 @@ export default function App() {
           mappedArts.sort((a, b) => (a.display_order ?? 999) - (b.display_order ?? 999));
         }
 
-        setArticlesList(mappedArts);
-        localStorage.setItem('pikam_articles_list', JSON.stringify(mappedArts));
+        finalArticles = mappedArts;
+      } else {
+        finalArticles = PIKAM_DATA.articles;
       }
+
+      setArticlesList(finalArticles);
+      localStorage.setItem('pikam_articles_list', JSON.stringify(finalArticles));
     } catch (err) {
       console.log('Supabase real-time sync notice:', err);
     }

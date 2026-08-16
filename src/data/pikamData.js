@@ -105,52 +105,52 @@ export const PIKAM_DATA = {
 
   articles: [
     {
-      id: "art-1",
+      id: "art-silanur-gor",
+      category: "STRATEJİ",
+      categoryColor: "#3b82f6",
+      title: "Küresel Açlık Azalıyor... Peki Neden Gıda Fiyatları Tırmanıyor?",
+      excerpt: "Küresel Açlık Azalıyor. Peki Neden Milyonlarca İnsan Hâlâ Sağlıklı Gıdaya Ulaşamıyor? Birleşmiş Milletler tarafından yayımlanan Dünya Gıda Güvenliği ve Beslenme Durumu 2026...",
+      author: "Sılanur Gör",
+      date: "27 Temmuz 2026",
+      readTime: "6 min okuma",
+      image: "https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80",
+      content: `<p class="lead">Birleşmiş Milletler tarafından yayımlanan Dünya Gıda Güvenliği ve Beslenme Durumu 2026 raporuna göre küresel ölçekte açlık çeken insan sayısı azalsa da tarımsal enflasyon ve gıda fiyatları yükselmeye devam ediyor.</p><p>Tedarik zincirlerindeki lojistik maliyetler, iklim değişikliğinin getirdiği bölgesel rekolte kayıpları ve enerji piyasalarındaki belirsizlikler, gıda erişilebilirliğini zorlaştıran temel unsurlar arasında yer almaktadır.</p>`
+    },
+    {
+      id: "art-mirac-cavus",
       category: "EKONOMİ",
       categoryColor: "#10b981",
       title: "Enflasyon Dinamikleri ve Para Politikası İletişiminin Etkinliği",
-      excerpt: "Merkez bankalarının sözel yönlendirme stratejilerinin piyasa beklentilerini şekillendirmedeki rolü.",
-      author: "Prof. Dr. Ahmet Yılmaz",
-      date: "19 Temmuz 2026",
-      readTime: "6 Dakika",
-      image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=600&q=80",
-      content: "Küresel finans piyasalarında merkez bankalarının faiz kararları kadar, bu kararların aktarım mekanizmasında kullanılan iletişim kanalları da hayati öneme sahiptir..."
+      excerpt: "Modern ekonomilerde enflasyon dinamikleri, sadece arz ve talep dengesiyle değil, büyük ölçüde aktörlerin geleceğe yönelik beklentileriyle şekillenmektedir. Tüketicilerin, iş...",
+      author: "Miraç Çavuş",
+      date: "26 Temmuz 2026",
+      readTime: "6 min okuma",
+      image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80",
+      content: `<p class="lead">Modern ekonomilerde enflasyon dinamikleri, sadece arz ve talep dengesiyle değil, büyük ölçüde iktisadi aktörlerin geleceğe yönelik beklentileriyle şekillenmektedir.</p><p>Merkez bankalarının sözel yönlendirme stratejileri ve şeffaf iletişim politikaları, enflasyonist beklentilerin çıpalanmasında faiz kararları kadar etkili bir araç haline gelmiştir.</p>`
     },
     {
-      id: "art-2",
+      id: "art-sera-erdagi",
       category: "POLİTİKA",
       categoryColor: "#ef4444",
-      title: "Kamu Diplomasisi ve Dijital Mecralarda Algı Yönetimi Doktrinleri",
-      excerpt: "Dış politika yapımında sosyo-dijital analitiğin ve stratejik iletişimin artan önemi.",
-      author: "Zeynep Demir",
-      date: "18 Temmuz 2026",
-      readTime: "5 Dakika",
-      image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=600&q=80",
-      content: "Modern devlet yapılarında siber alan ve kamu diplomasisi entegre bir biçimde ele alınmaktadır..."
+      title: "19 Mayıs 1919: İşgal Altındaki Bir Milletin Yeniden Doğuşu",
+      excerpt: "Bazı tarihler vardır; yalnızca bir günü değil, bir ulusun ta kendisini anlatır. Bazı tarihler vardır; sadece yaşanmaz. Nesiller boyunca hissedilir, hatırlanır ve yaşatılır. Kimisi tarihi yazar;...",
+      author: "Sera Erdağı",
+      date: "19 Mayıs 2026",
+      readTime: "7 min okuma",
+      image: "/pikam_kapak_mayis_1784839804094.jpg",
+      content: `<p class="lead">Bazı tarihler vardır; yalnızca bir günü değil, bir ulusun ta kendisini anlatır. 19 Mayıs 1919, Türk milletinin bağımsızlık ve hürriyet meşalesini yaktığı tarihi bir dönüm noktasıdır.</p><p>Mustafa Kemal Atatürk'ün Samsun'a çıkışıyla başlayan Milli Mücadele süreci, işgal altındaki bir milletin küllerinden yeniden doğuşunun ve cumhuriyete uzanan şanlı yolculuğunun başlangıcıdır.</p>`
     },
     {
-      id: "art-3",
-      category: "FİNANS",
-      categoryColor: "#059669",
-      title: "Yeşil Finansman ve Karbon Sınır Düzenlemesi (SKDM) Uyumu",
-      excerpt: "Türk ihracatçısının Avrupa Birliği Yeşil Mutabakatı karşısındaki rekabet gücü haritası.",
-      author: "Doç. Dr. Selin Aksoy",
-      date: "17 Temmuz 2026",
-      readTime: "7 Dakika",
-      image: "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=600&q=80",
-      content: "İklim değişikliği ile mücadele politikaları, uluslararası ticaret kurallarını baştan yazıyor..."
-    },
-    {
-      id: "art-4",
-      category: "KÜLTÜR SANAT",
-      categoryColor: "#d97706",
-      title: "Medeniyetlerin Sanat Havzaları ve Düşünce Tarihi Üzerine",
-      excerpt: "Tarihsel süreçte estetik ve felsefi akımların toplumsal yapılara etkisi.",
-      author: "Dr. Murat Karahan",
-      date: "16 Temmuz 2026",
-      readTime: "9 Dakika",
-      image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=600&q=80",
-      content: "Sanat ve felsefe ilişkisi toplumsal hafızanın taşınmasında asli unsur niteliğindedir..."
+      id: "art-osman-bahtiyar",
+      category: "POLİTİKA",
+      categoryColor: "#ef4444",
+      title: "Altyapı Ekonomisi ve Sivas Belediyesi",
+      excerpt: "Altyapı yatırımları; üretkenliği, yaşam kalitesini ve bölgesel rekabet gücünü doğrudan etkiler. Son dönemde Sivas Belediyesi'nin altyapıya verdiği öncelik, özellikle içme suyu v...",
+      author: "Osman Bahtiyar",
+      date: "5 Kasım 2025",
+      readTime: "5 min okuma",
+      image: "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=800&q=80",
+      content: `<p class="lead">Altyapı yatırımları; üretkenliği, kent sakinlerinin yaşam kalitesini ve bölgesel ekonomik rekabet gücünü doğrudan belirleyen temel stratejik yatırımlardır.</p><p>Son dönemde Sivas Belediyesi'nin altyapı modernizasyonuna ve su yönetimine verdiği öncelik, kentsel sürdürülebilirlik açısından örnek bir model sunmaktadır.</p>`
     }
   ],
 
