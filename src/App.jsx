@@ -1108,11 +1108,13 @@ export default function App() {
           />
         )}
 
-        <EditorialFeed 
-          activeCategory={activeCategory}
-          articlesList={articlesList}
-          onSelectArticle={handleOpenArticle}
-        />
+        {sectionVisibility.showEditorialFeed !== false && (
+          <EditorialFeed 
+            activeCategory={activeCategory}
+            articlesList={articlesList}
+            onSelectArticle={handleOpenArticle}
+          />
+        )}
 
         {sectionVisibility.showYazarlar && (
           <YazarlarSection 

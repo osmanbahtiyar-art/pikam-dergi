@@ -2445,6 +2445,21 @@ export default function AdminPanel({
                   </button>
                 </div>
 
+                {/* TOGGLE EDITORIAL FEED (MAKALELER SEKSİYONU) */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '20px', background: sectionVisibility.showEditorialFeed !== false ? '#f0fdf4' : '#fef2f2', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h4 style={{ fontSize: '1rem', color: '#0f172a', margin: 0 }}>Son Eklenen Makaleler Bölümü</h4>
+                    <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Makale Kartları ve Analizler Akışı</span>
+                  </div>
+                  <button 
+                    onClick={() => onToggleSection('showEditorialFeed')}
+                    style={{ background: sectionVisibility.showEditorialFeed !== false ? '#16a34a' : '#ef4444', color: 'white', padding: '8px 14px', borderRadius: '6px', fontWeight: '700', fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    {sectionVisibility.showEditorialFeed !== false ? <Eye size={15} /> : <EyeOff size={15} />}
+                    <span>{sectionVisibility.showEditorialFeed !== false ? 'AÇIK (Görünüyor)' : 'GİZLİ (Kapatıldı)'}</span>
+                  </button>
+                </div>
+
                 {/* TOGGLE TICKER */}
                 <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '20px', background: sectionVisibility.showTicker ? '#f0fdf4' : '#fef2f2', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
