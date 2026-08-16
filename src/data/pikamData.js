@@ -105,7 +105,7 @@ export const PIKAM_DATA = {
 
   articles: [
     {
-      id: "art-silanur-gor",
+      id: "yayinlar-3",
       category: "STRATEJİ",
       categoryColor: "#3b82f6",
       title: "Küresel Açlık Azalıyor... Peki Neden Gıda Fiyatları Tırmanıyor?",
@@ -117,7 +117,7 @@ export const PIKAM_DATA = {
       content: `<p class="lead">Birleşmiş Milletler tarafından yayımlanan Dünya Gıda Güvenliği ve Beslenme Durumu 2026 raporuna göre küresel ölçekte açlık çeken insan sayısı azalsa da tarımsal enflasyon ve gıda fiyatları yükselmeye devam ediyor.</p><p>Tedarik zincirlerindeki lojistik maliyetler, iklim değişikliğinin getirdiği bölgesel rekolte kayıpları ve enerji piyasalarındaki belirsizlikler, gıda erişilebilirliğini zorlaştıran temel unsurlar arasında yer almaktadır.</p>`
     },
     {
-      id: "art-mirac-cavus",
+      id: "yayinlar-1",
       category: "EKONOMİ",
       categoryColor: "#10b981",
       title: "Enflasyon Dinamikleri ve Para Politikası İletişiminin Etkinliği",
@@ -129,7 +129,7 @@ export const PIKAM_DATA = {
       content: `<p class="lead">Modern ekonomilerde enflasyon dinamikleri, sadece arz ve talep dengesiyle değil, büyük ölçüde iktisadi aktörlerin geleceğe yönelik beklentileriyle şekillenmektedir.</p><p>Merkez bankalarının sözel yönlendirme stratejileri ve şeffaf iletişim politikaları, enflasyonist beklentilerin çıpalanmasında faiz kararları kadar etkili bir araç haline gelmiştir.</p>`
     },
     {
-      id: "art-sera-erdagi",
+      id: "yayinlar-2",
       category: "POLİTİKA",
       categoryColor: "#ef4444",
       title: "19 Mayıs 1919: İşgal Altındaki Bir Milletin Yeniden Doğuşu",
@@ -141,7 +141,7 @@ export const PIKAM_DATA = {
       content: `<p class="lead">Bazı tarihler vardır; yalnızca bir günü değil, bir ulusun ta kendisini anlatır. 19 Mayıs 1919, Türk milletinin bağımsızlık ve hürriyet meşalesini yaktığı tarihi bir dönüm noktasıdır.</p><p>Mustafa Kemal Atatürk'ün Samsun'a çıkışıyla başlayan Milli Mücadele süreci, işgal altındaki bir milletin küllerinden yeniden doğuşunun ve cumhuriyete uzanan şanlı yolculuğunun başlangıcıdır.</p>`
     },
     {
-      id: "art-osman-bahtiyar",
+      id: "yayinlar-4",
       category: "POLİTİKA",
       categoryColor: "#ef4444",
       title: "Altyapı Ekonomisi ve Sivas Belediyesi",
