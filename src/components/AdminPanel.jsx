@@ -1310,10 +1310,10 @@ export default function AdminPanel({
                     <div>
                       <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#0284c7', display: 'block', marginBottom: '4px' }}>LINKEDIN HESAP LİNKİ (URL)</label>
                       <input 
-                        type="url" 
+                        type="text" 
                         value={headerLinkedinUrl} 
                         onChange={(e) => setHeaderLinkedinUrl(e.target.value)} 
-                        placeholder="https://linkedin.com/company/pikam" 
+                        placeholder="İsteğe bağlı, boş bırakılabilir" 
                         style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
                       />
                     </div>
@@ -1321,10 +1321,10 @@ export default function AdminPanel({
                     <div>
                       <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#0f172a', display: 'block', marginBottom: '4px' }}>X (TWITTER) HESAP LİNKİ (URL)</label>
                       <input 
-                        type="url" 
+                        type="text" 
                         value={headerTwitterUrl} 
                         onChange={(e) => setHeaderTwitterUrl(e.target.value)} 
-                        placeholder="https://x.com/pikam" 
+                        placeholder="İsteğe bağlı, boş bırakılabilir" 
                         style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
                       />
                     </div>
@@ -1332,10 +1332,10 @@ export default function AdminPanel({
                     <div>
                       <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#e11d48', display: 'block', marginBottom: '4px' }}>INSTAGRAM HESAP LİNKİ (URL)</label>
                       <input 
-                        type="url" 
+                        type="text" 
                         value={headerInstagramUrl} 
                         onChange={(e) => setHeaderInstagramUrl(e.target.value)} 
-                        placeholder="https://instagram.com/pikam" 
+                        placeholder="İsteğe bağlı, boş bırakılabilir" 
                         style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
                       />
                     </div>
@@ -1343,10 +1343,10 @@ export default function AdminPanel({
                     <div>
                       <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#dc2626', display: 'block', marginBottom: '4px' }}>YOUTUBE HESAP LİNKİ (URL)</label>
                       <input 
-                        type="url" 
+                        type="text" 
                         value={headerYoutubeUrl} 
                         onChange={(e) => setHeaderYoutubeUrl(e.target.value)} 
-                        placeholder="https://youtube.com/@pikam" 
+                        placeholder="İsteğe bağlı, boş bırakılabilir" 
                         style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
                       />
                     </div>
