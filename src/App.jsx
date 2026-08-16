@@ -247,8 +247,8 @@ export default function App() {
   // REAL-TIME INSTANT SYNCHRONIZATION FUNCTION (SUPABASE CLOUD AS SINGLE SOURCE OF TRUTH)
   const fetchAndMergeCloudData = async (force = false) => {
     const now = Date.now();
-    if (!force && now - lastFetchTimeRef.current < 15000) {
-      return; // Skip rapid queries within 15s to conserve Egress bandwidth
+    if (!force && now - lastFetchTimeRef.current < 4000) {
+      return; // Skip rapid non-forced queries within 4s
     }
     lastFetchTimeRef.current = now;
     try {
@@ -456,16 +456,16 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchAndMergeCloudData();
+    fetchAndMergeCloudData(true);
 
-    // Re-fetch automatically whenever window/tab receives focus
-    window.addEventListener('focus', fetchAndMergeCloudData);
+    const handleFocusSync = () => fetchAndMergeCloudData(true);
+    window.addEventListener('focus', handleFocusSync);
 
     // SUPABASE REALTIME SUBSCRIPTION FOR INSTANT CROSS-DEVICE SYNC
     const channel = supabase
       .channel('pikam-realtime-sync')
       .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-        fetchAndMergeCloudData();
+        fetchAndMergeCloudData(true);
       })
       .subscribe();
 
@@ -576,6 +576,7 @@ export default function App() {
 
     try {
       await supabase.from('site_settings').upsert([{ id: 'section_visibility', data: updated }]);
+      fetchAndMergeCloudData(true);
     } catch (err) {
       console.log('Supabase visibility sync notice:', err);
     }
@@ -591,6 +592,7 @@ export default function App() {
 
     try {
       await supabase.from('site_settings').upsert([{ id: 'nav_visibility', data: updated }]);
+      fetchAndMergeCloudData(true);
     } catch (err) {
       console.log('Supabase nav visibility notice:', err);
     }
@@ -602,6 +604,7 @@ export default function App() {
 
     try {
       await supabase.from('site_settings').upsert([{ id: 'kunye_data', data: updatedKunye }]);
+      fetchAndMergeCloudData(true);
     } catch (err) {
       console.log('Supabase kunye sync notice:', err);
     }
@@ -613,6 +616,7 @@ export default function App() {
 
     try {
       await supabase.from('site_settings').upsert([{ id: 'hero_featured', data: updatedHero }]);
+      fetchAndMergeCloudData(true);
     } catch (err) {
       console.log('Supabase hero sync notice:', err);
     }
@@ -918,6 +922,7 @@ export default function App() {
     localStorage.setItem('pikam_header_data', JSON.stringify(updatedHeader));
     try {
       await supabase.from('site_settings').upsert([{ id: 'header_data', data: updatedHeader }]);
+      fetchAndMergeCloudData(true);
     } catch (err) {
       console.log('Supabase header sync notice:', err);
     }
@@ -928,6 +933,7 @@ export default function App() {
     localStorage.setItem('pikam_footer_data', JSON.stringify(updatedFooter));
     try {
       await supabase.from('site_settings').upsert([{ id: 'footer_data', data: updatedFooter }]);
+      fetchAndMergeCloudData(true);
     } catch (err) {
       console.log('Supabase footer sync notice:', err);
     }
