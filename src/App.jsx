@@ -631,12 +631,14 @@ const DEFAULT_REGISTERED_USERS = [
     setAuthorsList(newList);
     localStorage.setItem('pikam_authors_list', JSON.stringify(newList));
     try {
-      await supabase.from('site_settings').upsert([{ id: 'authors_ordered_list', data: newList }]);
-      for (let i = 0; i < newList.length; i++) {
-        await supabase.from('authors').upsert([{ ...mapAuthorForCloud(newList[i]), displayorder: i }]);
-      }
+      const mappedCloudAuthors = newList.map(mapAuthorForCloud);
+      await Promise.all([
+        supabase.from('site_settings').upsert([{ id: 'authors_ordered_list', data: newList }], { onConflict: 'id' }),
+        supabase.from('authors').upsert(mappedCloudAuthors, { onConflict: 'id' })
+      ]);
+      fetchAndMergeCloudData(true).catch(() => {});
     } catch (err) {
-      console.log('Supabase author order sync notice:', err);
+      console.log('Supabase author batch sync error:', err);
     }
   };
 
@@ -822,12 +824,38 @@ const DEFAULT_REGISTERED_USERS = [
     localStorage.setItem('pikam_articles_list', JSON.stringify(newList));
 
     try {
-      await supabase.from('site_settings').upsert([{ id: 'articles_ordered_list', data: newList }]);
-      for (let i = 0; i < newList.length; i++) {
-        await supabase.from('articles').upsert([{ ...mapArticleForCloud(newList[i]), display_order: i }]);
-      }
+      const cleanArticlesList = (newList || []).map(a => ({
+        id: a.id,
+        category: a.category,
+        categorycolor: a.categoryColor || a.categorycolor || '#10b981',
+        title: a.title,
+        excerpt: a.excerpt,
+        author: typeof a.author === 'string' ? a.author : a.author?.name,
+        date: a.date,
+        readtime: a.readTime || a.readtime || '6 dk',
+        image: (a.image && a.image.startsWith('data:')) ? 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80' : a.image,
+        content: a.content
+      }));
+
+      const cleanArticlesOrder = (newList || []).map(a => ({
+        id: a.id,
+        title: a.title,
+        category: a.category,
+        categoryColor: a.categoryColor || '#10b981',
+        author: typeof a.author === 'string' ? a.author : a.author?.name,
+        date: a.date,
+        readTime: a.readTime || '6 dk',
+        image: (a.image && a.image.startsWith('data:')) ? 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80' : a.image,
+        excerpt: a.excerpt
+      }));
+
+      await Promise.all([
+        supabase.from('site_settings').upsert([{ id: 'articles_ordered_list', data: cleanArticlesOrder }], { onConflict: 'id' }),
+        supabase.from('articles').upsert(cleanArticlesList, { onConflict: 'id' })
+      ]);
+      fetchAndMergeCloudData(true).catch(() => {});
     } catch (err) {
-      console.log('Supabase article order sync notice:', err);
+      console.log('Supabase article batch sync error:', err);
     }
   };
 
