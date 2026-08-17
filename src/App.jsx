@@ -979,17 +979,46 @@ const DEFAULT_REGISTERED_USERS = [
 
   const handleForcePushCloudAll = async () => {
     try {
-      console.log('☁️ Fast Parallel Batch Pushing ALL local state to Supabase Cloud Database...');
+      console.log('☁️ Ultra-Lightweight Fast Pushing ALL local state to Supabase Cloud Database...');
+
+      const cleanArticlesList = (articlesList || []).map(a => ({
+        id: a.id,
+        category: a.category,
+        categorycolor: a.categoryColor || a.categorycolor || '#10b981',
+        title: a.title,
+        excerpt: a.excerpt,
+        author: typeof a.author === 'string' ? a.author : a.author?.name,
+        date: a.date,
+        readtime: a.readTime || a.readtime || '6 dk',
+        image: (a.image && a.image.startsWith('data:')) ? 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80' : a.image,
+        content: a.content
+      }));
+
+      const cleanArticlesOrder = (articlesList || []).map(a => ({
+        id: a.id,
+        title: a.title,
+        category: a.category,
+        categoryColor: a.categoryColor || '#10b981',
+        author: typeof a.author === 'string' ? a.author : a.author?.name,
+        date: a.date,
+        readTime: a.readTime || '6 dk',
+        image: (a.image && a.image.startsWith('data:')) ? 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80' : a.image,
+        excerpt: a.excerpt
+      }));
+
+      const cleanHeaderData = { ...headerData };
+      if (cleanHeaderData.logotypeUrl && cleanHeaderData.logotypeUrl.startsWith('data:')) cleanHeaderData.logotypeUrl = '/pikam_logo.png';
+      if (cleanHeaderData.emblemUrl && cleanHeaderData.emblemUrl.startsWith('data:')) cleanHeaderData.emblemUrl = '/pikam_logo.png';
+
+      const cleanFooterData = { ...footerData };
+      if (cleanFooterData.logoUrl && cleanFooterData.logoUrl.startsWith('data:')) cleanFooterData.logoUrl = '/pikam_logo.png';
 
       await Promise.all([
-        eDergiList.length > 0 
-          ? supabase.from('e_dergi_issues').upsert(eDergiList.map(mapIssueForCloud))
-          : Promise.resolve(),
-        articlesList.length > 0 
-          ? supabase.from('articles').upsert(articlesList.map(mapArticleForCloud))
+        cleanArticlesList.length > 0 
+          ? supabase.from('articles').upsert(cleanArticlesList, { onConflict: 'id' })
           : Promise.resolve(),
         authorsList.length > 0 
-          ? supabase.from('authors').upsert(authorsList.map(mapAuthorForCloud))
+          ? supabase.from('authors').upsert(authorsList.map(mapAuthorForCloud), { onConflict: 'id' })
           : Promise.resolve(),
         supabase.from('site_settings').upsert([
           { id: 'hero_featured', data: heroFeatured },
@@ -998,11 +1027,11 @@ const DEFAULT_REGISTERED_USERS = [
           { id: 'kunye_data', data: kunyeData },
           { id: 'admin_notes_list', data: adminNotesList },
           { id: 'authors_ordered_list', data: authorsList },
-          { id: 'articles_ordered_list', data: articlesList },
-          { id: 'header_data', data: headerData },
-          { id: 'footer_data', data: footerData },
-          { id: 'newsletter_subscribers', data: newsletterSubscribers }
-        ])
+          { id: 'articles_ordered_list', data: cleanArticlesOrder },
+          { id: 'header_data', data: cleanHeaderData },
+          { id: 'footer_data', data: cleanFooterData },
+          { id: 'registered_users_list', data: registeredUsersList }
+        ], { onConflict: 'id' })
       ]);
 
       await fetchAndMergeCloudData(true);
