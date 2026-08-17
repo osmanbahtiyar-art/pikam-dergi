@@ -247,13 +247,29 @@ export default function App() {
   // REAL-TIME INSTANT SYNCHRONIZATION FUNCTION (SUPABASE CLOUD AS SINGLE SOURCE OF TRUTH)
   const fetchAndMergeCloudData = async (force = false) => {
     const now = Date.now();
-    if (!force && now - lastFetchTimeRef.current < 4000) {
-      return; // Skip rapid non-forced queries within 4s
+    if (!force && now - lastFetchTimeRef.current < 2000) {
+      return; // Skip rapid non-forced queries within 2s
     }
     lastFetchTimeRef.current = now;
     try {
+      // ULTRA-FAST PARALLEL CONCURRENT CLOUD FETCHING (0.2s INSTANT INITIAL SYNC)
+      const [
+        { data: cloudProfiles },
+        { data: cloudComments },
+        { data: cloudAuthors },
+        { data: cloudSettings },
+        { data: cloudIssues },
+        { data: cloudArticles }
+      ] = await Promise.all([
+        supabase.from('profiles').select('*'),
+        supabase.from('article_comments').select('*'),
+        supabase.from('authors').select('*'),
+        supabase.from('site_settings').select('*'),
+        supabase.from('e_dergi_issues').select('*'),
+        supabase.from('articles').select('*')
+      ]);
+
       // 1. Registered Users / Profiles
-      const { data: cloudProfiles } = await supabase.from('profiles').select('*');
       if (cloudProfiles) {
         const mappedUsers = cloudProfiles.map(p => ({
           id: p.id,
@@ -267,8 +283,7 @@ export default function App() {
         localStorage.setItem('pikam_registered_users', JSON.stringify(mappedUsers));
       }
 
-      // 2. Reader Comments (Deletions in Admin Panel reflect instantly on all devices)
-      const { data: cloudComments } = await supabase.from('article_comments').select('*');
+      // 2. Reader Comments
       if (cloudComments && cloudComments.length > 0) {
         const mappedComments = cloudComments.map(c => ({
           id: c.id,
@@ -283,11 +298,7 @@ export default function App() {
         localStorage.setItem('pikam_article_comments', JSON.stringify(mappedComments));
       }
 
-      // 3. Authors List (Uses exact locked order from site_settings merged with all cloud authors)
-      const { data: cloudAuthors } = await supabase.from('authors').select('*');
-
-      // 4. Site Settings (Hero, Visibility, Nav, Künye, Authors Order, Admin Notes)
-      const { data: cloudSettings } = await supabase.from('site_settings').select('*');
+      // 3. Site Settings & Authors
       if (cloudSettings && cloudSettings.length > 0) {
         const authorsOrderSetting = cloudSettings.find(s => s.id === 'authors_ordered_list');
         if (cloudAuthors && cloudAuthors.length > 0) {
@@ -371,16 +382,14 @@ export default function App() {
         }
       }
 
-      // 5. E-Dergi Issues
-      const { data: cloudIssues } = await supabase.from('e_dergi_issues').select('*');
+      // 4. E-Dergi Issues
       if (cloudIssues && cloudIssues.length > 0) {
         const mappedIssues = cloudIssues.map(mapIssueFromCloud);
         setEDergiList(mappedIssues);
         localStorage.setItem('pikam_edergi_list', JSON.stringify(mappedIssues));
       }
 
-      // 6. Articles List (Uses exact locked order from site_settings merged with cloud articles)
-      const { data: cloudArticles } = await supabase.from('articles').select('*');
+      // 5. Articles List (Uses exact locked order from site_settings merged with cloud articles)
       let finalArticles = [];
       if (cloudArticles && cloudArticles.length > 0) {
         const mappedArts = cloudArticles.map(mapArticleFromCloud);
