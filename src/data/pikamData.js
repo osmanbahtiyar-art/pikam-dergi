@@ -204,6 +204,30 @@ export const PIKAM_DATA = {
       latestArticle: "Küresel enerji güvenliği, savunma sanayii ekosistemi ve jeostratejik güç projeksiyonları üzerine çalışmaktadır."
     },
     {
+      id: "auth-1785333313380",
+      name: "İrem Kumral",
+      role: "Ekonomi & Finans Araştırmacısı",
+      affiliation: "PİKAM Ekonomi Masası",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+      latestArticle: "PİKAM bünyesinde makroekonomi, kamu maliyesi ve gelir dağılımı politikaları üzerine akademik araştırmalar yapmaktadır."
+    },
+    {
+      id: "auth-1786866647845",
+      name: "Zeynep Sare Ağca",
+      role: "Kültür & Medya Uzmanı",
+      affiliation: "PİKAM Yayın Kurulu",
+      avatar: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&w=200&q=80",
+      latestArticle: "Medya sosyolojisi, kültürel diplomasi ve dijital yayıncılık standartları üzerine makaleler kaleme almaktadır."
+    },
+    {
+      id: "auth-test-1",
+      name: "Doğancan Tekin",
+      role: "Jeopolitik & Güvenlik Analisti",
+      affiliation: "PİKAM Güvenlik Masası",
+      avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80",
+      latestArticle: "Savunma sanayii ekosistemi, tedarik zinciri güvenliği ve Avrasya jeopolitiği üzerine stratejik raporlar sunmaktadır."
+    },
+    {
       id: "auth-14",
       name: "Eda Akpınar",
       role: "Kültür & Medya Editörü",
