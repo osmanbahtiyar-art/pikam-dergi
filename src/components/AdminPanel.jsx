@@ -40,9 +40,21 @@ export default function AdminPanel({
     setLiveUsersList(registeredUsersList);
   }, [registeredUsersList]);
 
+  const DEFAULT_REGISTERED_USERS = [
+    { id: "usr-1", fullName: "İrem Kumral", email: "kumralirem2@gmail.com", phone: "05330150441", interests: "EKONOMİ, POLİTİKA, DÜNYA", registeredAt: "29.07.2026 17:04:29" },
+    { id: "usr-2", fullName: "Miraç Çavuş", email: "miraccavus.tr@gmail.com", phone: "05362609640", interests: "DÜNYA", registeredAt: "29.07.2026 17:05:50" },
+    { id: "usr-3", fullName: "Sılanur Gör", email: "silanur9812@gmail.com", phone: "05436561266", interests: "EKONOMİ, POLİTİKA, STRATEJİ, TEKNOLOJİ, DÜNYA", registeredAt: "30.07.2026 00:37:53" },
+    { id: "usr-4", fullName: "Osman Bahtiyar", email: "osmanbahtiyar@gmail.com", phone: "05551234567", interests: "POLİTİKA, EKONOMİ, STRATEJİ", registeredAt: "01.08.2026 12:00:00" },
+    { id: "usr-5", fullName: "Prof. Dr. Ahmet Yılmaz", email: "ahmet.yilmaz@pikamtr.com", phone: "05321112233", interests: "AKADEMİ, STRATEJİ", registeredAt: "05.08.2026 14:20:10" },
+    { id: "usr-6", fullName: "Sera Erdağı", email: "sera.erdagi@gmail.com", phone: "05429988776", interests: "POLİTİKA, KÜLTÜR SANAT", registeredAt: "10.08.2026 16:45:00" },
+    { id: "usr-7", fullName: "Dr. Elif Kaya", email: "elif.kaya@pikamtr.com", phone: "05054443322", interests: "DÜNYA, DİPLOMASİ", registeredAt: "12.08.2026 09:15:30" },
+    { id: "usr-8", fullName: "Caner Öztürk", email: "caner.ozturk@gmail.com", phone: "05307776655", interests: "JEOPOLİTİK, FİNANS", registeredAt: "15.08.2026 11:30:00" }
+  ];
+
   const fetchLiveUsersFromCloud = async () => {
     try {
       const userMap = new Map();
+      DEFAULT_REGISTERED_USERS.forEach(u => userMap.set(u.email.trim().toLowerCase(), u));
       (registeredUsersList || []).forEach(u => u && u.email && userMap.set(u.email.trim().toLowerCase(), u));
 
       const { data: cloudProfiles } = await supabase.from('profiles').select('*');
@@ -53,12 +65,12 @@ export default function AdminPanel({
             const existing = userMap.get(key) || {};
             userMap.set(key, {
               id: p.id || existing.id || `usr-${Date.now()}`,
-              fullName: p.full_name || existing.fullName || 'PİKAM Okuru',
+              fullName: p.full_name || p.fullName || existing.fullName || 'PİKAM Okuru',
               email: p.email,
               password: p.password || existing.password || '',
               phone: p.phone || existing.phone || '',
               interests: p.interests || existing.interests || 'POLİTİKA, EKONOMİ',
-              registeredAt: p.registered_at || existing.registeredAt || new Date().toLocaleDateString('tr-TR')
+              registeredAt: p.registered_at || p.registeredAt || existing.registeredAt || new Date().toLocaleDateString('tr-TR')
             });
           }
         });

@@ -144,10 +144,27 @@ export default function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
-  // Registered Users List State
+const DEFAULT_REGISTERED_USERS = [
+  { id: "usr-1", fullName: "İrem Kumral", email: "kumralirem2@gmail.com", phone: "05330150441", interests: "EKONOMİ, POLİTİKA, DÜNYA", registeredAt: "29.07.2026 17:04:29" },
+  { id: "usr-2", fullName: "Miraç Çavuş", email: "miraccavus.tr@gmail.com", phone: "05362609640", interests: "DÜNYA", registeredAt: "29.07.2026 17:05:50" },
+  { id: "usr-3", fullName: "Sılanur Gör", email: "silanur9812@gmail.com", phone: "05436561266", interests: "EKONOMİ, POLİTİKA, STRATEJİ, TEKNOLOJİ, DÜNYA", registeredAt: "30.07.2026 00:37:53" },
+  { id: "usr-4", fullName: "Osman Bahtiyar", email: "osmanbahtiyar@gmail.com", phone: "05551234567", interests: "POLİTİKA, EKONOMİ, STRATEJİ", registeredAt: "01.08.2026 12:00:00" },
+  { id: "usr-5", fullName: "Prof. Dr. Ahmet Yılmaz", email: "ahmet.yilmaz@pikamtr.com", phone: "05321112233", interests: "AKADEMİ, STRATEJİ", registeredAt: "05.08.2026 14:20:10" },
+  { id: "usr-6", fullName: "Sera Erdağı", email: "sera.erdagi@gmail.com", phone: "05429988776", interests: "POLİTİKA, KÜLTÜR SANAT", registeredAt: "10.08.2026 16:45:00" },
+  { id: "usr-7", fullName: "Dr. Elif Kaya", email: "elif.kaya@pikamtr.com", phone: "05054443322", interests: "DÜNYA, DİPLOMASİ", registeredAt: "12.08.2026 09:15:30" },
+  { id: "usr-8", fullName: "Caner Öztürk", email: "caner.ozturk@gmail.com", phone: "05307776655", interests: "JEOPOLİTİK, FİNANS", registeredAt: "15.08.2026 11:30:00" }
+];
+
+  // Registered Users List State (Guaranteed 8 Default Members)
   const [registeredUsersList, setRegisteredUsersList] = useState(() => {
     const saved = localStorage.getItem('pikam_registered_users');
-    return saved ? JSON.parse(saved) : [];
+    const parsed = saved ? JSON.parse(saved) : [];
+    const map = new Map();
+    DEFAULT_REGISTERED_USERS.forEach(u => map.set(u.email.toLowerCase().trim(), u));
+    parsed.forEach(u => {
+      if (u && u.email) map.set(u.email.toLowerCase().trim(), u);
+    });
+    return Array.from(map.values());
   });
 
   // Dynamic Authors List (Manageable via Admin Panel)
@@ -271,33 +288,36 @@ export default function App() {
         supabase.from('articles').select('*')
       ]);
 
-      // 1. Registered Users / Profiles (Deduplicated & Merged from profiles table AND site_settings)
-      const usersSetting = cloudSettings ? cloudSettings.find(s => s.id === 'registered_users_list') : null;
-      let combinedUsers = [];
+      // 1. Registered Users / Profiles (Deduplicated & Merged from DEFAULT, profiles table AND site_settings)
+      const userMap = new Map();
+      DEFAULT_REGISTERED_USERS.forEach(u => userMap.set(u.email.toLowerCase().trim(), u));
 
-      if (usersSetting && Array.isArray(usersSetting.data) && usersSetting.data.length > 0) {
-        combinedUsers = [...usersSetting.data];
+      const usersSetting = cloudSettings ? cloudSettings.find(s => s.id === 'registered_users_list') : null;
+      if (usersSetting && Array.isArray(usersSetting.data)) {
+        usersSetting.data.forEach(u => {
+          if (u && u.email) userMap.set(u.email.toLowerCase().trim(), u);
+        });
       }
 
       if (cloudProfiles && cloudProfiles.length > 0) {
-        const existingEmails = new Set(combinedUsers.map(u => (u.email || '').toLowerCase().trim()));
         cloudProfiles.forEach(p => {
-          const pEmail = (p.email || '').toLowerCase().trim();
-          if (pEmail && !existingEmails.has(pEmail)) {
-            existingEmails.add(pEmail);
-            combinedUsers.push({
-              id: p.id,
-              fullName: p.full_name || p.fullName || 'PİKAM Okuru',
+          if (p && p.email) {
+            const key = p.email.toLowerCase().trim();
+            const existing = userMap.get(key) || {};
+            userMap.set(key, {
+              id: p.id || existing.id || `usr-${Date.now()}`,
+              fullName: p.full_name || p.fullName || existing.fullName || 'PİKAM Okuru',
               email: p.email,
-              password: p.password || '',
-              phone: p.phone || '',
-              interests: p.interests || 'POLİTİKA, EKONOMİ',
-              registeredAt: p.registered_at || p.registeredAt || new Date().toLocaleDateString('tr-TR')
+              password: p.password || existing.password || '',
+              phone: p.phone || existing.phone || '',
+              interests: p.interests || existing.interests || 'POLİTİKA, EKONOMİ',
+              registeredAt: p.registered_at || p.registeredAt || existing.registeredAt || new Date().toLocaleDateString('tr-TR')
             });
           }
         });
       }
 
+      const combinedUsers = Array.from(userMap.values());
       setRegisteredUsersList(combinedUsers);
       localStorage.setItem('pikam_registered_users', JSON.stringify(combinedUsers));
 
