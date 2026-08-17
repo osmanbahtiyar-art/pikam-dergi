@@ -271,19 +271,35 @@ export default function App() {
         supabase.from('articles').select('*')
       ]);
 
-      // 1. Registered Users / Profiles
-      if (cloudProfiles) {
-        const mappedUsers = cloudProfiles.map(p => ({
-          id: p.id,
-          fullName: p.full_name || p.fullName,
-          email: p.email,
-          phone: p.phone,
-          interests: p.interests,
-          registeredAt: p.registered_at || p.registeredAt
-        }));
-        setRegisteredUsersList(mappedUsers);
-        localStorage.setItem('pikam_registered_users', JSON.stringify(mappedUsers));
+      // 1. Registered Users / Profiles (Deduplicated & Merged from profiles table AND site_settings)
+      const usersSetting = cloudSettings ? cloudSettings.find(s => s.id === 'registered_users_list') : null;
+      let combinedUsers = [];
+
+      if (usersSetting && Array.isArray(usersSetting.data) && usersSetting.data.length > 0) {
+        combinedUsers = [...usersSetting.data];
       }
+
+      if (cloudProfiles && cloudProfiles.length > 0) {
+        const existingEmails = new Set(combinedUsers.map(u => (u.email || '').toLowerCase().trim()));
+        cloudProfiles.forEach(p => {
+          const pEmail = (p.email || '').toLowerCase().trim();
+          if (pEmail && !existingEmails.has(pEmail)) {
+            existingEmails.add(pEmail);
+            combinedUsers.push({
+              id: p.id,
+              fullName: p.full_name || p.fullName || 'PİKAM Okuru',
+              email: p.email,
+              password: p.password || '',
+              phone: p.phone || '',
+              interests: p.interests || 'POLİTİKA, EKONOMİ',
+              registeredAt: p.registered_at || p.registeredAt || new Date().toLocaleDateString('tr-TR')
+            });
+          }
+        });
+      }
+
+      setRegisteredUsersList(combinedUsers);
+      localStorage.setItem('pikam_registered_users', JSON.stringify(combinedUsers));
 
       // 2. Reader Comments
       if (cloudComments && cloudComments.length > 0) {
@@ -363,24 +379,6 @@ export default function App() {
         if (subSetting && Array.isArray(subSetting.data)) {
           setNewsletterSubscribers(subSetting.data);
           localStorage.setItem('pikam_newsletter_subscribers', JSON.stringify(subSetting.data));
-        }
-
-        const usersSetting = cloudSettings.find(s => s.id === 'registered_users_list');
-        if (usersSetting && Array.isArray(usersSetting.data)) {
-          setRegisteredUsersList(usersSetting.data);
-          localStorage.setItem('pikam_registered_users', JSON.stringify(usersSetting.data));
-        } else if (cloudProfiles && cloudProfiles.length > 0) {
-          const mappedUsers = cloudProfiles.map(p => ({
-            id: p.id,
-            fullName: p.full_name || p.fullName || 'PİKAM Okuru',
-            email: p.email,
-            password: p.password || '',
-            phone: p.phone || '',
-            interests: p.interests || 'POLİTİKA, EKONOMİ',
-            registeredAt: p.registered_at || p.registeredAt || new Date().toLocaleDateString('tr-TR')
-          }));
-          setRegisteredUsersList(mappedUsers);
-          localStorage.setItem('pikam_registered_users', JSON.stringify(mappedUsers));
         }
       }
 
