@@ -428,6 +428,11 @@ export default function App() {
     window.addEventListener('pageshow', handleSyncTrigger);
     document.addEventListener('visibilitychange', handleMobileWakeup);
 
+    // 2-SECOND AUTOMATIC BACKGROUND POLLING TIMER FOR ALL VISITORS WORLDWIDE
+    const autoPollInterval = setInterval(() => {
+      fetchAndMergeCloudData(true);
+    }, 2000);
+
     // SUPABASE REALTIME SUBSCRIPTION FOR INSTANT CROSS-DEVICE SYNC
     const channel = supabase
       .channel('pikam-realtime-sync')
@@ -461,6 +466,7 @@ export default function App() {
     window.addEventListener('hashchange', checkAdminRoute);
 
     return () => {
+      clearInterval(autoPollInterval);
       window.removeEventListener('focus', handleSyncTrigger);
       window.removeEventListener('online', handleSyncTrigger);
       window.removeEventListener('pageshow', handleSyncTrigger);
