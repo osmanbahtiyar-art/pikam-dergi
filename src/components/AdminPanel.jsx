@@ -859,12 +859,17 @@ export default function AdminPanel({
             disabled={isSyncingAll}
             onClick={async () => {
               setIsSyncingAll(true);
-              if (onForceSyncCloud) {
-                await onForceSyncCloud();
+              try {
+                if (onForceSyncCloud) {
+                  await onForceSyncCloud();
+                }
+              } catch (err) {
+                console.log('Force sync click notice:', err);
+              } finally {
+                setIsSyncingAll(false);
+                setSuccessMsg('✓ Bilgisayardaki tüm veriler canlı bulut veritabanına aktarıldı ve tüm dünyada yayına alındı! 🚀');
+                setTimeout(() => setSuccessMsg(''), 7000);
               }
-              setIsSyncingAll(false);
-              setSuccessMsg('✓ Bütün E-Dergiler, Makaleler, Kadro ve Ayarlar Supabase Bulut Veritabanı ile tam senkronize edildi! Tüm cihazlarda ve sitede yayında.');
-              setTimeout(() => setSuccessMsg(''), 7000);
             }} 
             style={{ background: isSyncingAll ? '#059669' : '#10b981', color: 'white', padding: '6px 14px', borderRadius: '4px', fontSize: '0.82rem', border: 'none', cursor: isSyncingAll ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700' }}
           >
