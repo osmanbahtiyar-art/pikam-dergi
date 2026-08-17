@@ -104,5 +104,13 @@ export const PIKAM_DATA = {
     { id: "auth-3", name: "Sera Erdağı", role: "Politika Analisti", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80" },
     { id: "auth-4", name: "Osman Bahtiyar", role: "Genel Yayın Yönetmeni", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80" }
   ],
+  kunye: {
+    yayinSahibi: "Politik ve İktisadi Araştırmalar Merkezi (PİKAM)",
+    yayinYonetmeni: "Osman Bahtiyar",
+    sorumluYaziIsleri: "PİKAM Dergi Editör Kurulu",
+    grafikTasarim: "PİKAM Dijital Yayıncılık Ekibi",
+    akademikDanismaKurulu: "Prof. Dr. Osman Bahtiyar, Sılanur Gör, Miraç Çavuş, Sera Erdağı",
+    iletisim: "iletisim@pikamtr.com | www.pikamtr.com"
+  },
   eDergiIssues: []
 };

@@ -126,13 +126,15 @@ export default function App() {
   // Dynamic Künye & Kurumsal Data CMS State
   const [kunyeData, setKunyeData] = useState(() => {
     const saved = localStorage.getItem('pikam_kunye_data');
-    return saved ? JSON.parse(saved) : {
-      yayinSahibi: PIKAM_DATA.kunye.yayinSahibi,
-      yayinYonetmeni: PIKAM_DATA.kunye.yayinYonetmeni,
-      sorumluYaziIsleri: PIKAM_DATA.kunye.sorumluYaziIsleri,
-      grafikTasarim: PIKAM_DATA.kunye.grafikTasarim,
-      akademikDanismaKurulu: PIKAM_DATA.kunye.akademikDanismaKurulu,
-      iletisim: PIKAM_DATA.kunye.iletisim
+    if (saved) return JSON.parse(saved);
+    if (PIKAM_DATA && PIKAM_DATA.kunye) return PIKAM_DATA.kunye;
+    return {
+      yayinSahibi: "Politik ve İktisadi Araştırmalar Merkezi (PİKAM)",
+      yayinYonetmeni: "Osman Bahtiyar",
+      sorumluYaziIsleri: "PİKAM Dergi Editör Kurulu",
+      grafikTasarim: "PİKAM Dijital Yayıncılık Ekibi",
+      akademikDanismaKurulu: "Prof. Dr. Osman Bahtiyar, Sılanur Gör, Miraç Çavuş, Sera Erdağı",
+      iletisim: "iletisim@pikamtr.com | www.pikamtr.com"
     };
   });
 
