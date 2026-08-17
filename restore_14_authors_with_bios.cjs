@@ -1,104 +1,14 @@
-export const PIKAM_DATA = {
-  header: {
-    title: "PİKAM DERGİ",
-    fullTitle: "Politik ve İktisadi Araştırmalar Merkezi",
-    tagline: "Dünü anlamak, bugünü tartışmak, yarını tasarlamak.",
-    issn: "ISSN 2717-9842 | Yıl: 7 | Sayı: 74 | Temmuz 2026",
-    portalUrl: "https://www.pikamtr.com/",
-    showIssn: true,
-    showAbout: true,
-    showEmblem: true,
-    emblemUrl: "/pikam_logo.png",
-    logotypeUrl: "/pikam_logo.png",
-    linkedinUrl: "https://linkedin.com/company/pikamdergi",
-    twitterUrl: "",
-    instagramUrl: "",
-    youtubeUrl: ""
-  },
-  ticker: [
-    { id: 1, category: "POLİTİKA", title: "PİKAM 2026 Raporu Yayımlandı: Doğu Akdeniz Enerji Mimarisi ve Yeni Güç Dengeleri" },
-    { id: 2, category: "EKONOMİ", title: "Merkez Bankaları Dijital Para Birimleri (CBDC) ve Küresel Finansal Sistem" },
-    { id: 3, category: "FİNANS", title: "Küresel Tedarik Zincirlerinde Yeniden Yapılanma ve Türkiye'nin Jeostratejik Rolü" },
-    { id: 4, category: "KÜLTÜR SANAT", title: "Sanat ve Sosyoloji: Dijitalleşen Çağda Yayıncılık ve Kültür Politikaları" }
-  ],
-  categories: [
-    { id: "ANASAYFA", label: "ANASAYFA", color: "#38bdf8" },
-    { id: "E-DERGİ", label: "E-DERGİ", color: "#ec4899" },
-    { id: "POLİTİKA", label: "POLİTİKA", color: "#ef4444" },
-    { id: "EKONOMİ", label: "EKONOMİ", color: "#10b981" },
-    { id: "FİNANS", label: "FİNANS", color: "#059669" },
-    { id: "KÜLTÜR SANAT", label: "KÜLTÜR SANAT", color: "#d97706" },
-    { id: "KÜNYE", label: "KÜNYE", color: "#64748b" },
-    { id: "EKİBİMİZ", label: "EKİBİMİZ", color: "#8b5cf6" }
-  ],
-  heroFeatured: {
-    id: "yayinlar-3",
-    category: "STRATEJİ",
-    categoryColor: "#6366f1",
-    title: "Küresel Açlık Azalıyor... Peki Neden Gıda Fiyatları Tırmanıyor?",
-    subtitle: "📊 Küresel Açlık Azalıyor. Peki Neden Milyonlarca İnsan Hâlâ Sağlıklı Gıdaya Ulaşamıyor?",
-    author: {
-      name: "Sılanur Gör",
-      title: "PİKAM Araştırmacısı",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
-    },
-    date: "27 Temmuz 2026",
-    readTime: "6 Dakika",
-    image: "https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80",
-    content: "<p class=\"lead\">Birleşmiş Milletler SOFI 2026 raporuna göre gıda fiyatları ve erişilebilirlik maliyetleri yükselmeye devam ediyor.</p>"
-  },
-  secondaryFeatured: [],
-  articles: [
-    {
-      id: "yayinlar-3",
-      category: "STRATEJİ",
-      categoryColor: "#6366f1",
-      title: "Küresel Açlık Azalıyor... Peki Neden Gıda Fiyatları Tırmanıyor?",
-      excerpt: "SOFI 2026 raporu gıda enflasyonu ve lojistik maliyetlerin etkisini inceliyor.",
-      author: "Sılanur Gör",
-      date: "27 Temmuz 2026",
-      readTime: "6 Dakika",
-      image: "https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80",
-      content: "<p class=\"lead\">Birleşmiş Milletler SOFI 2026 raporuna göre gıda fiyatları ve erişilebilirlik maliyetleri yükselmeye devam ediyor.</p>"
-    },
-    {
-      id: "yayinlar-1",
-      category: "EKONOMİ",
-      categoryColor: "#10b981",
-      title: "Enflasyon Dinamikleri ve Para Politikası İletişiminin Etkinliği",
-      excerpt: "Modern ekonomilerde enflasyon dinamikleri beklentilerle şekillenmektedir.",
-      author: "Miraç Çavuş",
-      date: "26 Temmuz 2026",
-      readTime: "6 Dakika",
-      image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80",
-      content: "<p class=\"lead\">Modern ekonomilerde beklenti yönetimi kritik bir role sahiptir.</p>"
-    },
-    {
-      id: "yayinlar-2",
-      category: "POLİTİKA",
-      categoryColor: "#ef4444",
-      title: "19 Mayıs 1919: İşgal Altındaki Bir Milletin Yeniden Doğuşu",
-      excerpt: "Milli Mücadele ruhu ve hürriyet yürüyüşünün tarihi analizi.",
-      author: "Sera Erdağı",
-      date: "19 Mayıs 2026",
-      readTime: "7 Dakika",
-      image: "/pikam_kapak_mayis_1784839804094.jpg",
-      content: "<p class=\"lead\">19 Mayıs 1919 Türk milletinin bağımsızlık meşalesidir.</p>"
-    },
-    {
-      id: "yayinlar-4",
-      category: "POLİTİKA",
-      categoryColor: "#ef4444",
-      title: "Altyapı Ekonomisi ve Sivas Belediyesi",
-      excerpt: "Altyapı yatırımları ve su yönetiminin bölgesel kalkınmaya etkileri.",
-      author: "Osman Bahtiyar",
-      date: "5 Kasım 2025",
-      readTime: "6 Dakika",
-      image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
-      content: "<p class=\"lead\">Su yönetimi ve altyapı hizmetleri ekonomik kalkınmanın merkezindedir.</p>"
-    }
-  ],
-  authors: [
+const { createClient } = require('@supabase/supabase-js');
+
+const SUPABASE_URL = 'https://czoecvbxstrsfgwsxvog.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_69J5Pj_VCgTGc53R5i9IEA_FoR93LvX';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function restore14AuthorsWithBios() {
+  console.log("Restoring all 14 team members with detailed bios to Supabase Cloud...");
+
+  const full14Authors = [
     {
       id: "auth-4",
       name: "Osman Bahtiyar",
@@ -211,14 +121,32 @@ export const PIKAM_DATA = {
       avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80",
       latestArticle: "Medya sosyolojisi, dijital yayıncılık standartları ve kültürel diplomasi konularında çalışmalar sunmaktadır."
     }
-  ],
-  kunye: {
-    yayinSahibi: "Politik ve İktisadi Araştırmalar Merkezi (PİKAM)",
-    yayinYonetmeni: "Osman Bahtiyar",
-    sorumluYaziIsleri: "PİKAM Dergi Editör Kurulu",
-    grafikTasarim: "PİKAM Dijital Yayıncılık Ekibi",
-    akademikDanismaKurulu: "Prof. Dr. Osman Bahtiyar, Sılanur Gör, Miraç Çavuş, Sera Erdağı",
-    iletisim: "iletisim@pikamtr.com | www.pikamtr.com"
-  },
-  eDergiIssues: []
-};
+  ];
+
+  // 1. Update site_settings authors_ordered_list
+  const { error: err1 } = await supabase.from('site_settings').upsert({
+    id: 'authors_ordered_list',
+    data: full14Authors
+  }, { onConflict: 'id' });
+  if (err1) console.error("site_settings error:", err1);
+  else console.log("✅ site_settings authors_ordered_list successfully updated with 14 detailed authors!");
+
+  // 2. Update authors table
+  for (const auth of full14Authors) {
+    const { error: err2 } = await supabase.from('authors').upsert({
+      id: auth.id,
+      name: auth.name,
+      role: auth.role,
+      affiliation: auth.affiliation,
+      avatar: auth.avatar,
+      latestarticle: auth.latestArticle
+    }, { onConflict: 'id' });
+    if (err2) console.error(`Error upserting author ${auth.name}:`, err2);
+  }
+  console.log("✅ authors table successfully updated with 14 detailed authors!");
+
+  console.log("🎉 ALL 14 TEAM MEMBERS WITH DETAILED BIOS ARE NOW RESTORED WORLDWIDE!");
+  process.exit(0);
+}
+
+restore14AuthorsWithBios().catch(e => { console.error(e); process.exit(1); });
