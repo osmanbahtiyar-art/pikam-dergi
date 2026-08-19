@@ -263,8 +263,14 @@ const DEFAULT_REGISTERED_USERS = [
   const [isAdmin, setIsAdmin] = useState(false);
   const lastFetchTimeRef = React.useRef(0);
 
+  const isMutatingCloudRef = useRef(false);
+
   // REAL-TIME INSTANT SYNCHRONIZATION FUNCTION (SUPABASE CLOUD AS SINGLE SOURCE OF TRUTH)
   const fetchAndMergeCloudData = async (force = false) => {
+    if (isMutatingCloudRef.current) {
+      console.log('⚡ Active admin mutation in progress - skipping cloud fetch overwrite');
+      return;
+    }
     const now = Date.now();
     if (!force && now - lastFetchTimeRef.current < 2000) {
       return; // Skip rapid non-forced queries within 2s
@@ -632,15 +638,18 @@ const DEFAULT_REGISTERED_USERS = [
   const handleSaveAuthorsCloud = async (newList) => {
     setAuthorsList(newList);
     localStorage.setItem('pikam_authors_list', JSON.stringify(newList));
+    isMutatingCloudRef.current = true;
     try {
       const mappedCloudAuthors = newList.map(mapAuthorForCloud);
       await Promise.all([
         supabase.from('site_settings').upsert([{ id: 'authors_ordered_list', data: newList }], { onConflict: 'id' }),
         supabase.from('authors').upsert(mappedCloudAuthors, { onConflict: 'id' })
       ]);
-      fetchAndMergeCloudData(true).catch(() => {});
     } catch (err) {
       console.log('Supabase author batch sync error:', err);
+    } finally {
+      lastFetchTimeRef.current = Date.now();
+      isMutatingCloudRef.current = false;
     }
   };
 
@@ -824,6 +833,7 @@ const DEFAULT_REGISTERED_USERS = [
   const handleSaveArticlesCloud = async (newList) => {
     setArticlesList(newList);
     localStorage.setItem('pikam_articles_list', JSON.stringify(newList));
+    isMutatingCloudRef.current = true;
 
     try {
       const cleanArticlesList = (newList || []).map(a => ({
@@ -855,9 +865,11 @@ const DEFAULT_REGISTERED_USERS = [
         supabase.from('site_settings').upsert([{ id: 'articles_ordered_list', data: cleanArticlesOrder }], { onConflict: 'id' }),
         supabase.from('articles').upsert(cleanArticlesList, { onConflict: 'id' })
       ]);
-      fetchAndMergeCloudData(true).catch(() => {});
     } catch (err) {
       console.log('Supabase article batch sync error:', err);
+    } finally {
+      lastFetchTimeRef.current = Date.now();
+      isMutatingCloudRef.current = false;
     }
   };
 
