@@ -411,26 +411,28 @@ const DEFAULT_REGISTERED_USERS = [
 
       // 5. Articles List (Uses exact locked order from site_settings merged with cloud articles)
       let finalArticles = [];
+      const articlesOrderSetting = cloudSettings ? cloudSettings.find(s => s.id === 'articles_ordered_list') : null;
+
       if (cloudArticles && cloudArticles.length > 0) {
         const mappedArts = cloudArticles.map(mapArticleFromCloud);
-        const articlesOrderSetting = cloudSettings ? cloudSettings.find(s => s.id === 'articles_ordered_list') : null;
 
         if (articlesOrderSetting && Array.isArray(articlesOrderSetting.data) && articlesOrderSetting.data.length > 0) {
-          const orderMap = new Map();
-          articlesOrderSetting.data.forEach((item, index) => {
-            const idKey = String(item.id || item).toLowerCase();
-            orderMap.set(idKey, index);
-          });
-          mappedArts.sort((a, b) => {
-            const indexA = orderMap.has(String(a.id).toLowerCase()) ? orderMap.get(String(a.id).toLowerCase()) : 999;
-            const indexB = orderMap.has(String(b.id).toLowerCase()) ? orderMap.get(String(b.id).toLowerCase()) : 999;
-            return indexA - indexB;
-          });
+          const validOrderIds = new Set(articlesOrderSetting.data.map(item => String(item.id || item).toLowerCase()));
+          const orderedArts = articlesOrderSetting.data
+            .map(item => {
+              const itemId = String(item.id || item).toLowerCase();
+              return mappedArts.find(a => String(a.id).toLowerCase() === itemId) || item;
+            })
+            .filter(Boolean);
+
+          const extraArts = mappedArts.filter(a => !validOrderIds.has(String(a.id).toLowerCase()));
+          finalArticles = [...orderedArts, ...extraArts];
         } else {
           mappedArts.sort((a, b) => (a.display_order ?? 999) - (b.display_order ?? 999));
+          finalArticles = mappedArts;
         }
-
-        finalArticles = mappedArts;
+      } else if (articlesOrderSetting && Array.isArray(articlesOrderSetting.data) && articlesOrderSetting.data.length > 0) {
+        finalArticles = articlesOrderSetting.data;
       } else {
         finalArticles = PIKAM_DATA.articles;
       }
@@ -902,9 +904,24 @@ const DEFAULT_REGISTERED_USERS = [
     setArticlesList(updated);
     localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
 
+    const cleanArticlesOrder = updated.map(a => ({
+      id: a.id,
+      title: a.title,
+      category: a.category,
+      categoryColor: a.categoryColor || '#10b981',
+      author: typeof a.author === 'string' ? a.author : a.author?.name,
+      date: a.date,
+      readTime: a.readTime || '6 dk',
+      image: (a.image && a.image.startsWith('data:')) ? 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80' : a.image,
+      excerpt: a.excerpt
+    }));
+
     try {
-      await supabase.from('articles').delete().eq('id', id);
-      await supabase.from('site_settings').upsert([{ id: 'articles_ordered_list', data: updated }]);
+      await Promise.all([
+        supabase.from('articles').delete().eq('id', id),
+        supabase.from('site_settings').upsert([{ id: 'articles_ordered_list', data: cleanArticlesOrder }], { onConflict: 'id' })
+      ]);
+      fetchAndMergeCloudData(true).catch(() => {});
     } catch (err) {
       console.log('Supabase article delete notice:', err);
     }
