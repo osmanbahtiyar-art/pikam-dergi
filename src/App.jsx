@@ -87,6 +87,19 @@ const mapIssueFromCloud = (issue) => ({
   pages: issue.pages
 });
 
+const safeParseJSON = (key, fallback) => {
+  try {
+    const saved = localStorage.getItem(key);
+    if (!saved) return fallback;
+    const parsed = JSON.parse(saved);
+    return (parsed !== null && parsed !== undefined) ? parsed : fallback;
+  } catch (err) {
+    console.log(`Corrupted localStorage key "${key}", purging and using fallback:`, err);
+    try { localStorage.removeItem(key); } catch (e) {}
+    return fallback;
+  }
+};
+
 export default function App() {
   const [activeCategory, setActiveCategory] = useState('ANASAYFA');
   
@@ -99,19 +112,17 @@ export default function App() {
 
   // Section Visibility Toggles (Hide/Show sections from Admin Panel)
   const [sectionVisibility, setSectionVisibility] = useState(() => {
-    const saved = localStorage.getItem('pikam_section_visibility');
-    return saved ? JSON.parse(saved) : {
+    return safeParseJSON('pikam_section_visibility', {
       showHero: true,
       showYazarlar: true,
       showEDergi: true,
       showTicker: true
-    };
+    });
   });
 
   // Navigation Menu Tabs Visibility State (Admin CMS toggle - categories hidden by default as requested)
   const [navVisibility, setNavVisibility] = useState(() => {
-    const saved = localStorage.getItem('pikam_nav_visibility');
-    return saved ? JSON.parse(saved) : {
+    return safeParseJSON('pikam_nav_visibility', {
       ANASAYFA: true,
       'E-DERGİ': true,
       POLİTİKA: false, // hidden as requested
@@ -120,28 +131,24 @@ export default function App() {
       'KÜLTÜR SANAT': false, // hidden as requested
       KÜNYE: true,
       EKİBİMİZ: true
-    };
+    });
   });
 
   // Dynamic Künye & Kurumsal Data CMS State
   const [kunyeData, setKunyeData] = useState(() => {
-    const saved = localStorage.getItem('pikam_kunye_data');
-    if (saved) return JSON.parse(saved);
-    if (PIKAM_DATA && PIKAM_DATA.kunye) return PIKAM_DATA.kunye;
-    return {
+    return safeParseJSON('pikam_kunye_data', (PIKAM_DATA && PIKAM_DATA.kunye) ? PIKAM_DATA.kunye : {
       yayinSahibi: "Politik ve İktisadi Araştırmalar Merkezi (PİKAM)",
       yayinYonetmeni: "Osman Bahtiyar",
       sorumluYaziIsleri: "PİKAM Dergi Editör Kurulu",
       grafikTasarim: "PİKAM Dijital Yayıncılık Ekibi",
       akademikDanismaKurulu: "Prof. Dr. Osman Bahtiyar, Sılanur Gör, Miraç Çavuş, Sera Erdağı",
       iletisim: "iletisim@pikamtr.com | www.pikamtr.com"
-    };
+    });
   });
 
   // Current Logged In User State
   const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('pikam_current_user');
-    return saved ? JSON.parse(saved) : null;
+    return safeParseJSON('pikam_current_user', null);
   });
 
 const DEFAULT_REGISTERED_USERS = [
@@ -157,49 +164,44 @@ const DEFAULT_REGISTERED_USERS = [
 
   // Registered Users List State (Guaranteed 8 Default Members)
   const [registeredUsersList, setRegisteredUsersList] = useState(() => {
-    const saved = localStorage.getItem('pikam_registered_users');
-    const parsed = saved ? JSON.parse(saved) : [];
+    const parsed = safeParseJSON('pikam_registered_users', []);
     const map = new Map();
     DEFAULT_REGISTERED_USERS.forEach(u => map.set(u.email.toLowerCase().trim(), u));
-    parsed.forEach(u => {
-      if (u && u.email) map.set(u.email.toLowerCase().trim(), u);
-    });
+    if (Array.isArray(parsed)) {
+      parsed.forEach(u => {
+        if (u && u.email) map.set(u.email.toLowerCase().trim(), u);
+      });
+    }
     return Array.from(map.values());
   });
 
   // Dynamic Authors List (Manageable via Admin Panel)
   const [authorsList, setAuthorsList] = useState(() => {
-    const saved = localStorage.getItem('pikam_authors_list');
-    return saved ? JSON.parse(saved) : PIKAM_DATA.authors;
+    return safeParseJSON('pikam_authors_list', PIKAM_DATA.authors);
   });
 
   // Dynamic Homepage Hero Main Story CMS State
   const [heroFeatured, setHeroFeatured] = useState(() => {
-    const saved = localStorage.getItem('pikam_hero_featured');
-    return saved ? JSON.parse(saved) : PIKAM_DATA.heroFeatured;
+    return safeParseJSON('pikam_hero_featured', PIKAM_DATA.heroFeatured);
   });
 
   // Dynamic E-Dergi & Articles state with Supabase & localStorage persistence
   const [eDergiList, setEDergiList] = useState(() => {
-    const saved = localStorage.getItem('pikam_edergi_list');
-    return saved ? JSON.parse(saved) : PIKAM_DATA.eDergiIssues;
+    return safeParseJSON('pikam_edergi_list', PIKAM_DATA.eDergiIssues);
   });
 
   const [articlesList, setArticlesList] = useState(() => {
-    const saved = localStorage.getItem('pikam_articles_list');
-    return saved ? JSON.parse(saved) : PIKAM_DATA.articles;
+    return safeParseJSON('pikam_articles_list', PIKAM_DATA.articles);
   });
 
   // Article Reader Comments State (Permanent Storage)
   const [allCommentsList, setAllCommentsList] = useState(() => {
-    const saved = localStorage.getItem('pikam_article_comments');
-    return saved ? JSON.parse(saved) : [];
+    return safeParseJSON('pikam_article_comments', []);
   });
 
   // Admin Notes & Todo List State (Permanent Cloud & Local Persistence)
   const [adminNotesList, setAdminNotesList] = useState(() => {
-    const saved = localStorage.getItem('pikam_admin_notes');
-    return saved ? JSON.parse(saved) : [
+    return safeParseJSON('pikam_admin_notes', [
       {
         id: 'note-1',
         title: 'E-Dergi Çapraz Cihaz Kontrolü',
@@ -209,13 +211,12 @@ const DEFAULT_REGISTERED_USERS = [
         isCompleted: false,
         createdAt: '31 Temmuz 2026'
       }
-    ];
+    ]);
   });
 
   // Dynamic Header & Footer CMS State
   const [headerData, setHeaderData] = useState(() => {
-    const saved = localStorage.getItem('pikam_header_data');
-    return saved ? JSON.parse(saved) : {
+    return safeParseJSON('pikam_header_data', {
       showSiteHeader: true,
       emblemUrl: '/pikam_blue_emblem.png',
       logotypeUrl: '/pikam_blue_logotype.png',
@@ -237,12 +238,11 @@ const DEFAULT_REGISTERED_USERS = [
       issn: 'ISSN 2717-9842 | Yıl: 7 | Sayı: 74 | Temmuz 2026',
       portalUrl: 'https://www.pikamtr.com/',
       portalLabel: 'pikamtr.com'
-    };
+    });
   });
 
   const [footerData, setFooterData] = useState(() => {
-    const saved = localStorage.getItem('pikam_footer_data');
-    return saved ? JSON.parse(saved) : {
+    return safeParseJSON('pikam_footer_data', {
       showSiteFooter: true,
       logoUrl: '/pikam_logo.png',
       title: 'PİKAM DERGİ',
@@ -251,13 +251,12 @@ const DEFAULT_REGISTERED_USERS = [
       portalLabel: 'Merkez Portalı: www.pikamtr.com',
       issnText: 'ISSN: 2717-9842 | Ankara, Türkiye',
       copyrightText: '© 2026 PİKAM - Politik ve İktisadi Araştırmalar Merkezi (pikamtr.com). Tüm Hakları Saklıdır.'
-    };
+    });
   });
 
   // Newsletter Subscribers State
   const [newsletterSubscribers, setNewsletterSubscribers] = useState(() => {
-    const saved = localStorage.getItem('pikam_newsletter_subscribers');
-    return saved ? JSON.parse(saved) : [];
+    return safeParseJSON('pikam_newsletter_subscribers', []);
   });
 
   const [isAdmin, setIsAdmin] = useState(false);
