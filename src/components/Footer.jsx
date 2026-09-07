@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, CheckCircle2, ExternalLink } from 'lucide-react';
 
-export default function Footer({ onSelectCategory: _onSelectCategory, onOpenKunye: _onOpenKunye, onScrollToEDergi: _onScrollToEDergi, footerData, headerData: _headerData, sectionVisibility = {}, onSubscribeNewsletter }) {
+export default function Footer({ onSelectCategory, onOpenKunye, onScrollToEDergi, footerData, headerData, sectionVisibility = {}, onSubscribeNewsletter }) {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
