@@ -7,9 +7,7 @@ export default function EDergiModal({ issue, onClose }) {
   const [renderedPdfPage, setRenderedPdfPage] = useState(null);
   const [isRenderingPage, setIsRenderingPage] = useState(false);
 
-  if (!issue) return null;
-
-  const totalPages = issue.pageCount || (issue.pagesDataUrls ? issue.pagesDataUrls.length : 68);
+  const totalPages = issue?.pageCount || (issue?.pagesDataUrls ? issue.pagesDataUrls.length : 68);
 
   const handleNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
@@ -20,7 +18,7 @@ export default function EDergiModal({ issue, onClose }) {
   };
 
   const handleDownloadPdf = () => {
-    if (!issue.pdfUrl || issue.pdfUrl === '#') {
+    if (!issue || !issue.pdfUrl || issue.pdfUrl === '#') {
       alert('Dergi PDF dosyası henüz yüklenmemiştir.');
       return;
     }
@@ -63,6 +61,7 @@ export default function EDergiModal({ issue, onClose }) {
 
   // Render PDF page dynamically using PDF.js
   useEffect(() => {
+    if (!issue) return;
     let isMounted = true;
 
     // Check pre-rendered pages array
@@ -115,6 +114,8 @@ export default function EDergiModal({ issue, onClose }) {
 
     return () => { isMounted = false; };
   }, [issue, currentPage]);
+
+  if (!issue) return null;
 
   const activePageData = issue.pages && issue.pages.find(p => p.page === currentPage);
 

@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { Mail, CheckCircle2, ExternalLink } from 'lucide-react';
 
-export default function Footer({ onSelectCategory, onOpenKunye, onScrollToEDergi, footerData, headerData, sectionVisibility = {}, onSubscribeNewsletter }) {
+export default function Footer({ onSelectCategory: _onSelectCategory, onOpenKunye: _onOpenKunye, onScrollToEDergi: _onScrollToEDergi, footerData, headerData: _headerData, sectionVisibility = {}, onSubscribeNewsletter }) {
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   if (sectionVisibility.showSiteFooter === false || (footerData && footerData.showSiteFooter === false)) {
     return null;
   }
@@ -15,10 +19,6 @@ export default function Footer({ onSelectCategory, onOpenKunye, onScrollToEDergi
     issnText: 'ISSN: 2717-9842 | Ankara, Türkiye',
     copyrightText: '© 2026 PİKAM - Politik ve İktisadi Araştırmalar Merkezi (pikamtr.com). Tüm Hakları Saklıdır.'
   };
-
-  const [email, setEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
