@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /admin
 
-Sitemap: https://pikamdergi.com/sitemap.xml
+Sitemap: https://www.pikamdergi.com/sitemap.xml

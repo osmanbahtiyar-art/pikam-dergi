@@ -1,6 +1,0 @@
-{
-  "name": "PİKAM Dergi",
-  "description": "Politik ve İktisadi Araştırmalar Merkezi. Küresel Jeopolitik, İktisadi Stratejiler, Teknoloji ve Politika Analizleri.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

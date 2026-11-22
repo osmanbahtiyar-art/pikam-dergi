@@ -1,6 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://czoecvbxstrsfgwsxvog.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_69J5Pj_VCgTGc53R5i9IEA_FoR93LvX';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Ortam değişkenleri yoksa site statik içerikle (src/data/pikamData.js) çalışmaya devam eder.
+export const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+export const isCloudEnabled = Boolean(supabase);

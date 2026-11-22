@@ -1,893 +1,225 @@
 import React, { useState } from 'react';
-import { X, User, Mail, Lock, LogIn, UserPlus, KeyRound, ArrowLeft, CheckCircle2 } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
-
-export default function UserAuthModal({ onClose, onLoginSuccess }) {
-  const [mode, setMode] = useState('login'); // 'login', 'register', or 'forgot'
-
-  // Form State
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [interests, setInterests] = useState(['EKONOMİ', 'POLİTİKA']);
-  
-  const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const availableInterests = ['EKONOMİ', 'POLİTİKA', 'STRATEJİ', 'TEKNOLOJİ', 'DÜNYA'];
-
-  const toggleInterest = (category) => {
-    if (interests.includes(category)) {
-      setInterests(interests.filter(i => i !== category));
-    } else {
-      setInterests([...interests, category]);
-    }
-  };
-
-  // Registration 2-Step States
-  const [registerStep, setRegisterStep] = useState(1); // 1 = details, 2 = 6-digit OTP verification
-  const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
-  const [registerOtpCode, setRegisterOtpCode] = useState('');
-  const [draftRegisterUser, setDraftRegisterUser] = useState(null);
-
-  const handleRegisterStep1 = async (e) => {
-    e.preventDefault();
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    if (!fullName || !email || !password || !phone) {
-      setErrorMsg('Lütfen tüm zorunlu alanları doldurun.');
-      return;
-    }
-
-    if (password.length < 4) {
-      setErrorMsg('Şifreniz en az 4 karakter olmalıdır.');
-      return;
-    }
-
-    if (password !== registerConfirmPassword) {
-      setErrorMsg('Girdiğiniz şifreler birbiriyle eşleşmiyor!');
-      return;
-    }
-
-    if (interests.length === 0) {
-      setErrorMsg('Lütfen en az 1 adet ilgi alanı seçin.');
-      return;
-    }
-
-    const cleanEmail = email.trim().toLowerCase();
-
-    // Check if email is already registered
-    const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-    const alreadyUser = existing.find(u => u.email && u.email.trim().toLowerCase() === cleanEmail);
-    if (alreadyUser && alreadyUser.isVerified !== false) {
-      setErrorMsg('Bu e-posta adresiyle zaten kayıtlı doğrulanmış bir üyelik var. Lütfen giriş yapın.');
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    const now = new Date();
-    const formattedDate = `${now.toLocaleDateString('tr-TR')} ${now.toLocaleTimeString('tr-TR')}`;
-
-    const draft = {
-      id: `usr-${Date.now()}`,
-      fullName,
-      email: cleanEmail,
-      phone,
-      password: password.trim(),
-      interests: interests.join(', '),
-      registeredAt: formattedDate,
-      rawDate: now.toISOString(),
-      isVerified: false
-    };
-
-    setDraftRegisterUser(draft);
-
-    // Save unverified user draft immediately so Admin Panel sees 🟡 BEKLEMEDE in real time
-    const updatedUsers = [draft, ...existing.filter(u => u.email && u.email.toLowerCase() !== cleanEmail)];
-    localStorage.setItem('pikam_registered_users', JSON.stringify(updatedUsers));
-
-    try {
-      await supabase.from('profiles').upsert([{
-        id: draft.id,
-        full_name: draft.fullName,
-        email: draft.email,
-        phone: draft.phone,
-        password: draft.password,
-        interests: draft.interests,
-        registered_at: draft.registeredAt,
-        is_verified: false
-      }]);
-      await supabase.from('site_settings').upsert([{ id: 'registered_users_list', data: updatedUsers }]);
-    } catch (sErr) {
-      console.log('Unverified profile sync notice:', sErr);
-    }
-
-    // Generate 6-digit random verification code & store persistently
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    localStorage.setItem(`pikam_reg_otp_${cleanEmail}`, code);
-
-    // Trigger Supabase Auth Signup Email silently
-    try {
-      const { error: signUpErr } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password: password.trim(),
-        options: {
-          data: {
-            full_name: fullName,
-            phone: phone
-          }
-        }
-      });
-      if (signUpErr) {
-        console.log('Supabase signup email log:', signUpErr);
-      }
-    } catch (err) {
-      console.log('Supabase signup mail notice:', err);
-    }
-
-    setIsSubmitting(false);
-    setRegisterStep(2);
-    setSuccessMsg(`✓ 6 Haneli e-posta doğrulama kodunuz "${cleanEmail}" hesabınıza gönderilmiştir.\n\nLütfen e-posta gelen kutunuzu (ve Gereksiz klasörünü) kontrol ederek 6 haneli kodu aşağıdaki kutucuğa giriniz.`);
-  };
-
-  const handleVerifyRegisterCode = async (e) => {
-    e.preventDefault();
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    if (!draftRegisterUser) {
-      setErrorMsg('Kayıt bilgileri alınamadı. Lütfen tekrar deneyin.');
-      setRegisterStep(1);
-      return;
-    }
-
-    if (!registerOtpCode) {
-      setErrorMsg('Lütfen e-postanıza gönderilen 6 haneli doğrulama kodunu girin.');
-      return;
-    }
-
-    const inputCode = registerOtpCode.trim();
-    const savedOtp = localStorage.getItem(`pikam_reg_otp_${draftRegisterUser.email}`);
-    let isOtpValid = false;
-
-    if (inputCode && (inputCode === savedOtp)) {
-      isOtpValid = true;
-    }
-
-    if (!isOtpValid) {
-      try {
-        const { error: vErr } = await supabase.auth.verifyOtp({
-          email: draftRegisterUser.email,
-          token: inputCode,
-          type: 'signup'
-        });
-        if (!vErr) isOtpValid = true;
-      } catch (e1) {}
-
-      if (!isOtpValid) {
-        try {
-          const { error: vErr2 } = await supabase.auth.verifyOtp({
-            email: draftRegisterUser.email,
-            token: inputCode,
-            type: 'email'
-          });
-          if (!vErr2) isOtpValid = true;
-        } catch (e2) {}
-      }
-    }
-
-    if (!isOtpValid) {
-      setErrorMsg('Girdiğiniz 6 haneli e-posta doğrulama kodu hatalı! Lütfen e-postanıza gelen kodu kontrol edip tekrar girin.');
-      return;
-    }
-
-    // OTP Verified! Mark user as verified and save across cloud and local storage
-    const verifiedUser = {
-      ...draftRegisterUser,
-      isVerified: true,
-      verifiedAt: `${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR')}`
-    };
-
-    const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-    const updatedUsers = [verifiedUser, ...existing.filter(u => u.email && u.email.toLowerCase() !== verifiedUser.email)];
-    localStorage.setItem('pikam_registered_users', JSON.stringify(updatedUsers));
-    localStorage.setItem('pikam_current_user', JSON.stringify(verifiedUser));
-
-    // Save to Supabase Cloud profiles table & site_settings
-    try {
-      await supabase.from('profiles').upsert([{
-        id: verifiedUser.id,
-        full_name: verifiedUser.fullName,
-        email: verifiedUser.email,
-        phone: verifiedUser.phone,
-        password: verifiedUser.password,
-        interests: verifiedUser.interests,
-        registered_at: verifiedUser.registeredAt,
-        is_verified: true,
-        verified_at: verifiedUser.verifiedAt
-      }]);
-
-      await supabase.from('site_settings').upsert([{
-        id: 'registered_users_list',
-        data: updatedUsers
-      }]);
-    } catch (err) {
-      console.log('Supabase verified user sync notice:', err);
-    }
-
-    onLoginSuccess(verifiedUser);
-    onClose();
-  };
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    if (!email || !password) {
-      setErrorMsg('Lütfen kayıtlı e-posta ve şifrenizi girin.');
-      return;
-    }
-
-    const inputEmail = email.trim().toLowerCase();
-    const inputPassword = password.trim();
-
-    // 1. Check registered users in local storage first
-    const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-    let found = existing.find(u => u.email && u.email.trim().toLowerCase() === inputEmail);
-
-    // 2. Fetch cloud profile from Supabase profiles table or site_settings
-    let cloudUser = null;
-    try {
-      const { data: cUser } = await supabase.from('profiles').select('*').eq('email', inputEmail).maybeSingle();
-      if (cUser) {
-        cloudUser = cUser;
-      }
-      
-      if (!cloudUser) {
-        const { data: cSetting } = await supabase.from('site_settings').select('*').eq('id', 'registered_users_list').maybeSingle();
-        if (cSetting && Array.isArray(cSetting.data)) {
-          const matchedInSetting = cSetting.data.find(u => u.email && u.email.trim().toLowerCase() === inputEmail);
-          if (matchedInSetting) {
-            cloudUser = matchedInSetting;
-          }
-        }
-      }
-    } catch (err) {
-      console.log('Supabase profile fetch notice:', err);
-    }
-
-    if (!found && cloudUser) {
-      found = {
-        id: cloudUser.id || `usr-${Date.now()}`,
-        fullName: cloudUser.full_name || cloudUser.fullName || inputEmail.split('@')[0].toUpperCase(),
-        email: cloudUser.email,
-        password: cloudUser.password || '',
-        phone: cloudUser.phone || '',
-        interests: cloudUser.interests || 'POLİTİKA, EKONOMİ',
-        registeredAt: cloudUser.registered_at || cloudUser.registeredAt || new Date().toLocaleDateString('tr-TR')
-      };
-      existing.unshift(found);
-      localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
-    }
-
-    // STRICT SECURE CHECK 1: If user is NOT registered, BLOCK login!
-    if (!found && !cloudUser) {
-      setErrorMsg('Bu e-posta adresiyle kayıtlı üye bulunamadı. Lütfen "Yeni Üye Ol" sekmesinden kayıt olun.');
-      return;
-    }
-
-    // STRICT SECURE CHECK 2: Password Match Verification
-    const expectedPassword = (found ? found.password : (cloudUser ? cloudUser.password : '')) || '';
-    
-    let isPasswordCorrect = expectedPassword && expectedPassword.trim() === inputPassword;
-
-    if (!isPasswordCorrect) {
-      try {
-        const { error: authError } = await supabase.auth.signInWithPassword({
-          email: inputEmail,
-          password: inputPassword
-        });
-        if (!authError) {
-          isPasswordCorrect = true;
-        }
-      } catch (authErr) {
-        console.log('Supabase auth match check:', authErr);
-      }
-    }
-
-    if (!isPasswordCorrect) {
-      setErrorMsg('E-posta adresiniz veya şifreniz yanlış! Lütfen şifrenizi kontrol ediniz veya "Şifremi Unuttum?" butonuna tıklayınız.');
-      return;
-    }
-
-    // LOGIN CLEAN SUCCESS - User is verified
-    if (found) {
-      found.password = inputPassword;
-    }
-
-    const updatedUsers = [found, ...existing.filter(u => u.email && u.email.toLowerCase() !== inputEmail)];
-    localStorage.setItem('pikam_registered_users', JSON.stringify(updatedUsers));
-    localStorage.setItem('pikam_current_user', JSON.stringify(found));
-
-    try {
-      await supabase.from('site_settings').upsert([{ id: 'registered_users_list', data: updatedUsers }]);
-      await supabase.from('profiles').upsert([{
-        id: found.id,
-        full_name: found.fullName,
-        email: inputEmail,
-        password: inputPassword,
-        phone: found.phone || '',
-        registered_at: found.registeredAt
-      }]);
-    } catch (sErr) {
-      console.log('Site settings users sync notice:', sErr);
-    }
-
-    onLoginSuccess(found);
-    onClose();
-  };
-
-  // Forgot Password 2-Step Flow States
-  const [forgotStep, setForgotStep] = useState(1); // 1 = enter email, 2 = enter 6-digit code & new password
-  const [resetTargetEmail, setResetTargetEmail] = useState('');
-  const [generatedCode, setGeneratedCode] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
-
-  const handleSendResetCode = async (e) => {
-    e.preventDefault();
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    if (!email) {
-      setErrorMsg('Lütfen kayıtlı e-posta adresinizi girin.');
-      return;
-    }
-
-    const inputEmail = email.trim().toLowerCase();
-    setResetTargetEmail(inputEmail);
-
-    const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-    let user = existing.find(u => u.email && u.email.toLowerCase() === inputEmail);
-
-    // Check cloud profiles if not found locally
-    if (!user) {
-      try {
-        const { data: cloudUser } = await supabase.from('profiles').select('*').eq('email', inputEmail).maybeSingle();
-        if (cloudUser) {
-          user = {
-            id: cloudUser.id || `usr-${Date.now()}`,
-            fullName: cloudUser.full_name || inputEmail.split('@')[0].toUpperCase(),
-            email: cloudUser.email,
-            password: cloudUser.password,
-            phone: cloudUser.phone || '',
-            interests: cloudUser.interests || 'POLİTİKA, EKONOMİ',
-            registeredAt: cloudUser.registered_at || new Date().toLocaleDateString('tr-TR')
-          };
-          existing.unshift(user);
-          localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
-        }
-      } catch (err) {
-        console.log('Supabase profile check notice:', err);
-      }
-    }
-
-    // STRICT SECURE CHECK: Must be a registered user to reset password
-    if (!user) {
-      setErrorMsg('Bu e-posta adresine ait kayıtlı bir üyelik bulunamadı. Lütfen önce kayıt olun.');
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    // Save OTP persistently to localStorage so it survives hash changes and page refreshes
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    setGeneratedCode(code);
-    localStorage.setItem(`pikam_otp_${inputEmail}`, code);
-
-    // Trigger Supabase Auth Reset Password Email silently
-    try {
-      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(inputEmail, {
-        redirectTo: `${window.location.origin}/#reset-password`
-      });
-      if (resetErr) {
-        console.log('Supabase reset email log:', resetErr);
-      }
-    } catch (resetErr) {
-      console.log('Supabase reset email notice:', resetErr);
-    }
-
-    setIsSubmitting(false);
-    setForgotStep(2);
-    setSuccessMsg(`✓ 6 Haneli doğrulama kodunuz "${inputEmail}" hesabınıza gönderilmiştir.\n\nLütfen e-posta gelen kutunuzu (ve Gereksiz klasörünü) kontrol ederek 6 haneli kodu aşağıdaki kutucuğa yazınız.`);
-  };
-
-  const handleVerifyCodeAndResetPassword = async (e) => {
-    e.preventDefault();
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    const targetEmail = (resetTargetEmail || email || '').trim().toLowerCase();
-
-    if (!targetEmail) {
-      setErrorMsg('E-posta adresi alınamadı. Lütfen e-posta adresinizi girip tekrar deneyin.');
-      setForgotStep(1);
-      return;
-    }
-
-    if (!verificationCode) {
-      setErrorMsg('Lütfen e-posta adresinize gönderilen 6 haneli kodu girin.');
-      return;
-    }
-
-    const inputCode = verificationCode.trim();
-    let isOtpValid = false;
-
-    // 1. Check persistent localStorage OTP or in-memory generatedCode
-    const savedOtp = localStorage.getItem(`pikam_otp_${targetEmail}`);
-    if (inputCode && (inputCode === generatedCode || inputCode === savedOtp)) {
-      isOtpValid = true;
-    }
-
-    // 2. Try Supabase Auth verifyOtp if type is recovery or email
-    if (!isOtpValid) {
-      try {
-        const { error: vErr } = await supabase.auth.verifyOtp({
-          email: targetEmail,
-          token: inputCode,
-          type: 'recovery'
-        });
-        if (!vErr) isOtpValid = true;
-      } catch (e1) {}
-
-      if (!isOtpValid) {
-        try {
-          const { error: vErr2 } = await supabase.auth.verifyOtp({
-            email: targetEmail,
-            token: inputCode,
-            type: 'email'
-          });
-          if (!vErr2) isOtpValid = true;
-        } catch (e2) {}
-      }
-    }
-
-    if (!isOtpValid) {
-      setErrorMsg('Girdiğiniz 6 haneli doğrulama kodu hatalı! Lütfen e-postanıza gönderilen 6 haneli kodu eksiksiz giriniz.');
-      return;
-    }
-
-    if (!newPassword || newPassword.length < 4) {
-      setErrorMsg('Lütfen en az 4 karakterden oluşan yeni şifrenizi girin.');
-      return;
-    }
-
-    if (newPassword !== newPasswordConfirm) {
-      setErrorMsg('Girdiğiniz yeni şifreler birbiriyle eşleşmiyor!');
-      return;
-    }
-
-    // Code verified & passwords match! Update user password across localStorage and Supabase profiles
-    const cleanPassword = newPassword.trim();
-    const existing = JSON.parse(localStorage.getItem('pikam_registered_users') || '[]');
-    
-    let updatedCount = 0;
-    existing.forEach(u => {
-      if (u.email && u.email.trim().toLowerCase() === targetEmail) {
-        u.password = cleanPassword;
-        updatedCount++;
-      }
-    });
-
-    let mainUser;
-    if (updatedCount > 0) {
-      mainUser = existing.find(u => u.email && u.email.trim().toLowerCase() === targetEmail);
-    } else {
-      mainUser = {
-        id: `usr-${Date.now()}`,
-        fullName: targetEmail.split('@')[0].toUpperCase(),
-        email: targetEmail,
-        password: cleanPassword,
-        phone: '+90 555 000 00 00',
-        interests: 'POLİTİKA, EKONOMİ',
-        registeredAt: `${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR')}`
-      };
-      existing.unshift(mainUser);
-    }
-
-    // Save to local storage
-    localStorage.setItem('pikam_registered_users', JSON.stringify(existing));
-    localStorage.setItem('pikam_current_user', JSON.stringify(mainUser));
-
-    // Update in Supabase Cloud Database Table 'profiles' & site_settings fallback
-    try {
-      await supabase.from('profiles').upsert([{
-        id: mainUser.id,
-        full_name: mainUser.fullName,
-        email: targetEmail,
-        password: cleanPassword,
-        registered_at: mainUser.registeredAt
-      }]);
-
-      await supabase.from('site_settings').upsert([{
-        id: 'registered_users_list',
-        data: existing
-      }]);
-
-      await supabase.auth.updateUser({ password: cleanPassword });
-    } catch (err) {
-      console.log('Supabase profile password update notice:', err);
-    }
-
-    setSuccessMsg('✓ Şifreniz başarıyla güncellendi! Otomatik giriş yapılıyor...');
-    setTimeout(() => {
-      onLoginSuccess(mainUser);
-      onClose();
-    }, 1000);
-  };
-
+import { X, User, Mail, Lock, LogIn, UserPlus, KeyRound, ArrowLeft, CheckCircle2, Phone } from 'lucide-react';
+import { isCloudEnabled } from '../lib/supabaseClient';
+import { signIn, signUp, sendPasswordReset, profileFromSession } from '../lib/db';
+
+const INTERESTS = ['EKONOMİ', 'POLİTİKA', 'STRATEJİ', 'TEKNOLOJİ', 'DÜNYA'];
+
+const translateError = (err) => {
+  const msg = (err?.message || '').toLowerCase();
+  if (msg.includes('invalid login')) return 'E-posta veya şifre hatalı.';
+  if (msg.includes('email not confirmed')) return 'E-posta adresiniz henüz doğrulanmadı. Gelen kutunuzdaki doğrulama bağlantısına tıklayın.';
+  if (msg.includes('already registered')) return 'Bu e-posta ile zaten bir hesap var. Giriş yapmayı deneyin.';
+  if (msg.includes('password')) return 'Şifre en az 6 karakter olmalıdır.';
+  if (msg.includes('rate limit')) return 'Çok fazla deneme yapıldı. Lütfen birkaç dakika sonra tekrar deneyin.';
+  return err?.message || 'Bir hata oluştu. Lütfen tekrar deneyin.';
+};
+
+const inputStyle = { width: '100%', padding: '10px 12px 10px 36px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' };
+const iconStyle = { position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' };
+const labelStyle = { fontSize: '0.78rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: 5 };
+
+function Field({ icon: Icon, label, ...props }) {
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-container" style={{ maxWidth: '520px', padding: '32px' }} onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close-btn" onClick={onClose}>
-          <X size={18} />
-        </button>
-
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <img src="/pikam_logo.png" alt="PİKAM Logo" style={{ width: '65px', height: '65px', margin: '0 auto 10px auto' }} />
-          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.5rem', color: '#0b132b' }}>
-            {mode === 'login' ? 'PİKAM OKUYUCU GİRİŞİ' : mode === 'register' ? 'PİKAM OKUYUCU ÜYELİK FORMU' : 'ŞİFREMİ UNUTTUM'}
-          </h2>
-          <p style={{ fontSize: '0.82rem', color: '#64748b' }}>
-            {mode === 'login' 
-              ? 'Makalelere yorum yapmak ve e-dergileri okumak için kayıtlı bilgilerinizle giriş yapın.' 
-              : mode === 'register'
-              ? 'Politik ve İktisadi Araştırmalar Merkezi yayınlarına üye olun.'
-              : 'Kayıtlı e-posta adresinize şifre sıfırlama bağlantısı gönderin.'}
-          </p>
-        </div>
-
-        {/* MODE TOGGLE SWITCH */}
-        {mode !== 'forgot' && (
-          <div style={{ display: 'flex', background: '#f1f5f9', padding: '4px', borderRadius: '6px', marginBottom: '20px' }}>
-            <button 
-              onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }}
-              style={{ flex: 1, padding: '8px', borderRadius: '4px', border: 'none', background: mode === 'login' ? '#0b132b' : 'transparent', color: mode === 'login' ? 'white' : '#475569', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-            >
-              <LogIn size={15} /> Giriş Yap
-            </button>
-            <button 
-              onClick={() => { setMode('register'); setErrorMsg(''); setSuccessMsg(''); }}
-              style={{ flex: 1, padding: '8px', borderRadius: '4px', border: 'none', background: mode === 'register' ? '#0b132b' : 'transparent', color: mode === 'register' ? 'white' : '#475569', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-            >
-              <UserPlus size={15} /> Yeni Üye Ol
-            </button>
-          </div>
-        )}
-
-        {errorMsg && (
-          <div style={{ background: '#fef2f2', color: '#dc2626', padding: '10px 14px', borderRadius: '6px', fontSize: '0.82rem', marginBottom: '16px', borderLeft: '4px solid #dc2626', lineHeight: '1.4' }}>
-            {errorMsg}
-          </div>
-        )}
-
-        {successMsg && (
-          <div style={{ background: '#f0fdf4', color: '#16a34a', padding: '12px 14px', borderRadius: '6px', fontSize: '0.84rem', marginBottom: '16px', borderLeft: '4px solid #16a34a', lineHeight: '1.5', whiteSpace: 'pre-line' }}>
-            {successMsg}
-          </div>
-        )}
-
-        {/* LOGIN FORM */}
-        {mode === 'login' && (
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>E-POSTA ADRESİ</label>
-              <div style={{ position: 'relative' }}>
-                <input 
-                  type="email" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  placeholder="ornek@pikamdergi.com" 
-                  required
-                  style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
-                />
-                <Mail size={16} color="#94a3b8" style={{ position: 'absolute', left: '10px', top: '12px' }} />
-              </div>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b' }}>ŞİFRE</label>
-                <button 
-                  type="button" 
-                  onClick={() => { setMode('forgot'); setErrorMsg(''); setSuccessMsg(''); }}
-                  style={{ background: 'none', border: 'none', color: '#0284c7', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', padding: 0 }}
-                >
-                  Şifremi Unuttum?
-                </button>
-              </div>
-              <div style={{ position: 'relative' }}>
-                <input 
-                  type="password" 
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  placeholder="••••••••" 
-                  required
-                  style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
-                />
-                <Lock size={16} color="#94a3b8" style={{ position: 'absolute', left: '10px', top: '12px' }} />
-              </div>
-            </div>
-
-            <button 
-              type="submit" 
-              style={{ background: '#0b132b', color: 'white', padding: '12px', borderRadius: '6px', fontWeight: '700', fontSize: '0.92rem', border: 'none', cursor: 'pointer', marginTop: '8px' }}
-            >
-              Giriş Yap
-            </button>
-          </form>
-        )}
-
-        {/* FORGOT PASSWORD FORM (2 STEPS) */}
-        {mode === 'forgot' && (
-          forgotStep === 1 ? (
-            /* STEP 1: ENTER EMAIL AND CLICK 'Kod Gönder ve Yeni Şifre Oluştur' */
-            <form onSubmit={handleSendResetCode} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>KAYITLI E-POSTA ADRESİNİZ</label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type="email" 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)} 
-                    placeholder="eposta@adresiniz.com" 
-                    required
-                    style={{ width: '100%', padding: '12px 14px 12px 38px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
-                  />
-                  <Mail size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '14px' }} />
-                </div>
-              </div>
-
-              <button 
-                type="submit" 
-                disabled={isSubmitting}
-                style={{ background: '#0284c7', color: 'white', padding: '12px', borderRadius: '6px', fontWeight: '700', fontSize: '0.92rem', border: 'none', cursor: isSubmitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-              >
-                <KeyRound size={16} />
-                <span>{isSubmitting ? 'Kod Gönderiliyor...' : 'Kod Gönder ve Yeni Şifre Oluştur'}</span>
-              </button>
-
-              <button 
-                type="button"
-                onClick={() => { setMode('login'); setForgotStep(1); setErrorMsg(''); setSuccessMsg(''); }}
-                style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.82rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '4px' }}
-              >
-                <ArrowLeft size={14} /> Giriş Ekranına Dön
-              </button>
-            </form>
-          ) : (
-            /* STEP 2: ENTER 6-DIGIT CODE AND NEW PASSWORD */
-            <form onSubmit={handleVerifyCodeAndResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: '800', color: '#0284c7', display: 'block', marginBottom: '6px' }}>
-                  6 HANELİ E-POSTA DOĞRULAMA KODU *
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type="text" 
-                    maxLength="8"
-                    value={verificationCode} 
-                    onChange={(e) => setVerificationCode(e.target.value)} 
-                    placeholder="Örn: 684920" 
-                    required
-                    style={{ width: '100%', padding: '12px 14px 12px 38px', borderRadius: '6px', border: '2px solid #0284c7', fontSize: '1.1rem', fontWeight: '800', letterSpacing: '3px', textAlign: 'center' }}
-                  />
-                  <KeyRound size={18} color="#0284c7" style={{ position: 'absolute', left: '12px', top: '14px' }} />
-                </div>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>YENİ ŞİFRE BELİRLEYİN *</label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type="password" 
-                    value={newPassword} 
-                    onChange={(e) => setNewPassword(e.target.value)} 
-                    placeholder="En az 4 karakter" 
-                    required
-                    style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
-                  />
-                  <Lock size={16} color="#94a3b8" style={{ position: 'absolute', left: '10px', top: '12px' }} />
-                </div>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>YENİ ŞİFRE TEKRARI *</label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type="password" 
-                    value={newPasswordConfirm} 
-                    onChange={(e) => setNewPasswordConfirm(e.target.value)} 
-                    placeholder="Şifrenizi tekrar girin" 
-                    required
-                    style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
-                  />
-                  <Lock size={16} color="#94a3b8" style={{ position: 'absolute', left: '10px', top: '12px' }} />
-                </div>
-              </div>
-
-              <button 
-                type="submit" 
-                style={{ background: '#16a34a', color: 'white', padding: '12px', borderRadius: '6px', fontWeight: '700', fontSize: '0.92rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '4px' }}
-              >
-                <CheckCircle2 size={16} />
-                <span>Şifreyi Güncelle ve Giriş Yap</span>
-              </button>
-
-              <button 
-                type="button"
-                onClick={() => { setForgotStep(1); setErrorMsg(''); setSuccessMsg(''); }}
-                style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
-              >
-                <ArrowLeft size={13} /> E-Posta Adresini Değiştir
-              </button>
-            </form>
-          )
-        )}
-
-        {/* REGISTER FORM (2 STEPS) */}
-        {mode === 'register' && (
-          registerStep === 1 ? (
-            /* STEP 1: FILL DETAILS & CLICK 'Hesabımı Oluştur ve Doğrulama Kodu Gönder' */
-            <form onSubmit={handleRegisterStep1} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>İSİM VE SOYİSİM *</label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type="text" 
-                    value={fullName} 
-                    onChange={(e) => setFullName(e.target.value)} 
-                    placeholder="Örn: Dr. Canan Yılmaz" 
-                    required
-                    style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
-                  />
-                  <User size={16} color="#94a3b8" style={{ position: 'absolute', left: '10px', top: '12px' }} />
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>E-POSTA *</label>
-                  <input 
-                    type="email" 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)} 
-                    placeholder="eposta@adresiniz.com" 
-                    required
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>TELEFON NUMARASI *</label>
-                  <input 
-                    type="tel" 
-                    value={phone} 
-                    onChange={(e) => setPhone(e.target.value)} 
-                    placeholder="05xx xxx xx xx" 
-                    required
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>ŞİFRE OLUŞTURUN *</label>
-                  <input 
-                    type="password" 
-                    value={password} 
-                    onChange={(e) => setPassword(e.target.value)} 
-                    placeholder="En az 4 karakter" 
-                    required
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>ŞİFRE TEKRARI *</label>
-                  <input 
-                    type="password" 
-                    value={registerConfirmPassword} 
-                    onChange={(e) => setRegisterConfirmPassword(e.target.value)} 
-                    placeholder="Şifrenizi tekrar girin" 
-                    required
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>İLGİ ALANLARINIZ * (Çoklu Seçilebilir)</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {availableInterests.map((cat) => (
-                    <button 
-                      type="button" 
-                      key={cat} 
-                      onClick={() => toggleInterest(cat)}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: '20px',
-                        border: '1px solid',
-                        borderColor: interests.includes(cat) ? '#0284c7' : '#cbd5e1',
-                        background: interests.includes(cat) ? '#e0f2fe' : '#ffffff',
-                        color: interests.includes(cat) ? '#0369a1' : '#64748b',
-                        fontSize: '0.78rem',
-                        fontWeight: '700',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {interests.includes(cat) ? '✓ ' : '+ '}{cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <button 
-                type="submit" 
-                disabled={isSubmitting}
-                style={{ background: '#0b132b', color: 'white', padding: '12px', borderRadius: '6px', fontWeight: '700', fontSize: '0.92rem', border: 'none', cursor: isSubmitting ? 'not-allowed' : 'pointer', marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-              >
-                <KeyRound size={16} color="#38bdf8" />
-                <span>{isSubmitting ? 'Doğrulama Kodu Gönderiliyor...' : 'Hesabımı Oluştur ve Doğrulama Kodu Gönder'}</span>
-              </button>
-            </form>
-          ) : (
-            /* STEP 2: ENTER 6-DIGIT EMAIL OTP VERIFICATION CODE */
-            <form onSubmit={handleVerifyRegisterCode} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div>
-                <label style={{ fontSize: '0.82rem', fontWeight: '800', color: '#0284c7', display: 'block', marginBottom: '6px' }}>
-                  6 HANELİ E-POSTA DOĞRULAMA KODU *
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type="text" 
-                    maxLength="8"
-                    value={registerOtpCode} 
-                    onChange={(e) => setRegisterOtpCode(e.target.value)} 
-                    placeholder="Örn: 549302" 
-                    required
-                    style={{ width: '100%', padding: '12px 14px 12px 38px', borderRadius: '6px', border: '2px solid #0284c7', fontSize: '1.1rem', fontWeight: '800', letterSpacing: '3px', textAlign: 'center' }}
-                  />
-                  <KeyRound size={18} color="#0284c7" style={{ position: 'absolute', left: '12px', top: '14px' }} />
-                </div>
-              </div>
-
-              <button 
-                type="submit" 
-                style={{ background: '#16a34a', color: 'white', padding: '13px', borderRadius: '6px', fontWeight: '700', fontSize: '0.95rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-              >
-                <CheckCircle2 size={18} />
-                <span>E-Postamı Doğrula ve Kaydımı Tamamla</span>
-              </button>
-
-              <button 
-                type="button"
-                onClick={() => { setRegisterStep(1); setErrorMsg(''); setSuccessMsg(''); }}
-                style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
-              >
-                <ArrowLeft size={13} /> Kayıt Bilgilerini Düzenle
-              </button>
-            </form>
-          )
-        )}
+    <div>
+      <label style={labelStyle}>{label}</label>
+      <div style={{ position: 'relative' }}>
+        <Icon size={15} style={iconStyle} />
+        <input {...props} style={inputStyle} />
       </div>
     </div>
   );
 }
+
+export default function UserAuthModal({ onClose, onLoginSuccess }) {
+  const [mode, setMode] = useState('login'); // login | register | forgot
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
+  const [phone, setPhone] = useState('');
+  const [interests, setInterests] = useState(['EKONOMİ', 'POLİTİKA']);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const switchMode = (m) => {
+    setMode(m);
+    setErrorMsg('');
+    setSuccessMsg('');
+  };
+
+  const run = async (fn) => {
+    setErrorMsg('');
+    setSuccessMsg('');
+    setBusy(true);
+    try {
+      await fn();
+    } catch (err) {
+      setErrorMsg(translateError(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    run(async () => {
+      const { session } = await signIn(email, password);
+      onLoginSuccess?.(profileFromSession(session));
+      onClose();
+    });
+  };
+
+  const handleRegister = (e) => {
+    e.preventDefault();
+    if (password !== password2) {
+      setErrorMsg('Şifreler eşleşmiyor.');
+      return;
+    }
+    run(async () => {
+      const { session } = await signUp({ email, password, fullName, phone, interests: interests.join(', ') });
+      if (session) {
+        onLoginSuccess?.(profileFromSession(session));
+        onClose();
+      } else {
+        setSuccessMsg(`Kaydınız alındı. ${email} adresine gönderilen doğrulama bağlantısına tıkladıktan sonra giriş yapabilirsiniz.`);
+        setMode('login');
+      }
+    });
+  };
+
+  const handleForgot = (e) => {
+    e.preventDefault();
+    run(async () => {
+      await sendPasswordReset(email);
+      setSuccessMsg(`Şifre sıfırlama bağlantısı ${email} adresine gönderildi.`);
+    });
+  };
+
+  const titles = {
+    login: ['Üye Girişi', 'Yorum yapmak için hesabınıza giriş yapın.'],
+    register: ['Yeni Üyelik', 'PİKAM Dergi okur topluluğuna katılın.'],
+    forgot: ['Şifremi Unuttum', 'Kayıtlı e-posta adresinize sıfırlama bağlantısı gönderelim.'],
+  };
+
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(11,19,43,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: '#fff', borderRadius: 10, width: '100%', maxWidth: 440, maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}
+      >
+        <div style={{ background: '#0b132b', color: '#fff', padding: '18px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderRadius: '10px 10px 0 0' }}>
+          <div>
+            <h2 style={{ margin: 0, fontFamily: 'Playfair Display, serif', fontSize: '1.25rem' }}>{titles[mode][0]}</h2>
+            <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>{titles[mode][1]}</p>
+          </div>
+          <button onClick={onClose} aria-label="Kapat" style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}>
+            <X size={20} />
+          </button>
+        </div>
+
+        <div style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {!isCloudEnabled && (
+            <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', color: '#92400e', padding: 10, borderRadius: 6, fontSize: '0.82rem' }}>
+              Üyelik sistemi şu anda bakımda. Lütfen daha sonra tekrar deneyin.
+            </div>
+          )}
+          {errorMsg && (
+            <div style={{ background: '#fef2f2', borderLeft: '4px solid #ef4444', color: '#b91c1c', padding: '9px 12px', borderRadius: 4, fontSize: '0.84rem' }}>{errorMsg}</div>
+          )}
+          {successMsg && (
+            <div style={{ background: '#ecfdf5', borderLeft: '4px solid #10b981', color: '#047857', padding: '9px 12px', borderRadius: 4, fontSize: '0.84rem', display: 'flex', gap: 8 }}>
+              <CheckCircle2 size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+              <span>{successMsg}</span>
+            </div>
+          )}
+
+          {mode === 'login' && (
+            <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <Field icon={Mail} label="E-POSTA" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+              <Field icon={Lock} label="ŞİFRE" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
+              <button type="submit" disabled={busy || !isCloudEnabled} style={btn(busy)}>
+                <LogIn size={16} /> {busy ? 'Giriş yapılıyor…' : 'Giriş Yap'}
+              </button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                <button type="button" onClick={() => switchMode('forgot')} style={linkBtn}>
+                  <KeyRound size={13} /> Şifremi unuttum
+                </button>
+                <button type="button" onClick={() => switchMode('register')} style={linkBtn}>
+                  <UserPlus size={13} /> Hesap oluştur
+                </button>
+              </div>
+            </form>
+          )}
+
+          {mode === 'register' && (
+            <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Field icon={User} label="AD SOYAD" value={fullName} onChange={(e) => setFullName(e.target.value)} required autoComplete="name" />
+              <Field icon={Mail} label="E-POSTA" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+              <Field icon={Phone} label="TELEFON (İSTEĞE BAĞLI)" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" />
+              <Field icon={Lock} label="ŞİFRE (EN AZ 6 KARAKTER)" type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password" />
+              <Field icon={Lock} label="ŞİFRE TEKRAR" type="password" minLength={6} value={password2} onChange={(e) => setPassword2(e.target.value)} required autoComplete="new-password" />
+              <div>
+                <label style={labelStyle}>İLGİ ALANLARI</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {INTERESTS.map((c) => {
+                    const on = interests.includes(c);
+                    return (
+                      <button
+                        type="button"
+                        key={c}
+                        onClick={() => setInterests(on ? interests.filter((i) => i !== c) : [...interests, c])}
+                        style={{ padding: '5px 10px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', border: `1px solid ${on ? '#0284c7' : '#cbd5e1'}`, background: on ? '#e0f2fe' : '#fff', color: on ? '#0369a1' : '#64748b' }}
+                      >
+                        {c}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <button type="submit" disabled={busy || !isCloudEnabled} style={btn(busy)}>
+                <UserPlus size={16} /> {busy ? 'Kaydediliyor…' : 'Kayıt Ol'}
+              </button>
+              <button type="button" onClick={() => switchMode('login')} style={{ ...linkBtn, justifyContent: 'center' }}>
+                <ArrowLeft size={13} /> Zaten hesabım var
+              </button>
+            </form>
+          )}
+
+          {mode === 'forgot' && (
+            <form onSubmit={handleForgot} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <Field icon={Mail} label="E-POSTA" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+              <button type="submit" disabled={busy || !isCloudEnabled} style={btn(busy)}>
+                <KeyRound size={16} /> {busy ? 'Gönderiliyor…' : 'Sıfırlama Bağlantısı Gönder'}
+              </button>
+              <button type="button" onClick={() => switchMode('login')} style={{ ...linkBtn, justifyContent: 'center' }}>
+                <ArrowLeft size={13} /> Girişe dön
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const btn = (busy) => ({
+  background: busy ? '#334155' : '#0b132b',
+  color: '#fff',
+  padding: 12,
+  borderRadius: 6,
+  fontWeight: 700,
+  fontSize: '0.92rem',
+  border: 'none',
+  cursor: busy ? 'wait' : 'pointer',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  gap: 8,
+});
+
+const linkBtn = { background: 'none', border: 'none', color: '#0284c7', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.82rem', padding: 0 };

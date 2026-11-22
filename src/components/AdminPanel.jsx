@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, LogOut, PlusCircle, BookOpen, FileText, CheckCircle2, Trash2, Upload, ShieldCheck, Eye, Loader2, Users, Download, Image as ImageIcon, Newspaper, Feather, EyeOff, Settings, Edit3, Layout, X, ArrowUp, ArrowDown, MessageSquare, Compass, Info, AlignLeft, StickyNote, CheckSquare, Square, AlertCircle, Tag, Mail, Phone, MapPin, Globe, RefreshCw } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, isCloudEnabled } from '../lib/supabaseClient';
+import { signIn, signOut, isCurrentUserAdmin, uploadImage, uploadMedia, dataUrlToBlob } from '../lib/db';
 
 import { processPdfFile } from '../lib/pdfHelper';
 
@@ -18,15 +19,10 @@ export default function AdminPanel({
   headerData = {}, onUpdateHeaderData,
   footerData = {}, onUpdateFooterData,
   newsletterSubscribers = [], onDeleteSubscriber,
-  onForceSyncCloud
+  onAdminReady, onRefresh
 }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    try {
-      return sessionStorage.getItem('pikam_admin_auth') === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -34,79 +30,23 @@ export default function AdminPanel({
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSyncingAll, setIsSyncingAll] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
-  const [liveUsersList, setLiveUsersList] = useState(registeredUsersList);
+  const liveUsersList = registeredUsersList;
 
+  // Supabase oturumunu kontrol et: yalnızca admins tablosundaki kullanıcılar girebilir.
   useEffect(() => {
-    setLiveUsersList(registeredUsersList);
-  }, [registeredUsersList]);
-
-  const DEFAULT_REGISTERED_USERS = [
-    { id: "usr-1", fullName: "İrem Kumral", email: "kumralirem2@gmail.com", phone: "05330150441", interests: "EKONOMİ, POLİTİKA, DÜNYA", registeredAt: "29.07.2026 17:04:29" },
-    { id: "usr-2", fullName: "Miraç Çavuş", email: "miraccavus.tr@gmail.com", phone: "05362609640", interests: "DÜNYA", registeredAt: "29.07.2026 17:05:50" },
-    { id: "usr-3", fullName: "Sılanur Gör", email: "silanur9812@gmail.com", phone: "05436561266", interests: "EKONOMİ, POLİTİKA, STRATEJİ, TEKNOLOJİ, DÜNYA", registeredAt: "30.07.2026 00:37:53" },
-    { id: "usr-4", fullName: "Osman Bahtiyar", email: "osmanbahtiyar@gmail.com", phone: "05551234567", interests: "POLİTİKA, EKONOMİ, STRATEJİ", registeredAt: "01.08.2026 12:00:00" },
-    { id: "usr-5", fullName: "Prof. Dr. Ahmet Yılmaz", email: "ahmet.yilmaz@pikamtr.com", phone: "05321112233", interests: "AKADEMİ, STRATEJİ", registeredAt: "05.08.2026 14:20:10" },
-    { id: "usr-6", fullName: "Sera Erdağı", email: "sera.erdagi@gmail.com", phone: "05429988776", interests: "POLİTİKA, KÜLTÜR SANAT", registeredAt: "10.08.2026 16:45:00" },
-    { id: "usr-7", fullName: "Dr. Elif Kaya", email: "elif.kaya@pikamtr.com", phone: "05054443322", interests: "DÜNYA, DİPLOMASİ", registeredAt: "12.08.2026 09:15:30" },
-    { id: "usr-8", fullName: "Caner Öztürk", email: "caner.ozturk@gmail.com", phone: "05307776655", interests: "JEOPOLİTİK, FİNANS", registeredAt: "15.08.2026 11:30:00" }
-  ];
-
-  const fetchLiveUsersFromCloud = async () => {
-    try {
-      const userMap = new Map();
-      DEFAULT_REGISTERED_USERS.forEach(u => userMap.set(u.email.trim().toLowerCase(), u));
-      (registeredUsersList || []).forEach(u => u && u.email && userMap.set(u.email.trim().toLowerCase(), u));
-
-      const { data: cloudProfiles } = await supabase.from('profiles').select('*');
-      if (cloudProfiles && cloudProfiles.length > 0) {
-        cloudProfiles.forEach(p => {
-          if (p && p.email) {
-            const key = p.email.trim().toLowerCase();
-            const existing = userMap.get(key) || {};
-            userMap.set(key, {
-              id: p.id || existing.id || `usr-${Date.now()}`,
-              fullName: p.full_name || p.fullName || existing.fullName || 'PİKAM Okuru',
-              email: p.email,
-              password: p.password || existing.password || '',
-              phone: p.phone || existing.phone || '',
-              interests: p.interests || existing.interests || 'POLİTİKA, EKONOMİ',
-              registeredAt: p.registered_at || p.registeredAt || existing.registeredAt || new Date().toLocaleDateString('tr-TR')
-            });
-          }
-        });
-      }
-
-      const { data: cloudSettings } = await supabase.from('site_settings').select('*').eq('id', 'registered_users_list').maybeSingle();
-      if (cloudSettings && Array.isArray(cloudSettings.data)) {
-        cloudSettings.data.forEach(u => {
-          if (u && u.email) {
-            const key = u.email.trim().toLowerCase();
-            if (!userMap.has(key)) userMap.set(key, u);
-          }
-        });
-      }
-
-      const finalLive = Array.from(userMap.values());
-      setLiveUsersList(finalLive);
-      localStorage.setItem('pikam_registered_users', JSON.stringify(finalLive));
-    } catch (err) {
-      console.log('Admin live users fetch notice:', err);
-    }
-  };
-
-  // AUTOMATIC REAL-TIME USER POLLING TIMER FOR ADMIN PANEL
-  useEffect(() => {
-    let timer;
-    if (activeTab === 'uyeler') {
-      fetchLiveUsersFromCloud();
-      timer = setInterval(() => {
-        fetchLiveUsersFromCloud();
-      }, 3000);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
+    let active = true;
+    const check = async () => {
+      const ok = await isCurrentUserAdmin();
+      if (!active) return;
+      setIsAuthenticated(ok);
+      setAuthChecked(true);
+      if (ok && onAdminReady) onAdminReady();
     };
-  }, [activeTab]);
+    check();
+    if (!supabase) return () => { active = false; };
+    const { data: sub } = supabase.auth.onAuthStateChange(() => { check(); });
+    return () => { active = false; sub.subscription.unsubscribe(); };
+  }, []);
 
   // Header CMS Form State
   const [headerEmblemUrl, setHeaderEmblemUrl] = useState(headerData.emblemUrl || '/pikam_blue_emblem.png');
@@ -245,9 +185,7 @@ export default function AdminPanel({
   const [coverImage, setCoverImage] = useState('/pikam_kapak_temmuz_1784839785714.jpg');
   const [pdfFile, setPdfFile] = useState(null);
   const [pdfFileName, setPdfFileName] = useState('');
-  const [pdfDataUrl, setPdfDataUrl] = useState('');
   const [customPdfUrl, setCustomPdfUrl] = useState('');
-  const [pagesDataUrls, setPagesDataUrls] = useState([]);
   const [isPdfProcessing, setIsPdfProcessing] = useState(false);
   const [editorNote, setEditorNote] = useState('PİKAM 75. sayımızda Doğu Akdeniz enerji koridorları ve küresel makroekonomi masaya yatırılıyor.');
 
@@ -259,7 +197,8 @@ export default function AdminPanel({
     setPageCount(issue.pageCount || issue.pagecount || 64);
     setCoverImage(issue.coverImage || issue.coverimage || '');
     setPdfFileName(issue.pdfFileName || issue.pdffilename || '');
-    if (issue.pagesDataUrls) setPagesDataUrls(issue.pagesDataUrls);
+    setCustomPdfUrl(issue.pdfUrl && !issue.pdfUrl.startsWith('data:') && issue.pdfUrl !== '#' ? issue.pdfUrl : '');
+    setPdfFile(null);
     setActiveTab('edergi');
   };
 
@@ -272,7 +211,7 @@ export default function AdminPanel({
     setCoverImage('/pikam_kapak_temmuz_1784839785714.jpg');
     setPdfFile(null);
     setPdfFileName('');
-    setPagesDataUrls([]);
+    setCustomPdfUrl('');
   };
 
   // Article Form & Edit State
@@ -374,44 +313,14 @@ export default function AdminPanel({
 
   const processPermanentImage = async (file) => {
     if (!file) return null;
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800;
-          const MAX_HEIGHT = 800;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height = Math.round((height * MAX_WIDTH) / width);
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width = Math.round((width * MAX_HEIGHT) / height);
-              height = MAX_HEIGHT;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/png', 0.9);
-          resolve(compressedDataUrl);
-        };
-        img.onerror = () => {
-          resolve(e.target.result);
-        };
-        img.src = e.target.result;
-      };
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(file);
-    });
+    try {
+      return await uploadImage(file, 'gorseller');
+    } catch (err) {
+      console.error('Görsel yüklenemedi:', err);
+      setSuccessMsg('⚠ Görsel yüklenemedi: ' + err.message);
+      setTimeout(() => setSuccessMsg(''), 7000);
+      return null;
+    }
   };
 
   const handleHeroImageUpload = async (e) => {
@@ -438,28 +347,28 @@ export default function AdminPanel({
     }
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (username.trim() === 'admin' && password.trim() === 'pikam2026') {
-      setIsAuthenticated(true);
-      try {
-        sessionStorage.setItem('pikam_admin_auth', 'true');
-      } catch (err) {
-        console.log('Session storage error:', err);
+    setLoginError('');
+    try {
+      await signIn(username, password);
+      const ok = await isCurrentUserAdmin();
+      if (!ok) {
+        await signOut();
+        setLoginError('Bu hesabın yönetici yetkisi yok.');
+        return;
       }
-      setLoginError('');
-    } else {
-      setLoginError('Hatalı kullanıcı adı veya şifre! Lütfen bilgilerinizi kontrol ediniz.');
+      setIsAuthenticated(true);
+      setPassword('');
+      if (onAdminReady) onAdminReady();
+    } catch (err) {
+      setLoginError('Hatalı e-posta veya şifre! Lütfen bilgilerinizi kontrol ediniz.');
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut();
     setIsAuthenticated(false);
-    try {
-      sessionStorage.removeItem('pikam_admin_auth');
-    } catch (err) {
-      console.log('Session storage error:', err);
-    }
     setUsername('');
     setPassword('');
   };
@@ -623,61 +532,50 @@ export default function AdminPanel({
     if (!issueNumber || !theme || !monthYear) return;
 
     setIsPublishing(true);
+    try {
+      const existing = editingIssueId ? eDergiList.find(i => i.id === editingIssueId) : null;
 
-    const safePdfUrl = customPdfUrl || ((pdfDataUrl && pdfDataUrl.length < 1500000) ? pdfDataUrl : '#');
+      // PDF: yeni dosya seçildiyse depoya yükle, yoksa bağlantıyı ya da mevcut PDF'i koru.
+      let pdfUrl = customPdfUrl.trim() || existing?.pdfUrl || '#';
+      if (pdfFile) {
+        pdfUrl = await uploadMedia(pdfFile, 'dergiler');
+      }
 
-    if (editingIssueId) {
-      const updatedIssue = {
-        id: editingIssueId,
+      // Kapak: tarayıcıda üretilmiş (data:) görselse depoya yükle.
+      let finalCover = coverImage || '/pikam_kapak_temmuz_1784839785714.jpg';
+      if (finalCover.startsWith('data:')) {
+        const blob = await dataUrlToBlob(finalCover);
+        finalCover = await uploadMedia(new File([blob], 'kapak.jpg', { type: blob.type || 'image/jpeg' }), 'kapaklar');
+      }
+
+      const issue = {
+        id: editingIssueId || `ed-${Date.now()}`,
         issueNumber,
         monthYear,
         theme,
-        coverImage: coverImage || '/pikam_kapak_temmuz_1784839785714.jpg',
-        pdfUrl: safePdfUrl,
-        pdfFileName: pdfFileName || 'PIKAM_Dergi_Dijital.pdf',
-        pageCount: parseInt(pageCount) || (pagesDataUrls.length ? pagesDataUrls.length : 64),
-        pagesDataUrls: pagesDataUrls || [],
-        pages: pagesDataUrls.length > 0 ? pagesDataUrls.map((url, idx) => ({
-          page: idx + 1,
-          title: idx === 0 ? 'Kapak' : `Sayfa ${idx + 1}`,
-          imageUrl: url
-        })) : [
-          { page: 1, title: 'Kapak', subtitle: `${monthYear} Öne Çıkanlar` },
-          { page: 2, title: 'Editörden', content: editorNote }
-        ]
-      };
-      if (onUpdateEDergi) onUpdateEDergi(updatedIssue);
-      setSuccessMsg(`"${issueNumber} (${monthYear})"` + ' sayısı başarıyla güncellendi!');
-      cancelEditIssue();
-    } else {
-      const newIssue = {
-        id: `ed-${Date.now()}`,
-        issueNumber,
-        monthYear,
-        theme,
-        coverImage: coverImage || '/pikam_kapak_temmuz_1784839785714.jpg',
-        pdfUrl: safePdfUrl,
-        pdfFileName: pdfFileName || 'PIKAM_Dergi_Dijital.pdf',
-        pageCount: parseInt(pageCount) || (pagesDataUrls.length ? pagesDataUrls.length : 64),
-        pagesDataUrls: pagesDataUrls || [],
-        pages: pagesDataUrls.length > 0 ? pagesDataUrls.map((url, idx) => ({
-          page: idx + 1,
-          title: idx === 0 ? 'Kapak' : `Sayfa ${idx + 1}`,
-          imageUrl: url
-        })) : [
-          { page: 1, title: 'Kapak', subtitle: `${monthYear} Öne Çıkanlar` },
-          { page: 2, title: 'Editörden', content: editorNote },
-          { page: 3, title: 'İçindekiler & Yayın Kurulu', content: '04-20 Küresel Ticaret | 21-40 Enerji Jeopolitiği | 41-72 Yapay Zeka Doktrini' }
-        ]
+        coverImage: finalCover,
+        pdfUrl,
+        pdfFileName: pdfFileName || existing?.pdfFileName || 'PIKAM_Dergi.pdf',
+        pageCount: parseInt(pageCount) || existing?.pageCount || 1,
+        hidden: existing?.hidden || false,
+        editorNote,
       };
 
-      onAddEDergi(newIssue);
-      setSuccessMsg(`"${issueNumber} (${monthYear}) - ${theme}" başarıyla pikamdergi.com sitesinde yayınlandı!`);
+      if (editingIssueId) {
+        await onUpdateEDergi(issue);
+        setSuccessMsg(`"${issueNumber} (${monthYear})" sayısı güncellendi!`);
+      } else {
+        await onAddEDergi(issue);
+        setSuccessMsg(`"${issueNumber} (${monthYear}) - ${theme}" sitede yayınlandı!`);
+      }
       cancelEditIssue();
+    } catch (err) {
+      console.error('E-Dergi yayınlanamadı:', err);
+      setSuccessMsg('⚠ Dergi yayınlanamadı: ' + err.message);
+    } finally {
+      setIsPublishing(false);
+      setTimeout(() => setSuccessMsg(''), 7000);
     }
-
-    setIsPublishing(false);
-    setTimeout(() => setSuccessMsg(''), 7000);
   };
 
   const handlePublishArticle = async (e) => {
@@ -770,6 +668,14 @@ export default function AdminPanel({
   };
 
   // LOGIN SCREEN RENDER
+  if (!authChecked) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#0b132b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontFamily: 'system-ui, sans-serif' }}>
+        <Loader2 size={22} className="spin" />
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div style={{ minHeight: '100vh', background: '#0b132b', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'system-ui, sans-serif' }}>
@@ -784,6 +690,12 @@ export default function AdminPanel({
             </p>
           </div>
 
+          {!isCloudEnabled && (
+            <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', color: '#92400e', padding: '10px 14px', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '20px' }}>
+              Supabase bağlantısı yapılandırılmamış (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).
+            </div>
+          )}
+
           {loginError && (
             <div style={{ background: '#fef2f2', borderLeft: '4px solid #ef4444', color: '#b91c1c', padding: '10px 14px', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '20px' }}>
               {loginError}
@@ -792,12 +704,13 @@ export default function AdminPanel({
 
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
-              <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>KULLANICI ADI</label>
+              <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>E-POSTA</label>
               <input 
-                type="text" 
+                type="email" 
+                autoComplete="username"
                 value={username} 
                 onChange={(e) => setUsername(e.target.value)} 
-                placeholder="Kullanıcı adınızı giriniz" 
+                placeholder="Yönetici e-posta adresiniz" 
                 required
                 style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', outline: 'none' }}
               />
@@ -860,21 +773,21 @@ export default function AdminPanel({
             onClick={async () => {
               setIsSyncingAll(true);
               try {
-                if (onForceSyncCloud) {
-                  await onForceSyncCloud();
+                if (onRefresh) {
+                  await onRefresh();
                 }
               } catch (err) {
-                console.log('Force sync click notice:', err);
+                console.log('Refresh notice:', err);
               } finally {
                 setIsSyncingAll(false);
-                setSuccessMsg('✓ Bilgisayardaki tüm veriler canlı bulut veritabanına aktarıldı ve tüm dünyada yayına alındı! 🚀');
+                setSuccessMsg('✓ Üye, yorum ve abone listeleri yenilendi.');
                 setTimeout(() => setSuccessMsg(''), 7000);
               }
             }} 
             style={{ background: isSyncingAll ? '#059669' : '#10b981', color: 'white', padding: '6px 14px', borderRadius: '4px', fontSize: '0.82rem', border: 'none', cursor: isSyncingAll ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700' }}
           >
-            {isSyncingAll ? <Loader2 size={14} className="spin" /> : <Upload size={14} />}
-            <span>{isSyncingAll ? 'Buluta Yükleniyor...' : 'Bilgisayardaki Verileri Buluta Yükle'}</span>
+            {isSyncingAll ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />}
+            <span>{isSyncingAll ? 'Yenileniyor...' : 'Listeleri Yenile'}</span>
           </button>
           <a href="/" target="_blank" rel="noreferrer" style={{ background: '#1c2541', color: '#e2e8f0', padding: '6px 14px', borderRadius: '4px', fontSize: '0.82rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600' }}>
             <Eye size={14} /> Sitede Gör ↗
@@ -2505,13 +2418,13 @@ export default function AdminPanel({
                   SİTEDE KAYITLI OKUYUCULAR VE ÜYE BİLGİLERİ ({(liveUsersList || registeredUsersList).length})
                 </h2>
                 <p style={{ color: '#64748b', fontSize: '0.88rem', margin: '4px 0 0 0' }}>
-                  Sitede hesap oluşturan tüm okuyucuların iletişim verileri, şifreleri ve kayıt tarihleri canlı olarak burada listelenir.
+                  Sitede hesap oluşturan okuyucuların iletişim bilgileri ve kayıt tarihleri. Şifreler Supabase tarafından şifrelenmiş saklanır ve görüntülenemez.
                 </p>
               </div>
 
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <button 
-                  onClick={fetchLiveUsersFromCloud}
+                  onClick={() => onRefresh && onRefresh()}
                   style={{ background: '#0284c7', color: 'white', padding: '10px 16px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
                   <RefreshCw size={15} />
@@ -2539,7 +2452,6 @@ export default function AdminPanel({
                     <tr style={{ background: '#0b132b', color: 'white', fontSize: '0.82rem' }}>
                       <th style={{ padding: '12px 16px' }}>AD SOYAD</th>
                       <th style={{ padding: '12px 16px' }}>E-POSTA ADRESİ</th>
-                      <th style={{ padding: '12px 16px' }}>DOĞRULAMA DURUMU</th>
                       <th style={{ padding: '12px 16px' }}>TELEFON NUMARASI</th>
                       <th style={{ padding: '12px 16px' }}>İLGİ ALANLARI</th>
                       <th style={{ padding: '12px 16px' }}>KAYIT TARİHİ VE SAATİ</th>
@@ -2551,17 +2463,6 @@ export default function AdminPanel({
                       <tr key={user.id || idx} style={{ borderBottom: '1px solid #e2e8f0', fontSize: '0.88rem', background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
                         <td style={{ padding: '14px 16px', fontWeight: '700', color: '#0f172a' }}>{user.fullName}</td>
                         <td style={{ padding: '14px 16px', color: '#0284c7', fontWeight: '700' }}>{user.email}</td>
-                        <td style={{ padding: '14px 16px' }}>
-                          {user.isVerified !== false ? (
-                            <span style={{ background: '#dcfce7', color: '#15803d', border: '1px solid #86efac', padding: '4px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                              <CheckCircle2 size={13} /> DOĞRULANMIŞ ÜYE
-                            </span>
-                          ) : (
-                            <span style={{ background: '#fefce8', color: '#a16207', border: '1px solid #fef08a', padding: '4px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                              🟡 BEKLEMEDE (KOD GÖNDERİLDİ)
-                            </span>
-                          )}
-                        </td>
                         <td style={{ padding: '14px 16px', color: '#475569' }}>{user.phone}</td>
                         <td style={{ padding: '14px 16px' }}>
                           <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '700' }}>
@@ -2572,11 +2473,7 @@ export default function AdminPanel({
                         <td style={{ padding: '14px 16px' }}>
                           <button 
                             onClick={() => {
-                              if (confirm(`"${user.fullName || user.email}" kullanıcısını üye listesinden ve buluttan kalıcı olarak silmek istediğinize emin misiniz?`)) {
-                                const currentList = liveUsersList || registeredUsersList;
-                                const filtered = currentList.filter(u => u.email !== user.email && u.id !== user.id);
-                                setLiveUsersList(filtered);
-                                localStorage.setItem('pikam_registered_users', JSON.stringify(filtered));
+                              if (confirm(`"${user.fullName || user.email}" kullanıcısının profilini üye listesinden silmek istediğinize emin misiniz? (Giriş hesabını tamamen silmek için Supabase > Authentication > Users bölümünü kullanın.)`)) {
                                 if (onDeleteUser) {
                                   onDeleteUser(user.id, user.email);
                                 }
@@ -2783,9 +2680,7 @@ export default function AdminPanel({
                       onChange={(e) => {
                         const file = e.target.files[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (ev) => setCoverImage(ev.target.result);
-                          reader.readAsDataURL(file);
+                          processPermanentImage(file).then((url) => url && setCoverImage(url));
                         }
                       }} 
                       style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#ffffff' }}
@@ -2819,15 +2714,10 @@ export default function AdminPanel({
                         setPdfFileName(file.name);
                         setIsPdfProcessing(true);
 
-                        const fReader = new FileReader();
-                        fReader.onload = (ev) => setPdfDataUrl(ev.target.result);
-                        fReader.readAsDataURL(file);
-
                         try {
                           const result = await processPdfFile(file);
                           if (result.pageCount) setPageCount(result.pageCount);
                           if (result.coverImage) setCoverImage(result.coverImage);
-                          if (result.pagesDataUrls) setPagesDataUrls(result.pagesDataUrls);
                         } catch (err) {
                           console.error('PDF process error:', err);
                         } finally {
@@ -2841,11 +2731,18 @@ export default function AdminPanel({
                   <label htmlFor="pdf-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                     {isPdfProcessing ? <Loader2 size={32} className="animate-spin" color="#0284c7" /> : <Upload size={32} color="#0284c7" />}
                     <span style={{ fontWeight: '700', color: '#0f172a', fontSize: '0.95rem' }}>
-                      {isPdfProcessing ? 'PDF Sayfaları İşleniyor ve İlk Sayfa Kapak Olarak Ayarlanıyor...' : pdfFileName ? `Seçilen Dosya: ${pdfFileName}` : 'PDF Dosyası Yüklemek İçin Tıklayın (500MB Dosyalar Desteklenir)'}
+                      {isPdfProcessing ? 'PDF Sayfaları İşleniyor ve İlk Sayfa Kapak Olarak Ayarlanıyor...' : pdfFileName ? `Seçilen Dosya: ${pdfFileName}` : 'PDF Dosyası Yüklemek İçin Tıklayın (en fazla 50 MB)'}
                     </span>
-                    <span style={{ fontSize: '0.78rem', color: '#64748b' }}>PDF'in ilk sayfası otomatik kapak görseli yapılır ve tüm sayfalar interaktif okuyucuya aktarılır.</span>
+                    <span style={{ fontSize: '0.78rem', color: '#64748b' }}>PDF'in ilk sayfası otomatik kapak görseli yapılır; dosya yayınlarken depoya yüklenir.</span>
                   </label>
                 </div>
+                <input 
+                  type="url" 
+                  placeholder="veya PDF bağlantısı (Google Drive vb. https://...)" 
+                  value={customPdfUrl} 
+                  onChange={(e) => setCustomPdfUrl(e.target.value)} 
+                  style={{ marginTop: '8px', width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', boxSizing: 'border-box' }}
+                />
               </div>
 
               <div>

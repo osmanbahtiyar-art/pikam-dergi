@@ -1,16 +1,33 @@
-# React + Vite
+# PİKAM Dergi — pikamdergi.com
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + Vite ile yazılmış dergi sitesi. İçerik, üyeler, yorumlar ve bülten aboneleri Supabase'de tutulur; site Vercel'de yayınlanır.
 
-Currently, two official plugins are available:
+## Yapı
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Parça | Nerede |
+|---|---|
+| Site kodu | `src/` |
+| Veritabanı şeması | `supabase/schema.sql` |
+| Supabase erişimi | `src/lib/db.js` |
+| Varsayılan içerik (Supabase boşsa) | `src/data/defaults.js`, `src/data/pikamData.js` |
+| Yönetim paneli | `https://www.pikamdergi.com/admin` |
 
-## React Compiler
+## Kurulum
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Supabase'de yeni proje açın, `supabase/schema.sql` dosyasını SQL Editor'da çalıştırın.
+2. Authentication > Users'tan yönetici kullanıcısını oluşturun ve şemanın sonundaki `insert into public.admins …` sorgusunu çalıştırın.
+3. İlk içeriği yüklemek için: `npm run seed -- <SUPABASE_URL> <SERVICE_ROLE_KEY>` (anahtarı repoya koymayın).
+4. Vercel > Settings > Environment Variables:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY` (Project Settings > API > anon / publishable key)
+5. Supabase > Authentication > URL Configuration: Site URL `https://www.pikamdergi.com`.
 
-## Expanding the Oxlint configuration
+## Geliştirme
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```bash
+npm install
+cp .env.example .env.local   # değerleri doldurun
+npm run dev
+```
+
+Yönetici girişi Supabase Auth ile yapılır; yalnızca `admins` tablosundaki kullanıcılar paneli açabilir. Görseller ve PDF'ler Supabase Storage'daki `media` deposuna yüklenir.

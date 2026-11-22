@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import TopBar from './components/TopBar';
 import Header from './components/Header';
 import Navbar from './components/Navbar';
@@ -16,509 +16,115 @@ import KunyeModal from './components/KunyeModal';
 import UserAuthModal from './components/UserAuthModal';
 import AdminPanel from './components/AdminPanel';
 
-import { PIKAM_DATA } from './data/pikamData';
+import { SITE_DEFAULTS } from './data/defaults';
 import { supabase } from './lib/supabaseClient';
+import * as db from './lib/db';
 
-// CLOUD MAPPERS (Bridges JavaScript camelCase with PostgreSQL lowercased columns)
-const mapArticleForCloud = (art) => ({
-  id: art.id,
-  category: art.category,
-  categorycolor: art.categoryColor || art.categorycolor || '#10b981',
-  title: art.title,
-  excerpt: art.excerpt,
-  author: typeof art.author === 'string' ? art.author : art.author?.name,
-  date: art.date,
-  readtime: art.readTime || art.readtime || '6 dk',
-  image: art.image,
-  content: art.content
-});
+// TopBar şu an kullanılmıyor; import, ileride yeniden eklenebilmesi için duruyor.
+void TopBar;
 
-const mapArticleFromCloud = (art) => ({
-  id: art.id,
-  category: art.category,
-  categoryColor: art.categorycolor || art.categoryColor || '#10b981',
-  title: art.title,
-  excerpt: art.excerpt,
-  author: art.author,
-  date: art.date,
-  readTime: art.readtime || art.readTime || '6 dk',
-  image: art.image,
-  content: art.content,
-  hidden: !!art.hidden
-});
+const isAdminPath = () => /^\/admin\/?$/i.test(window.location.pathname) || /^#\/?admin$/i.test(window.location.hash);
 
-const mapAuthorForCloud = (auth) => ({
-  id: auth.id,
-  name: auth.name,
-  role: auth.role,
-  affiliation: auth.affiliation,
-  avatar: auth.avatar,
-  latestarticle: auth.latestArticle || auth.latestarticle || ''
-});
-
-const mapAuthorFromCloud = (auth) => ({
-  id: auth.id,
-  name: auth.name,
-  role: auth.role,
-  affiliation: auth.affiliation,
-  avatar: auth.avatar,
-  latestArticle: auth.latestarticle || auth.latestArticle || ''
-});
-
-const mapIssueForCloud = (issue) => ({
-  id: issue.id,
-  issuenumber: issue.issueNumber || issue.issuenumber,
-  monthyear: issue.monthYear || issue.monthyear,
-  theme: issue.theme,
-  coverimage: issue.coverImage || issue.coverimage,
-  pdfurl: issue.pdfUrl || issue.pdfurl,
-  pagecount: issue.pageCount || issue.pagecount,
-  pages: issue.pages
-});
-
-const mapIssueFromCloud = (issue) => ({
-  id: issue.id,
-  issueNumber: issue.issuenumber || issue.issueNumber,
-  monthYear: issue.monthyear || issue.monthYear,
-  theme: issue.theme,
-  coverImage: issue.coverimage || issue.coverImage,
-  pdfUrl: issue.pdfurl || issue.pdfUrl,
-  pageCount: issue.pagecount || issue.pageCount,
-  pages: issue.pages
-});
-
-const safeParseJSON = (key, fallback) => {
-  try {
-    const saved = localStorage.getItem(key);
-    if (!saved) return fallback;
-    const parsed = JSON.parse(saved);
-    return (parsed !== null && parsed !== undefined) ? parsed : fallback;
-  } catch (err) {
-    console.log(`Corrupted localStorage key "${key}", purging and using fallback:`, err);
-    try { localStorage.removeItem(key); } catch (e) {}
-    return fallback;
-  }
+const moveItem = (list, index, delta) => {
+  const target = index + delta;
+  if (target < 0 || target >= list.length) return list;
+  const next = [...list];
+  [next[index], next[target]] = [next[target], next[index]];
+  return next;
 };
 
+function PasswordResetModal({ onDone }) {
+  const [pw, setPw] = useState('');
+  const [msg, setMsg] = useState('');
+  const submit = async (e) => {
+    e.preventDefault();
+    const { error } = await supabase.auth.updateUser({ password: pw });
+    if (error) setMsg(error.message);
+    else onDone();
+  };
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(11,19,43,0.7)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <form onSubmit={submit} style={{ background: '#fff', borderRadius: 10, padding: 24, width: '100%', maxWidth: 380, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <h2 style={{ margin: 0, fontFamily: 'Playfair Display, serif', fontSize: '1.2rem' }}>Yeni Şifre Belirleyin</h2>
+        {msg && <div style={{ color: '#b91c1c', fontSize: '0.85rem' }}>{msg}</div>}
+        <input type="password" minLength={6} required value={pw} onChange={(e) => setPw(e.target.value)} placeholder="En az 6 karakter" autoComplete="new-password" style={{ padding: 10, borderRadius: 6, border: '1px solid #cbd5e1' }} />
+        <button type="submit" style={{ background: '#0b132b', color: '#fff', padding: 12, border: 'none', borderRadius: 6, fontWeight: 700, cursor: 'pointer' }}>Şifreyi Kaydet</button>
+      </form>
+    </div>
+  );
+}
+
 export default function App() {
+  const [isAdmin] = useState(isAdminPath);
   const [activeCategory, setActiveCategory] = useState('ANASAYFA');
-  
-  // Modals state
+
+  // Modallar
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [selectedEDergi, setSelectedEDergi] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isKunyeOpen, setIsKunyeOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // Section Visibility Toggles (Hide/Show sections from Admin Panel)
-  const [sectionVisibility, setSectionVisibility] = useState(() => {
-    return safeParseJSON('pikam_section_visibility', {
-      showHero: true,
-      showYazarlar: true,
-      showEDergi: true,
-      showTicker: true
-    });
-  });
+  // Site içeriği (Supabase'den gelir; yoksa varsayılanlar)
+  const [content, setContent] = useState(SITE_DEFAULTS);
+  const [saveError, setSaveError] = useState('');
 
-  // Navigation Menu Tabs Visibility State (Admin CMS toggle - categories hidden by default as requested)
-  const [navVisibility, setNavVisibility] = useState(() => {
-    return safeParseJSON('pikam_nav_visibility', {
-      ANASAYFA: true,
-      'E-DERGİ': true,
-      POLİTİKA: false, // hidden as requested
-      EKONOMİ: false,  // hidden as requested
-      FİNANS: false,   // hidden as requested
-      'KÜLTÜR SANAT': false, // hidden as requested
-      KÜNYE: true,
-      EKİBİMİZ: true
-    });
-  });
+  // Okur hesapları, yorumlar, admin verileri
+  const [currentUser, setCurrentUser] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [profiles, setProfiles] = useState([]);
+  const [subscribers, setSubscribers] = useState([]);
+  const [isRecovering, setIsRecovering] = useState(false);
 
-  // Dynamic Künye & Kurumsal Data CMS State
-  const [kunyeData, setKunyeData] = useState(() => {
-    return safeParseJSON('pikam_kunye_data', (PIKAM_DATA && PIKAM_DATA.kunye) ? PIKAM_DATA.kunye : {
-      yayinSahibi: "Politik ve İktisadi Araştırmalar Merkezi (PİKAM)",
-      yayinYonetmeni: "Osman Bahtiyar",
-      sorumluYaziIsleri: "PİKAM Dergi Editör Kurulu",
-      grafikTasarim: "PİKAM Dijital Yayıncılık Ekibi",
-      akademikDanismaKurulu: "Prof. Dr. Osman Bahtiyar, Sılanur Gör, Miraç Çavuş, Sera Erdağı",
-      iletisim: "iletisim@pikamtr.com | www.pikamtr.com"
-    });
-  });
-
-  // Current Logged In User State
-  const [currentUser, setCurrentUser] = useState(() => {
-    return safeParseJSON('pikam_current_user', null);
-  });
-
-const DEFAULT_REGISTERED_USERS = [
-  { id: "usr-1", fullName: "İrem Kumral", email: "kumralirem2@gmail.com", phone: "05330150441", interests: "EKONOMİ, POLİTİKA, DÜNYA", registeredAt: "29.07.2026 17:04:29" },
-  { id: "usr-2", fullName: "Miraç Çavuş", email: "miraccavus.tr@gmail.com", phone: "05362609640", interests: "DÜNYA", registeredAt: "29.07.2026 17:05:50" },
-  { id: "usr-3", fullName: "Sılanur Gör", email: "silanur9812@gmail.com", phone: "05436561266", interests: "EKONOMİ, POLİTİKA, STRATEJİ, TEKNOLOJİ, DÜNYA", registeredAt: "30.07.2026 00:37:53" },
-  { id: "usr-4", fullName: "Osman Bahtiyar", email: "osmanbahtiyar@gmail.com", phone: "05551234567", interests: "POLİTİKA, EKONOMİ, STRATEJİ", registeredAt: "01.08.2026 12:00:00" },
-  { id: "usr-5", fullName: "Prof. Dr. Ahmet Yılmaz", email: "ahmet.yilmaz@pikamtr.com", phone: "05321112233", interests: "AKADEMİ, STRATEJİ", registeredAt: "05.08.2026 14:20:10" },
-  { id: "usr-6", fullName: "Sera Erdağı", email: "sera.erdagi@gmail.com", phone: "05429988776", interests: "POLİTİKA, KÜLTÜR SANAT", registeredAt: "10.08.2026 16:45:00" },
-  { id: "usr-7", fullName: "Dr. Elif Kaya", email: "elif.kaya@pikamtr.com", phone: "05054443322", interests: "DÜNYA, DİPLOMASİ", registeredAt: "12.08.2026 09:15:30" },
-  { id: "usr-8", fullName: "Caner Öztürk", email: "caner.ozturk@gmail.com", phone: "05307776655", interests: "JEOPOLİTİK, FİNANS", registeredAt: "15.08.2026 11:30:00" }
-];
-
-  // Registered Users List State (Guaranteed 8 Default Members)
-  const [registeredUsersList, setRegisteredUsersList] = useState(() => {
-    const parsed = safeParseJSON('pikam_registered_users', []);
-    const map = new Map();
-    DEFAULT_REGISTERED_USERS.forEach(u => map.set(u.email.toLowerCase().trim(), u));
-    if (Array.isArray(parsed)) {
-      parsed.forEach(u => {
-        if (u && u.email) map.set(u.email.toLowerCase().trim(), u);
-      });
-    }
-    return Array.from(map.values());
-  });
-
-  // Dynamic Authors List (Manageable via Admin Panel)
-  const [authorsList, setAuthorsList] = useState(() => {
-    return safeParseJSON('pikam_authors_list', PIKAM_DATA.authors);
-  });
-
-  // Dynamic Homepage Hero Main Story CMS State
-  const [heroFeatured, setHeroFeatured] = useState(() => {
-    return safeParseJSON('pikam_hero_featured', PIKAM_DATA.heroFeatured);
-  });
-
-  // Dynamic E-Dergi & Articles state with Supabase & localStorage persistence
-  const [eDergiList, setEDergiList] = useState(() => {
-    return safeParseJSON('pikam_edergi_list', PIKAM_DATA.eDergiIssues);
-  });
-
-  const [articlesList, setArticlesList] = useState(() => {
-    return safeParseJSON('pikam_articles_list', PIKAM_DATA.articles);
-  });
-
-  // Article Reader Comments State (Permanent Storage)
-  const [allCommentsList, setAllCommentsList] = useState(() => {
-    return safeParseJSON('pikam_article_comments', []);
-  });
-
-  // Admin Notes & Todo List State (Permanent Cloud & Local Persistence)
-  const [adminNotesList, setAdminNotesList] = useState(() => {
-    return safeParseJSON('pikam_admin_notes', [
-      {
-        id: 'note-1',
-        title: 'E-Dergi Çapraz Cihaz Kontrolü',
-        content: 'Yüklenen tüm PDF dergilerin iOS Safari ve Android Chrome mobil cihazlarda kesintisiz açıldığının düzenli kontrolü.',
-        category: 'Yapılacaklar',
-        priority: 'Yüksek',
-        isCompleted: false,
-        createdAt: '31 Temmuz 2026'
-      }
-    ]);
-  });
-
-  // Dynamic Header & Footer CMS State
-  const [headerData, setHeaderData] = useState(() => {
-    return safeParseJSON('pikam_header_data', {
-      showSiteHeader: true,
-      emblemUrl: '/pikam_blue_emblem.png',
-      logotypeUrl: '/pikam_blue_logotype.png',
-      showEmblem: true,
-      showLogotype: true,
-      showPortalBadge: true,
-      showIssn: true,
-      showTagline: true,
-      showAbout: true,
-      showSocials: true,
-      linkedinUrl: 'https://linkedin.com',
-      twitterUrl: 'https://x.com',
-      instagramUrl: 'https://instagram.com',
-      youtubeUrl: 'https://youtube.com',
-      title: 'PİKAM DERGİ',
-      fullTitle: 'Politik ve İktisadi Araştırmalar Merkezi',
-      tagline: 'Türkiye\'nin politik ve iktisadi geleceğine yön veren düşünce merkezi.',
-      aboutText: 'PİKAM Dergi; Politik ve İktisadi Araştırmalar Merkezi bünyesinde yayınlanan, küresel jeopolitik, iktisadi stratejiler ve kamu politikaları alanında bağımsız ve akademik analizler sunan dijital yayın organıdır.',
-      issn: 'ISSN 2717-9842 | Yıl: 7 | Sayı: 74 | Temmuz 2026',
-      portalUrl: 'https://www.pikamtr.com/',
-      portalLabel: 'pikamtr.com'
-    });
-  });
-
-  const [footerData, setFooterData] = useState(() => {
-    return safeParseJSON('pikam_footer_data', {
-      showSiteFooter: true,
-      logoUrl: '/pikam_logo.png',
-      title: 'PİKAM DERGİ',
-      description: 'Politik ve İktisadi Araştırmalar Merkezi (PİKAM) bağımsız, akademik ve stratejik düşünce kuruluşu dijital yayın organıdır.',
-      portalUrl: 'https://www.pikamtr.com/',
-      portalLabel: 'Merkez Portalı: www.pikamtr.com',
-      issnText: 'ISSN: 2717-9842 | Ankara, Türkiye',
-      copyrightText: '© 2026 PİKAM - Politik ve İktisadi Araştırmalar Merkezi (pikamtr.com). Tüm Hakları Saklıdır.'
-    });
-  });
-
-  // Newsletter Subscribers State
-  const [newsletterSubscribers, setNewsletterSubscribers] = useState(() => {
-    return safeParseJSON('pikam_newsletter_subscribers', []);
-  });
-
-  const [isAdmin, setIsAdmin] = useState(false);
-  const lastFetchTimeRef = React.useRef(0);
-
-  const isMutatingCloudRef = useRef(false);
-
-  // REAL-TIME INSTANT SYNCHRONIZATION FUNCTION (SUPABASE CLOUD AS SINGLE SOURCE OF TRUTH)
-  const fetchAndMergeCloudData = async (force = false) => {
-    if (isMutatingCloudRef.current) {
-      console.log('⚡ Active admin mutation in progress - skipping cloud fetch overwrite');
-      return;
-    }
-    const now = Date.now();
-    if (!force && now - lastFetchTimeRef.current < 2000) {
-      return; // Skip rapid non-forced queries within 2s
-    }
-    lastFetchTimeRef.current = now;
-    try {
-      // ULTRA-FAST PARALLEL CONCURRENT CLOUD FETCHING (0.2s INSTANT INITIAL SYNC)
-      const [
-        { data: cloudProfiles },
-        { data: cloudComments },
-        { data: cloudAuthors },
-        { data: cloudSettings },
-        { data: cloudIssues },
-        { data: cloudArticles }
-      ] = await Promise.all([
-        supabase.from('profiles').select('*'),
-        supabase.from('article_comments').select('*'),
-        supabase.from('authors').select('*'),
-        supabase.from('site_settings').select('*'),
-        supabase.from('e_dergi_issues').select('*'),
-        supabase.from('articles').select('*')
-      ]);
-
-      // 1. Registered Users / Profiles (Deduplicated & Merged from DEFAULT, profiles table AND site_settings)
-      const userMap = new Map();
-      DEFAULT_REGISTERED_USERS.forEach(u => userMap.set(u.email.toLowerCase().trim(), u));
-
-      const usersSetting = cloudSettings ? cloudSettings.find(s => s.id === 'registered_users_list') : null;
-      if (usersSetting && Array.isArray(usersSetting.data)) {
-        usersSetting.data.forEach(u => {
-          if (u && u.email) userMap.set(u.email.toLowerCase().trim(), u);
-        });
-      }
-
-      if (cloudProfiles && cloudProfiles.length > 0) {
-        cloudProfiles.forEach(p => {
-          if (p && p.email) {
-            const key = p.email.toLowerCase().trim();
-            const existing = userMap.get(key) || {};
-            userMap.set(key, {
-              id: p.id || existing.id || `usr-${Date.now()}`,
-              fullName: p.full_name || p.fullName || existing.fullName || 'PİKAM Okuru',
-              email: p.email,
-              password: p.password || existing.password || '',
-              phone: p.phone || existing.phone || '',
-              interests: p.interests || existing.interests || 'POLİTİKA, EKONOMİ',
-              registeredAt: p.registered_at || p.registeredAt || existing.registeredAt || new Date().toLocaleDateString('tr-TR')
-            });
-          }
-        });
-      }
-
-      const combinedUsers = Array.from(userMap.values());
-      setRegisteredUsersList(combinedUsers);
-      localStorage.setItem('pikam_registered_users', JSON.stringify(combinedUsers));
-
-      // 2. Reader Comments
-      if (cloudComments && cloudComments.length > 0) {
-        const mappedComments = cloudComments.map(c => ({
-          id: c.id,
-          articleId: c.article_id || c.articleId,
-          articleTitle: c.article_title || c.articleTitle,
-          authorName: c.author_name || c.authorName,
-          authorEmail: c.author_email || c.authorEmail,
-          commentText: c.comment_text || c.commentText,
-          createdAt: c.created_at || c.createdAt
-        }));
-        setAllCommentsList(mappedComments);
-        localStorage.setItem('pikam_article_comments', JSON.stringify(mappedComments));
-      }
-
-      // 3. Site Settings & Authors
-      if (cloudSettings && cloudSettings.length > 0) {
-        const authorsOrderSetting = cloudSettings.find(s => s.id === 'authors_ordered_list');
-        if (cloudAuthors && cloudAuthors.length > 0) {
-          const mappedAuthors = cloudAuthors.map(mapAuthorFromCloud);
-          if (authorsOrderSetting && Array.isArray(authorsOrderSetting.data) && authorsOrderSetting.data.length > 0) {
-            const orderedIds = new Set(authorsOrderSetting.data.map(a => a.id));
-            const missingCloudAuthors = mappedAuthors.filter(a => !orderedIds.has(a.id));
-            const mergedList = [...authorsOrderSetting.data, ...missingCloudAuthors];
-            setAuthorsList(mergedList);
-            localStorage.setItem('pikam_authors_list', JSON.stringify(mergedList));
-          } else {
-            setAuthorsList(mappedAuthors);
-            localStorage.setItem('pikam_authors_list', JSON.stringify(mappedAuthors));
-          }
-        }
-
-        const heroSetting = cloudSettings.find(s => s.id === 'hero_featured');
-        if (heroSetting && heroSetting.data) {
-          setHeroFeatured(heroSetting.data);
-          localStorage.setItem('pikam_hero_featured', JSON.stringify(heroSetting.data));
-        }
-
-        const visibilitySetting = cloudSettings.find(s => s.id === 'section_visibility');
-        if (visibilitySetting && visibilitySetting.data) {
-          setSectionVisibility(visibilitySetting.data);
-          localStorage.setItem('pikam_section_visibility', JSON.stringify(visibilitySetting.data));
-        }
-
-        const navSetting = cloudSettings.find(s => s.id === 'nav_visibility');
-        if (navSetting && navSetting.data) {
-          setNavVisibility(navSetting.data);
-          localStorage.setItem('pikam_nav_visibility', JSON.stringify(navSetting.data));
-        }
-
-        const kunyeSetting = cloudSettings.find(s => s.id === 'kunye_data');
-        if (kunyeSetting && kunyeSetting.data) {
-          setKunyeData(kunyeSetting.data);
-          localStorage.setItem('pikam_kunye_data', JSON.stringify(kunyeSetting.data));
-        }
-
-        const headerSetting = cloudSettings.find(s => s.id === 'header_data');
-        if (headerSetting && headerSetting.data) {
-          setHeaderData(headerSetting.data);
-          localStorage.setItem('pikam_header_data', JSON.stringify(headerSetting.data));
-        }
-
-        const footerSetting = cloudSettings.find(s => s.id === 'footer_data');
-        if (footerSetting && footerSetting.data) {
-          setFooterData(footerSetting.data);
-          localStorage.setItem('pikam_footer_data', JSON.stringify(footerSetting.data));
-        }
-
-        const notesSetting = cloudSettings.find(s => s.id === 'admin_notes_list');
-        if (notesSetting && notesSetting.data) {
-          setAdminNotesList(notesSetting.data);
-          localStorage.setItem('pikam_admin_notes', JSON.stringify(notesSetting.data));
-        }
-
-        const subSetting = cloudSettings.find(s => s.id === 'newsletter_subscribers');
-        if (subSetting && Array.isArray(subSetting.data)) {
-          setNewsletterSubscribers(subSetting.data);
-          localStorage.setItem('pikam_newsletter_subscribers', JSON.stringify(subSetting.data));
-        }
-      }
-
-      // 4. E-Dergi Issues
-      if (cloudIssues && cloudIssues.length > 0) {
-        const mappedIssues = cloudIssues.map(mapIssueFromCloud);
-        setEDergiList(mappedIssues);
-        localStorage.setItem('pikam_edergi_list', JSON.stringify(mappedIssues));
-      }
-
-      // 5. Articles List (Uses exact locked order from site_settings merged with cloud articles)
-      let finalArticles = [];
-      const articlesOrderSetting = cloudSettings ? cloudSettings.find(s => s.id === 'articles_ordered_list') : null;
-
-      if (cloudArticles && cloudArticles.length > 0) {
-        const mappedArts = cloudArticles.map(mapArticleFromCloud);
-
-        if (articlesOrderSetting && Array.isArray(articlesOrderSetting.data) && articlesOrderSetting.data.length > 0) {
-          const validOrderIds = new Set(articlesOrderSetting.data.map(item => String(item.id || item).toLowerCase()));
-          const orderedArts = articlesOrderSetting.data
-            .map(item => {
-              const itemId = String(item.id || item).toLowerCase();
-              return mappedArts.find(a => String(a.id).toLowerCase() === itemId) || item;
-            })
-            .filter(Boolean);
-
-          const extraArts = mappedArts.filter(a => !validOrderIds.has(String(a.id).toLowerCase()));
-          finalArticles = [...orderedArts, ...extraArts];
-        } else {
-          mappedArts.sort((a, b) => (a.display_order ?? 999) - (b.display_order ?? 999));
-          finalArticles = mappedArts;
-        }
-      } else if (articlesOrderSetting && Array.isArray(articlesOrderSetting.data) && articlesOrderSetting.data.length > 0) {
-        finalArticles = articlesOrderSetting.data;
-      } else {
-        finalArticles = PIKAM_DATA.articles;
-      }
-
-      setArticlesList(finalArticles);
-      localStorage.setItem('pikam_articles_list', JSON.stringify(finalArticles));
-    } catch (err) {
-      console.log('Supabase real-time sync notice:', err);
-    }
-  };
-
+  // ---------- İlk yükleme ----------
   useEffect(() => {
-    fetchAndMergeCloudData(true);
-
-    const handleSyncTrigger = () => fetchAndMergeCloudData(true);
-    const handleMobileWakeup = () => {
-      if (document.visibilityState === 'visible') {
-        fetchAndMergeCloudData(true);
-      }
-    };
-
-    window.addEventListener('focus', handleSyncTrigger);
-    window.addEventListener('online', handleSyncTrigger);
-    window.addEventListener('pageshow', handleSyncTrigger);
-    document.addEventListener('visibilitychange', handleMobileWakeup);
-
-    // 2-SECOND AUTOMATIC BACKGROUND POLLING TIMER FOR ALL VISITORS WORLDWIDE
-    const autoPollInterval = setInterval(() => {
-      fetchAndMergeCloudData(true);
-    }, 2000);
-
-    // SUPABASE REALTIME SUBSCRIPTION FOR INSTANT CROSS-DEVICE SYNC
-    const channel = supabase
-      .channel('pikam-realtime-sync')
-      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-        fetchAndMergeCloudData(true);
-      })
-      .subscribe();
-
-    const checkAdminRoute = () => {
-      const path = window.location.pathname.toLowerCase();
-      const hash = window.location.hash.toLowerCase();
-      const search = window.location.search.toLowerCase();
-      
-      if (path.includes('admin') || hash.includes('admin') || search.includes('admin')) {
-        setIsAdmin(true);
-      }
-
-      if (hash.includes('reset-password') || hash.includes('access_token') || hash.includes('type=recovery')) {
-        setIsAuthModalOpen(true);
-      }
-
-      if (path.includes('admin') || hash.includes('admin') || search.includes('admin')) {
-        fetchAndMergeCloudData(true); // Re-sync immediately on entering admin panel
-      } else {
-        setIsAdmin(false);
-      }
-    };
-
-    checkAdminRoute();
-    window.addEventListener('popstate', checkAdminRoute);
-    window.addEventListener('hashchange', checkAdminRoute);
-
-    return () => {
-      clearInterval(autoPollInterval);
-      window.removeEventListener('focus', handleSyncTrigger);
-      window.removeEventListener('online', handleSyncTrigger);
-      window.removeEventListener('pageshow', handleSyncTrigger);
-      document.removeEventListener('visibilitychange', handleMobileWakeup);
-      window.removeEventListener('popstate', checkAdminRoute);
-      window.removeEventListener('hashchange', checkAdminRoute);
-      supabase.removeChannel(channel);
-    };
+    db.loadContent()
+      .then((cloud) => setContent((prev) => ({ ...prev, ...cloud })))
+      .catch((err) => console.error('İçerik yüklenemedi:', err));
+    db.loadComments()
+      .then(setComments)
+      .catch((err) => console.error('Yorumlar yüklenemedi:', err));
   }, []);
 
+  // ---------- Oturum takibi ----------
+  useEffect(() => {
+    if (!supabase) return undefined;
+    supabase.auth.getSession().then(({ data }) => setCurrentUser(db.profileFromSession(data.session)));
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      setCurrentUser(db.profileFromSession(session));
+      if (event === 'PASSWORD_RECOVERY') setIsRecovering(true);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  // ---------- Admin verileri (yalnızca /admin) ----------
+  const refreshAdminData = useCallback(async () => {
+    const [p, s, c] = await Promise.allSettled([db.loadProfiles(), db.loadSubscribers(), db.loadComments()]);
+    if (p.status === 'fulfilled') setProfiles(p.value);
+    if (s.status === 'fulfilled') setSubscribers(s.value);
+    if (c.status === 'fulfilled') setComments(c.value);
+  }, []);
+
+  // ---------- Kaydetme ----------
+  const save = useCallback(async (key, value) => {
+    setContent((prev) => ({ ...prev, [key]: value }));
+    try {
+      await db.saveContent(key, value);
+      setSaveError('');
+      return true;
+    } catch (err) {
+      console.error(`"${key}" kaydedilemedi:`, err);
+      setSaveError(`Değişiklik kaydedilemedi (${key}): ${err.message}. Sayfayı yenileyip tekrar deneyin.`);
+      return false;
+    }
+  }, []);
+
+  const { articles, authors, issues, hero, sections, nav, kunye, header, footer, notes } = content;
+
+  // ---------- Yazı bağlantıları (/yazi-id) ----------
   const handleOpenArticle = (art) => {
     setSelectedArticle(art);
-    if (art && art.id) {
-      const newUrl = `/${art.id}`;
-      window.history.pushState({ articleId: art.id }, '', newUrl);
-    }
+    if (art?.id) window.history.pushState({ articleId: art.id }, '', `/${art.id}`);
   };
 
   const handleCloseArticle = () => {
@@ -527,752 +133,222 @@ const DEFAULT_REGISTERED_USERS = [
   };
 
   useEffect(() => {
-    const checkUrlArticle = () => {
-      if (!articlesList || articlesList.length === 0) return;
-      const pathStr = window.location.pathname.replace(/^\//, '').trim();
-      const params = new URLSearchParams(window.location.search);
-      const targetId = pathStr || params.get('article');
-      
-      if (targetId && targetId.toLowerCase() !== 'admin') {
-        const found = articlesList.find(a => String(a.id).toLowerCase() === String(targetId).toLowerCase());
-        if (found) {
-          setSelectedArticle(found);
-        }
-      }
+    if (isAdmin) return undefined;
+    const syncFromUrl = () => {
+      const id = window.location.pathname.replace(/^\//, '').trim() || new URLSearchParams(window.location.search).get('article');
+      const found = id && articles.find((a) => String(a.id).toLowerCase() === id.toLowerCase());
+      setSelectedArticle(found || null);
     };
+    syncFromUrl();
+    window.addEventListener('popstate', syncFromUrl);
+    return () => window.removeEventListener('popstate', syncFromUrl);
+  }, [articles, isAdmin]);
 
-    checkUrlArticle();
-    window.addEventListener('popstate', checkUrlArticle);
-    return () => window.removeEventListener('popstate', checkUrlArticle);
-  }, [articlesList]);
-
-  const handleAddComment = async (newComment) => {
-    const updated = [newComment, ...allCommentsList];
-    setAllCommentsList(updated);
-    localStorage.setItem('pikam_article_comments', JSON.stringify(updated));
-
+  // ---------- Yorumlar ----------
+  const handleAddComment = async (c) => {
     try {
-      await supabase.from('article_comments').upsert([{
-        id: newComment.id,
-        article_id: newComment.articleId,
-        article_title: newComment.articleTitle,
-        author_name: newComment.authorName,
-        author_email: newComment.authorEmail,
-        comment_text: newComment.commentText,
-        created_at: newComment.createdAt
-      }]);
+      const saved = await db.addComment({
+        articleId: c.articleId,
+        articleTitle: c.articleTitle,
+        authorName: currentUser?.fullName || c.authorName,
+        commentText: c.commentText,
+      });
+      setComments((prev) => [saved, ...prev]);
     } catch (err) {
-      console.log('Supabase comment add notice:', err);
+      console.error('Yorum eklenemedi:', err);
     }
   };
 
-  const handleDeleteComment = async (commentId) => {
-    const updated = allCommentsList.filter(c => c.id !== commentId);
-    setAllCommentsList(updated);
-    localStorage.setItem('pikam_article_comments', JSON.stringify(updated));
-
+  const handleDeleteComment = async (id) => {
     try {
-      await supabase.from('article_comments').delete().eq('id', commentId);
+      await db.deleteComment(id);
+      setComments((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
-      console.log('Supabase comment delete notice:', err);
+      setSaveError(`Yorum silinemedi: ${err.message}`);
     }
   };
 
-  const handleToggleSection = async (sectionKey) => {
-    const updated = {
-      ...sectionVisibility,
-      [sectionKey]: !sectionVisibility[sectionKey]
-    };
-    setSectionVisibility(updated);
-    localStorage.setItem('pikam_section_visibility', JSON.stringify(updated));
-
-    try {
-      await supabase.from('site_settings').upsert([{ id: 'section_visibility', data: updated }]);
-      fetchAndMergeCloudData(true);
-    } catch (err) {
-      console.log('Supabase visibility sync notice:', err);
-    }
-  };
-
-  const handleToggleNavTab = async (tabKey) => {
-    const updated = {
-      ...navVisibility,
-      [tabKey]: navVisibility[tabKey] === false ? true : false
-    };
-    setNavVisibility(updated);
-    localStorage.setItem('pikam_nav_visibility', JSON.stringify(updated));
-
-    try {
-      await supabase.from('site_settings').upsert([{ id: 'nav_visibility', data: updated }]);
-      fetchAndMergeCloudData(true);
-    } catch (err) {
-      console.log('Supabase nav visibility notice:', err);
-    }
-  };
-
-  const handleUpdateKunye = async (updatedKunye) => {
-    setKunyeData(updatedKunye);
-    localStorage.setItem('pikam_kunye_data', JSON.stringify(updatedKunye));
-
-    try {
-      await supabase.from('site_settings').upsert([{ id: 'kunye_data', data: updatedKunye }]);
-      fetchAndMergeCloudData(true);
-    } catch (err) {
-      console.log('Supabase kunye sync notice:', err);
-    }
-  };
-
-  const handleUpdateHeroFeatured = async (updatedHero) => {
-    setHeroFeatured(updatedHero);
-    localStorage.setItem('pikam_hero_featured', JSON.stringify(updatedHero));
-
-    try {
-      await supabase.from('site_settings').upsert([{ id: 'hero_featured', data: updatedHero }]);
-      fetchAndMergeCloudData(true);
-    } catch (err) {
-      console.log('Supabase hero sync notice:', err);
-    }
-  };
-
-  const handleSaveAuthorsCloud = async (newList) => {
-    setAuthorsList(newList);
-    localStorage.setItem('pikam_authors_list', JSON.stringify(newList));
-    isMutatingCloudRef.current = true;
-    try {
-      const mappedCloudAuthors = newList.map(mapAuthorForCloud);
-      await Promise.all([
-        supabase.from('site_settings').upsert([{ id: 'authors_ordered_list', data: newList }], { onConflict: 'id' }),
-        supabase.from('authors').upsert(mappedCloudAuthors, { onConflict: 'id' })
-      ]);
-    } catch (err) {
-      console.log('Supabase author batch sync error:', err);
-    } finally {
-      lastFetchTimeRef.current = Date.now();
-      isMutatingCloudRef.current = false;
-    }
-  };
-
-  const handleAddAuthor = async (newAuthor) => {
-    const updated = [newAuthor, ...authorsList];
-    handleSaveAuthorsCloud(updated);
-  };
-
-  const handleUpdateAuthor = async (updatedAuthor) => {
-    const updated = authorsList.map(a => a.id === updatedAuthor.id ? updatedAuthor : a);
-    handleSaveAuthorsCloud(updated);
-  };
-
-  const handleDeleteAuthor = async (authorId) => {
-    const updated = authorsList.filter(a => a.id !== authorId);
-    setAuthorsList(updated);
-    localStorage.setItem('pikam_authors_list', JSON.stringify(updated));
-    try {
-      await supabase.from('authors').delete().eq('id', authorId);
-      await supabase.from('site_settings').upsert([{ id: 'authors_ordered_list', data: updated }]);
-    } catch (err) {
-      console.log('Supabase author delete notice:', err);
-    }
-  };
-
-  const handleMoveAuthorUp = (index) => {
-    if (index <= 0) return;
-    const newList = [...authorsList];
-    const temp = newList[index];
-    newList[index] = newList[index - 1];
-    newList[index - 1] = temp;
-    handleSaveAuthorsCloud(newList);
-  };
-
-  const handleMoveAuthorDown = (index) => {
-    if (index >= authorsList.length - 1) return;
-    const newList = [...authorsList];
-    const temp = newList[index];
-    newList[index] = newList[index + 1];
-    newList[index + 1] = temp;
-    handleSaveAuthorsCloud(newList);
-  };
-
-  const handleLoginSuccess = async (user) => {
-    setCurrentUser(user);
-    try {
-      const { data: cloudProfiles } = await supabase.from('profiles').select('*');
-      if (cloudProfiles && cloudProfiles.length > 0) {
-        const mappedUsers = cloudProfiles.map(p => ({
-          id: p.id,
-          fullName: p.full_name || p.fullName,
-          email: p.email,
-          phone: p.phone,
-          interests: p.interests,
-          registeredAt: p.registered_at || p.registeredAt
-        }));
-        setRegisteredUsersList(mappedUsers);
-        localStorage.setItem('pikam_registered_users', JSON.stringify(mappedUsers));
-      }
-    } catch (err) {
-      console.log('Login success user refresh notice:', err);
-    }
-  };
-
-  const handleLogoutUser = () => {
-    setCurrentUser(null);
-    localStorage.removeItem('pikam_current_user');
-  };
-
-  const handleDeleteUser = async (userId, userEmail) => {
-    const updated = registeredUsersList.filter(u => {
-      const matchId = userId && u.id === userId;
-      const matchEmail = userEmail && u.email && u.email.trim().toLowerCase() === userEmail.trim().toLowerCase();
-      return !matchId && !matchEmail;
-    });
-
-    setRegisteredUsersList(updated);
-    localStorage.setItem('pikam_registered_users', JSON.stringify(updated));
-
-    try {
-      if (userId) {
-        await supabase.from('profiles').delete().eq('id', userId);
-      }
-      if (userEmail) {
-        await supabase.from('profiles').delete().eq('email', userEmail.trim().toLowerCase());
-      }
-      await supabase.from('site_settings').upsert([{ id: 'registered_users_list', data: updated }]);
-    } catch (err) {
-      console.log('Supabase profile delete notice:', err);
-    }
-  };
-
-  const handleAddEDergi = async (newIssue) => {
-    const updated = [newIssue, ...eDergiList];
-    setEDergiList(updated);
-    localStorage.setItem('pikam_edergi_list', JSON.stringify(updated));
-
-    try {
-      const { error } = await supabase.from('e_dergi_issues').upsert([mapIssueForCloud(newIssue)]);
-      if (error) {
-        console.error('Supabase E-Dergi add error:', error);
-      } else {
-        console.log('✓ E-Dergi successfully upserted to Supabase Cloud!');
-        fetchAndMergeCloudData();
-      }
-    } catch (err) {
-      console.log('Supabase edergi add notice:', err);
-    }
-  };
-
-  const handleUpdateEDergi = async (updatedIssue) => {
-    const updated = eDergiList.map(i => i.id === updatedIssue.id ? updatedIssue : i);
-    setEDergiList(updated);
-    localStorage.setItem('pikam_edergi_list', JSON.stringify(updated));
-
-    try {
-      const { error } = await supabase.from('e_dergi_issues').upsert([mapIssueForCloud(updatedIssue)]);
-      if (error) {
-        console.error('Supabase E-Dergi update error:', error);
-      } else {
-        console.log('✓ E-Dergi successfully updated in Supabase Cloud!');
-        fetchAndMergeCloudData();
-      }
-    } catch (err) {
-      console.log('Supabase edergi update notice:', err);
-    }
-  };
-
-  const handleToggleHideEDergi = async (id) => {
-    const updated = eDergiList.map(i => {
-      if (i.id === id) {
-        return { ...i, hidden: !i.hidden };
-      }
-      return i;
-    });
-    setEDergiList(updated);
-    localStorage.setItem('pikam_edergi_list', JSON.stringify(updated));
-
-    const target = updated.find(i => i.id === id);
-    if (target) {
-      try {
-        await supabase.from('e_dergi_issues').upsert([mapIssueForCloud(target)]);
-      } catch (err) {
-        console.log('Supabase edergi hide notice:', err);
-      }
-    }
-  };
-
-  const handleMoveEDergiUp = (index) => {
-    if (index <= 0) return;
-    const newList = [...eDergiList];
-    const temp = newList[index];
-    newList[index] = newList[index - 1];
-    newList[index - 1] = temp;
-    setEDergiList(newList);
-    localStorage.setItem('pikam_edergi_list', JSON.stringify(newList));
-  };
-
-  const handleMoveEDergiDown = (index) => {
-    if (index >= eDergiList.length - 1) return;
-    const newList = [...eDergiList];
-    const temp = newList[index];
-    newList[index] = newList[index + 1];
-    newList[index + 1] = temp;
-    setEDergiList(newList);
-    localStorage.setItem('pikam_edergi_list', JSON.stringify(newList));
-  };
-
-  const handleDeleteEDergi = async (id) => {
-    const updated = eDergiList.filter(i => i.id !== id);
-    setEDergiList(updated);
-    localStorage.setItem('pikam_edergi_list', JSON.stringify(updated));
-
-    try {
-      await supabase.from('e_dergi_issues').delete().eq('id', id);
-    } catch (err) {
-      console.log('Supabase delete sync:', err);
-    }
-  };
-
-  const handleSaveArticlesCloud = async (newList) => {
-    setArticlesList(newList);
-    localStorage.setItem('pikam_articles_list', JSON.stringify(newList));
-    isMutatingCloudRef.current = true;
-
-    try {
-      const cleanArticlesList = (newList || []).map(a => ({
-        id: a.id,
-        category: a.category,
-        categorycolor: a.categoryColor || a.categorycolor || '#10b981',
-        title: a.title,
-        excerpt: a.excerpt,
-        author: typeof a.author === 'string' ? a.author : a.author?.name,
-        date: a.date,
-        readtime: a.readTime || a.readtime || '6 dk',
-        image: (a.image && a.image.startsWith('data:')) ? 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80' : a.image,
-        content: a.content
-      }));
-
-      const cleanArticlesOrder = (newList || []).map(a => ({
-        id: a.id,
-        title: a.title,
-        category: a.category,
-        categoryColor: a.categoryColor || '#10b981',
-        author: typeof a.author === 'string' ? a.author : a.author?.name,
-        date: a.date,
-        readTime: a.readTime || '6 dk',
-        image: (a.image && a.image.startsWith('data:')) ? 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80' : a.image,
-        excerpt: a.excerpt
-      }));
-
-      await Promise.all([
-        supabase.from('site_settings').upsert([{ id: 'articles_ordered_list', data: cleanArticlesOrder }], { onConflict: 'id' }),
-        supabase.from('articles').upsert(cleanArticlesList, { onConflict: 'id' })
-      ]);
-    } catch (err) {
-      console.log('Supabase article batch sync error:', err);
-    } finally {
-      lastFetchTimeRef.current = Date.now();
-      isMutatingCloudRef.current = false;
-    }
-  };
-
-  const handleAddArticle = async (newArticle) => {
-    const updated = [newArticle, ...articlesList];
-    handleSaveArticlesCloud(updated);
-  };
-
-  const handleUpdateArticle = async (updatedArticle) => {
-    const updated = articlesList.map(a => a.id === updatedArticle.id ? updatedArticle : a);
-    handleSaveArticlesCloud(updated);
-  };
-
-  const handleToggleHideArticle = async (articleId) => {
-    const updated = articlesList.map(a => {
-      if (a.id === articleId) {
-        return { ...a, hidden: !a.hidden };
-      }
-      return a;
-    });
-    handleSaveArticlesCloud(updated);
-  };
-
-  const handleMoveArticleUp = async (index) => {
-    if (index === 0) return;
-    const updated = [...articlesList];
-    const temp = updated[index];
-    updated[index] = updated[index - 1];
-    updated[index - 1] = temp;
-    handleSaveArticlesCloud(updated);
-  };
-
-  const handleMoveArticleDown = async (index) => {
-    if (index === articlesList.length - 1) return;
-    const updated = [...articlesList];
-    const temp = updated[index];
-    updated[index] = updated[index + 1];
-    updated[index + 1] = temp;
-    handleSaveArticlesCloud(updated);
-  };
-
-  const handleDeleteArticle = async (id) => {
-    const updated = articlesList.filter(a => a.id !== id);
-    setArticlesList(updated);
-    localStorage.setItem('pikam_articles_list', JSON.stringify(updated));
-
-    const cleanArticlesOrder = updated.map(a => ({
-      id: a.id,
-      title: a.title,
-      category: a.category,
-      categoryColor: a.categoryColor || '#10b981',
-      author: typeof a.author === 'string' ? a.author : a.author?.name,
-      date: a.date,
-      readTime: a.readTime || '6 dk',
-      image: (a.image && a.image.startsWith('data:')) ? 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80' : a.image,
-      excerpt: a.excerpt
-    }));
-
-    try {
-      await Promise.all([
-        supabase.from('articles').delete().eq('id', id),
-        supabase.from('site_settings').upsert([{ id: 'articles_ordered_list', data: cleanArticlesOrder }], { onConflict: 'id' })
-      ]);
-      fetchAndMergeCloudData(true).catch(() => {});
-    } catch (err) {
-      console.log('Supabase article delete notice:', err);
-    }
-  };
-
-  const scrollToEDergi = () => {
-    const el = document.getElementById('e-dergi-section');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const scrollToYazarlar = () => {
-    const el = document.getElementById('yazarlar-section');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleSaveNotesCloud = async (updatedNotes) => {
-    setAdminNotesList(updatedNotes);
-    localStorage.setItem('pikam_admin_notes', JSON.stringify(updatedNotes));
-    try {
-      await supabase.from('site_settings').upsert([{ id: 'admin_notes_list', data: updatedNotes }]);
-    } catch (err) {
-      console.log('Supabase notes sync notice:', err);
-    }
-  };
-
-  const handleAddNote = (newNote) => {
-    const updated = [newNote, ...adminNotesList];
-    handleSaveNotesCloud(updated);
-  };
-
-  const handleUpdateNote = (updatedNote) => {
-    const updated = adminNotesList.map(n => n.id === updatedNote.id ? updatedNote : n);
-    handleSaveNotesCloud(updated);
-  };
-
-  const handleToggleCompleteNote = (noteId) => {
-    const updated = adminNotesList.map(n => n.id === noteId ? { ...n, isCompleted: !n.isCompleted } : n);
-    handleSaveNotesCloud(updated);
-  };
-
-  const handleDeleteNote = (noteId) => {
-    const updated = adminNotesList.filter(n => n.id !== noteId);
-    handleSaveNotesCloud(updated);
-  };
-
-  const handleUpdateHeaderData = async (updatedHeader) => {
-    setHeaderData(updatedHeader);
-    localStorage.setItem('pikam_header_data', JSON.stringify(updatedHeader));
-    try {
-      await supabase.from('site_settings').upsert([{ id: 'header_data', data: updatedHeader }]);
-      fetchAndMergeCloudData(true);
-    } catch (err) {
-      console.log('Supabase header sync notice:', err);
-    }
-  };
-
-  const handleUpdateFooterData = async (updatedFooter) => {
-    setFooterData(updatedFooter);
-    localStorage.setItem('pikam_footer_data', JSON.stringify(updatedFooter));
-    try {
-      await supabase.from('site_settings').upsert([{ id: 'footer_data', data: updatedFooter }]);
-      fetchAndMergeCloudData(true);
-    } catch (err) {
-      console.log('Supabase footer sync notice:', err);
-    }
-  };
-
+  // ---------- Bülten ----------
   const handleSubscribeNewsletter = async (email) => {
     if (!email || !email.includes('@')) return false;
-    const cleanEmail = email.trim();
-    const existing = newsletterSubscribers.find(s => s.email.toLowerCase() === cleanEmail.toLowerCase());
-    if (existing) return true;
-
-    const newSub = {
-      id: `sub-${Date.now()}`,
-      email: cleanEmail,
-      subscribedAt: new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-    };
-    const updated = [newSub, ...newsletterSubscribers];
-    setNewsletterSubscribers(updated);
-    localStorage.setItem('pikam_newsletter_subscribers', JSON.stringify(updated));
     try {
-      await supabase.from('site_settings').upsert([{ id: 'newsletter_subscribers', data: updated }]);
+      await db.subscribeNewsletter(email);
+      return true;
     } catch (err) {
-      console.log('Newsletter cloud sync notice:', err);
-    }
-    return true;
-  };
-
-  const handleDeleteSubscriber = async (subId) => {
-    const updated = newsletterSubscribers.filter(s => s.id !== subId);
-    setNewsletterSubscribers(updated);
-    localStorage.setItem('pikam_newsletter_subscribers', JSON.stringify(updated));
-    try {
-      await supabase.from('site_settings').upsert([{ id: 'newsletter_subscribers', data: updated }]);
-    } catch (err) {
-      console.log('Newsletter cloud sync notice:', err);
+      console.error('Bülten kaydı başarısız:', err);
+      return false;
     }
   };
 
-  const handleForcePushCloudAll = async () => {
-    const timeoutPromise = new Promise(resolve => setTimeout(() => {
-      console.log('⚡ Force sync timeout reached - returning fast UI response');
-      resolve(true);
-    }, 1500));
-
-    const pushWorkPromise = (async () => {
-      try {
-        console.log('☁️ Ultra-Lightweight Fast Pushing ALL local state to Supabase Cloud Database...');
-
-        const cleanArticlesList = (articlesList || []).map(a => ({
-          id: a.id,
-          category: a.category,
-          categorycolor: a.categoryColor || a.categorycolor || '#10b981',
-          title: a.title,
-          excerpt: a.excerpt,
-          author: typeof a.author === 'string' ? a.author : a.author?.name,
-          date: a.date,
-          readtime: a.readTime || a.readtime || '6 dk',
-          image: (a.image && a.image.startsWith('data:')) ? 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80' : a.image,
-          content: a.content
-        }));
-
-        const cleanArticlesOrder = (articlesList || []).map(a => ({
-          id: a.id,
-          title: a.title,
-          category: a.category,
-          categoryColor: a.categoryColor || '#10b981',
-          author: typeof a.author === 'string' ? a.author : a.author?.name,
-          date: a.date,
-          readTime: a.readTime || '6 dk',
-          image: (a.image && a.image.startsWith('data:')) ? 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80' : a.image,
-          excerpt: a.excerpt
-        }));
-
-        const cleanHeaderData = { ...headerData };
-        if (cleanHeaderData.logotypeUrl && cleanHeaderData.logotypeUrl.startsWith('data:')) cleanHeaderData.logotypeUrl = '/pikam_logo.png';
-        if (cleanHeaderData.emblemUrl && cleanHeaderData.emblemUrl.startsWith('data:')) cleanHeaderData.emblemUrl = '/pikam_logo.png';
-
-        const cleanFooterData = { ...footerData };
-        if (cleanFooterData.logoUrl && cleanFooterData.logoUrl.startsWith('data:')) cleanFooterData.logoUrl = '/pikam_logo.png';
-
-        await Promise.all([
-          cleanArticlesList.length > 0 
-            ? supabase.from('articles').upsert(cleanArticlesList, { onConflict: 'id' })
-            : Promise.resolve(),
-          authorsList.length > 0 
-            ? supabase.from('authors').upsert(authorsList.map(mapAuthorForCloud), { onConflict: 'id' })
-            : Promise.resolve(),
-          supabase.from('site_settings').upsert([
-            { id: 'hero_featured', data: heroFeatured },
-            { id: 'section_visibility', data: sectionVisibility },
-            { id: 'nav_visibility', data: navVisibility },
-            { id: 'kunye_data', data: kunyeData },
-            { id: 'admin_notes_list', data: adminNotesList },
-            { id: 'authors_ordered_list', data: authorsList },
-            { id: 'articles_ordered_list', data: cleanArticlesOrder },
-            { id: 'header_data', data: cleanHeaderData },
-            { id: 'footer_data', data: cleanFooterData },
-            { id: 'registered_users_list', data: registeredUsersList }
-          ], { onConflict: 'id' })
-        ]);
-
-        fetchAndMergeCloudData(true).catch(() => {});
-        return true;
-      } catch (err) {
-        console.error('Push all cloud error:', err);
-        return false;
-      }
-    })();
-
-    return await Promise.race([pushWorkPromise, timeoutPromise]);
+  const handleDeleteSubscriber = async (id) => {
+    try {
+      await db.deleteSubscriber(id);
+      setSubscribers((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      setSaveError(`Abone silinemedi: ${err.message}`);
+    }
   };
 
-  // RENDER ADMIN PANEL IF ADMIN ROUTE DETECTED
+  // ---------- Üyeler ----------
+  const handleDeleteUser = async (id) => {
+    try {
+      await db.deleteProfile(id);
+      setProfiles((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      setSaveError(`Üye silinemedi: ${err.message}`);
+    }
+  };
+
+  const handleLogoutUser = async () => {
+    await db.signOut();
+    setCurrentUser(null);
+  };
+
+  const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+
+  // ---------- Yönetim paneli ----------
   if (isAdmin) {
     return (
-      <AdminPanel 
-        eDergiList={eDergiList}
-        onAddEDergi={handleAddEDergi}
-        onUpdateEDergi={handleUpdateEDergi}
-        onToggleHideEDergi={handleToggleHideEDergi}
-        onMoveEDergiUp={handleMoveEDergiUp}
-        onMoveEDergiDown={handleMoveEDergiDown}
-        onDeleteEDergi={handleDeleteEDergi}
-        onAddArticle={handleAddArticle}
-        onUpdateArticle={handleUpdateArticle}
-        onToggleHideArticle={handleToggleHideArticle}
-        onMoveArticleUp={handleMoveArticleUp}
-        onMoveArticleDown={handleMoveArticleDown}
-        articlesList={articlesList}
-        onDeleteArticle={handleDeleteArticle}
-        registeredUsersList={registeredUsersList}
-        onDeleteUser={handleDeleteUser}
-        authorsList={authorsList}
-        onAddAuthor={handleAddAuthor}
-        onDeleteAuthor={handleDeleteAuthor}
-        onUpdateAuthor={handleUpdateAuthor}
-        onMoveAuthorUp={handleMoveAuthorUp}
-        onMoveAuthorDown={handleMoveAuthorDown}
-        heroFeatured={heroFeatured}
-        onUpdateHeroFeatured={handleUpdateHeroFeatured}
-        sectionVisibility={sectionVisibility}
-        onToggleSection={handleToggleSection}
-        navVisibility={navVisibility}
-        onToggleNavTab={handleToggleNavTab}
-        kunyeData={kunyeData}
-        onUpdateKunye={handleUpdateKunye}
-        allCommentsList={allCommentsList}
-        onDeleteComment={handleDeleteComment}
-        adminNotesList={adminNotesList}
-        onAddNote={handleAddNote}
-        onUpdateNote={handleUpdateNote}
-        onToggleCompleteNote={handleToggleCompleteNote}
-        onDeleteNote={handleDeleteNote}
-        headerData={headerData}
-        onUpdateHeaderData={handleUpdateHeaderData}
-        footerData={footerData}
-        onUpdateFooterData={handleUpdateFooterData}
-        newsletterSubscribers={newsletterSubscribers}
-        onDeleteSubscriber={handleDeleteSubscriber}
-        onForceSyncCloud={handleForcePushCloudAll}
-      />
+      <>
+        {saveError && (
+          <div
+            role="alert"
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999, background: '#b91c1c', color: '#fff', padding: '10px 16px', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', gap: 12 }}
+          >
+            <span>{saveError}</span>
+            <button onClick={() => setSaveError('')} style={{ background: 'transparent', color: '#fff', border: '1px solid #fff', borderRadius: 4, cursor: 'pointer' }}>
+              Kapat
+            </button>
+          </div>
+        )}
+        <AdminPanel
+          onAdminReady={refreshAdminData}
+          eDergiList={issues}
+          onAddEDergi={(issue) => save('issues', [issue, ...issues])}
+          onUpdateEDergi={(issue) => save('issues', issues.map((i) => (i.id === issue.id ? issue : i)))}
+          onToggleHideEDergi={(id) => save('issues', issues.map((i) => (i.id === id ? { ...i, hidden: !i.hidden } : i)))}
+          onMoveEDergiUp={(idx) => save('issues', moveItem(issues, idx, -1))}
+          onMoveEDergiDown={(idx) => save('issues', moveItem(issues, idx, 1))}
+          onDeleteEDergi={(id) => save('issues', issues.filter((i) => i.id !== id))}
+          articlesList={articles}
+          onAddArticle={(art) => save('articles', [art, ...articles])}
+          onUpdateArticle={(art) => save('articles', articles.map((a) => (a.id === art.id ? art : a)))}
+          onToggleHideArticle={(id) => save('articles', articles.map((a) => (a.id === id ? { ...a, hidden: !a.hidden } : a)))}
+          onMoveArticleUp={(idx) => save('articles', moveItem(articles, idx, -1))}
+          onMoveArticleDown={(idx) => save('articles', moveItem(articles, idx, 1))}
+          onDeleteArticle={(id) => save('articles', articles.filter((a) => a.id !== id))}
+          registeredUsersList={profiles}
+          onDeleteUser={handleDeleteUser}
+          authorsList={authors}
+          onAddAuthor={(a) => save('authors', [a, ...authors])}
+          onUpdateAuthor={(a) => save('authors', authors.map((x) => (x.id === a.id ? a : x)))}
+          onDeleteAuthor={(id) => save('authors', authors.filter((a) => a.id !== id))}
+          onMoveAuthorUp={(idx) => save('authors', moveItem(authors, idx, -1))}
+          onMoveAuthorDown={(idx) => save('authors', moveItem(authors, idx, 1))}
+          heroFeatured={hero}
+          onUpdateHeroFeatured={(h) => save('hero', h)}
+          sectionVisibility={sections}
+          onToggleSection={(key) => save('sections', { ...sections, [key]: !sections[key] })}
+          navVisibility={nav}
+          onToggleNavTab={(key) => save('nav', { ...nav, [key]: !nav[key] })}
+          kunyeData={kunye}
+          onUpdateKunye={(k) => save('kunye', k)}
+          allCommentsList={comments}
+          onDeleteComment={handleDeleteComment}
+          adminNotesList={notes}
+          onAddNote={(n) => save('notes', [n, ...notes])}
+          onUpdateNote={(n) => save('notes', notes.map((x) => (x.id === n.id ? n : x)))}
+          onToggleCompleteNote={(id) => save('notes', notes.map((x) => (x.id === id ? { ...x, isCompleted: !x.isCompleted } : x)))}
+          onDeleteNote={(id) => save('notes', notes.filter((x) => x.id !== id))}
+          headerData={header}
+          onUpdateHeaderData={(h) => save('header', h)}
+          footerData={footer}
+          onUpdateFooterData={(f) => save('footer', f)}
+          newsletterSubscribers={subscribers}
+          onDeleteSubscriber={handleDeleteSubscriber}
+          onRefresh={refreshAdminData}
+        />
+      </>
     );
   }
 
-  // MAIN WEBSITE INTERFACE
+  // ---------- Site ----------
   return (
     <div className="app-root">
-      <Navbar 
+      <Navbar
         activeCategory={activeCategory}
-        onSelectCategory={(cat) => setActiveCategory(cat)}
+        onSelectCategory={setActiveCategory}
         onOpenKunye={() => setIsKunyeOpen(true)}
-        onScrollToEDergi={scrollToEDergi}
-        onScrollToYazarlar={scrollToYazarlar}
-        navVisibility={navVisibility}
+        onScrollToEDergi={() => scrollTo('e-dergi-section')}
+        onScrollToYazarlar={() => scrollTo('yazarlar-section')}
+        navVisibility={nav}
         currentUser={currentUser}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onLogoutUser={handleLogoutUser}
         onOpenSearch={() => setIsSearchOpen(true)}
       />
 
-      <Header 
-        headerData={headerData}
-        sectionVisibility={sectionVisibility}
-      />
+      <Header headerData={header} sectionVisibility={sections} />
 
-      {sectionVisibility.showTicker && (
-        <Ticker 
-          onSelectArticle={handleOpenArticle}
-        />
-      )}
+      {sections.showTicker && <Ticker onSelectArticle={handleOpenArticle} />}
 
       <main>
-        {sectionVisibility.showEDergi && (
-          <EDergiSection 
-            id="e-dergi-section"
-            eDergiList={eDergiList}
-            onOpenEDergiModal={(issue) => setSelectedEDergi(issue)}
-          />
+        {sections.showEDergi && (
+          <EDergiSection id="e-dergi-section" eDergiList={issues} onOpenEDergiModal={setSelectedEDergi} />
         )}
 
-        {sectionVisibility.showHero && (
-          <HeroGrid 
-            heroFeatured={heroFeatured}
-            onSelectArticle={handleOpenArticle}
-          />
+        {sections.showHero && <HeroGrid heroFeatured={hero} onSelectArticle={handleOpenArticle} />}
+
+        {sections.showEditorialFeed !== false && (
+          <EditorialFeed activeCategory={activeCategory} articlesList={articles} onSelectArticle={handleOpenArticle} />
         )}
 
-        {sectionVisibility.showEditorialFeed !== false && (
-          <EditorialFeed 
-            activeCategory={activeCategory}
-            articlesList={articlesList}
-            onSelectArticle={handleOpenArticle}
-          />
-        )}
-
-        {sectionVisibility.showYazarlar && (
-          <YazarlarSection 
-            id="yazarlar-section"
-            authorsList={authorsList}
-          />
-        )}
+        {sections.showYazarlar && <YazarlarSection id="yazarlar-section" authorsList={authors} />}
       </main>
 
-      <Footer 
-        onSelectCategory={(cat) => setActiveCategory(cat)}
+      <Footer
+        onSelectCategory={setActiveCategory}
         onOpenKunye={() => setIsKunyeOpen(true)}
-        onScrollToEDergi={scrollToEDergi}
-        footerData={footerData}
-        headerData={headerData}
-        sectionVisibility={sectionVisibility}
+        onScrollToEDergi={() => scrollTo('e-dergi-section')}
+        footerData={footer}
+        headerData={header}
+        sectionVisibility={sections}
         onSubscribeNewsletter={handleSubscribeNewsletter}
       />
 
-      {/* MODAL OVERLAYS */}
       {selectedArticle && (
-        <ArticleModal 
+        <ArticleModal
           article={selectedArticle}
           currentUser={currentUser}
-          allCommentsList={allCommentsList}
+          allCommentsList={comments}
           onAddComment={handleAddComment}
           onOpenAuthModal={() => {
-            setSelectedArticle(null);
+            handleCloseArticle();
             setIsAuthModalOpen(true);
           }}
           onClose={handleCloseArticle}
         />
       )}
 
-      {selectedEDergi && (
-        <EDergiModal 
-          issue={selectedEDergi}
-          onClose={() => setSelectedEDergi(null)}
-        />
-      )}
+      {selectedEDergi && <EDergiModal issue={selectedEDergi} onClose={() => setSelectedEDergi(null)} />}
 
       {isSearchOpen && (
-        <SearchModal 
-          articlesList={articlesList}
-          eDergiList={eDergiList}
-          authorsList={authorsList}
+        <SearchModal
+          articlesList={articles}
+          eDergiList={issues}
+          authorsList={authors}
           onClose={() => setIsSearchOpen(false)}
           onSelectArticle={handleOpenArticle}
-          onSelectEDergi={(issue) => setSelectedEDergi(issue)}
+          onSelectEDergi={setSelectedEDergi}
         />
       )}
 
-      {isKunyeOpen && (
-        <KunyeModal 
-          onClose={() => setIsKunyeOpen(false)}
-          kunyeData={kunyeData}
-        />
-      )}
+      {isKunyeOpen && <KunyeModal onClose={() => setIsKunyeOpen(false)} kunyeData={kunye} />}
+
+      {isRecovering && <PasswordResetModal onDone={() => setIsRecovering(false)} />}
 
       {isAuthModalOpen && (
-        <UserAuthModal 
-          onClose={() => setIsAuthModalOpen(false)}
-          onLoginSuccess={handleLoginSuccess}
-        />
+        <UserAuthModal onClose={() => setIsAuthModalOpen(false)} onLoginSuccess={(user) => setCurrentUser(user)} />
       )}
     </div>
   );
