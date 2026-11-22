@@ -187,6 +187,6 @@ export const PIKAM_DATA = {
   "grafikTasarim": "PİKAM Dijital Yayıncılık Ekibi",
   "yayinYonetmeni": "Osman Bahtiyar",
   "sorumluYaziIsleri": "PİKAM Dergi Editör Kurulu",
-  "akademikDanismaKurulu": "Prof. Dr. Osman Bahtiyar, Sılanur Gör, Miraç Çavuş, Sera Erdağı"
+  "akademikDanismaKurulu": "Prof. Dr. Osman Bahtiyar, Miraç Çavuş, Sera Erdağı"
 }
 };
