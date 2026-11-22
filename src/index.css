@@ -987,21 +987,21 @@ button {
 }
 .edg-feature-text { text-align: center; }
 .edg-logotype { width: min(320px, 80%); height: auto; margin: 0 auto 18px; display: block; }
-.edg-kicker { font-size: 0.78rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #9f1d20; margin-bottom: 6px; }
-.edg-title { font-family: 'Playfair Display', serif; font-size: 2rem; color: #7a1418; margin: 0 0 10px; font-style: italic; }
-.edg-lead { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.35rem; line-height: 1.5; color: #7a1418; margin: 0 auto 8px; max-width: 460px; }
+.edg-kicker { font-size: 0.78rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #4760EB; margin-bottom: 6px; }
+.edg-title { font-family: 'Playfair Display', serif; font-size: 2rem; color: #4760EB; margin: 0 0 10px; font-style: italic; }
+.edg-lead { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.35rem; line-height: 1.5; color: #4760EB; margin: 0 auto 8px; max-width: 460px; }
 .edg-theme { color: #475569; font-size: 0.95rem; margin: 0 0 4px; }
 .edg-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 22px; }
 .edg-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   padding: 12px 22px; border-radius: 6px; font-weight: 700; font-size: 0.9rem;
-  text-decoration: none; cursor: pointer; border: 2px solid #7a1418; transition: background 0.2s ease, color 0.2s ease;
+  text-decoration: none; cursor: pointer; border: 2px solid #4760EB; transition: background 0.2s ease, color 0.2s ease;
   min-width: 170px;
 }
-.edg-btn-primary { background: #7a1418; color: #ffffff; }
-.edg-btn-primary:hover { background: #5e0f12; }
-.edg-btn-secondary { background: #ffffff; color: #7a1418; }
-.edg-btn-secondary:hover { background: #fdf2f2; }
+.edg-btn-primary { background: #4760EB; color: #ffffff; }
+.edg-btn-primary:hover { background: #3449C9; }
+.edg-btn-secondary { background: #ffffff; color: #4760EB; }
+.edg-btn-secondary:hover { background: #EEF3FE; }
 .edg-meta { margin-top: 12px; font-size: 0.8rem; color: #94a3b8; }
 .edg-cover-btn { padding: 0; border: none; background: none; cursor: pointer; display: block; width: 100%; }
 .edg-cover {
