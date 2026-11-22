@@ -155,14 +155,6 @@ export const PIKAM_DATA = {
       "affiliation": "PİKAM Finans Masası",
       "latestArticle": "Sakarya Üniversitesi İktisat Bölümü mezunudur. PİKAM bünyesinde Finans Editörü olarak görev yapmaktadır. Temel çalışma ve ilgi alanları arasında Türkiye'nin finans tarihi, sermaye piyasalarının evrimi ve finansal okuryazarlık yer almaktadır.",
       "linkedinUrl": "https://www.linkedin.com/in/o%C4%9Fuzhan-kale-a65b82379/"
-    },
-    {
-      "id": "auth-1785450479146",
-      "name": "Sılanur Gör",
-      "role": "PİKAM EKONOMİ EDİTÖRÜ",
-      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-      "affiliation": "PİKAM Ekonomi Masası",
-      "latestArticle": "Süleyman Demirel Üniversitesi İktisat Bölümü öğrencisidir. Ekonomi politikaları, enflasyon, finans ve veri analizi alanlarıyla ilgilenmektedir."
     }
   ],
   eDergiIssues: [
