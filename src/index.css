@@ -1024,3 +1024,77 @@ button {
   .edg-lead { font-size: 1.15rem; }
   .edg-btn { flex: 1 1 100%; }
 }
+
+/* ===== Menü (masaüstü: ortalı iki satır, mobil: tek satır) ===== */
+.pk-nav { padding: 6px 0; }
+.pk-nav-inner { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.pk-nav-menu { justify-content: center; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; width: auto; }
+.pk-nav-actions { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 2px 0 4px; }
+.pk-auth { color: #38bdf8 !important; font-weight: 700 !important; font-size: 0.82rem; cursor: pointer; }
+.pk-user-chip { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 20px; color: #38bdf8; font-size: 0.82rem; font-weight: 700; }
+.pk-logout { color: #f87171; border: none; background: none; cursor: pointer; display: flex; align-items: center; }
+
+/* Menüden bir bölüme gidildiğinde başlık sabit menünün altında kalmasın */
+section[id] { scroll-margin-top: 120px; }
+
+/* Dergi okuyucunun mobil alt sayfa çubuğu (masaüstünde gizli) */
+.edr-mobile-pager { display: none; }
+
+@media (max-width: 768px) {
+  /* --- Menü: tek satır, yana kaydırılabilir --- */
+  .pk-nav { padding: 0; }
+  .pk-nav-inner { flex-direction: row; align-items: center; gap: 6px; padding: 0 6px 0 0; }
+  .pk-nav-menu { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; width: auto; gap: 0;
+    -webkit-mask-image: linear-gradient(to right, #000 94%, transparent); mask-image: linear-gradient(to right, #000 94%, transparent); }
+  .pk-nav-menu .nav-link { padding: 14px 8px; font-size: 0.74rem; letter-spacing: 0.3px; min-height: 46px; }
+  .pk-nav-actions { flex: 0 0 auto; gap: 4px; margin: 0; }
+  .pk-icon-btn { width: 38px; height: 38px; padding: 0 !important; justify-content: center; border-radius: 50%; background: rgba(255,255,255,0.08); color: #e2e8f0; }
+  .pk-btn-label { display: none; }
+  .pk-user-chip { padding: 0 4px 0 10px; height: 38px; }
+  .pk-logout { width: 30px; height: 30px; justify-content: center; }
+  section[id] { scroll-margin-top: 56px; }
+
+  /* --- Başlık bölümü: daha sade --- */
+  .site-header { padding: 14px 0 10px !important; }
+  .header-brand-inner { gap: 8px !important; }
+  .header-logo-img { width: 48px !important; height: 48px !important; }
+  .site-header img:not(.header-logo-img) { max-height: 64px; width: auto; }
+  .logo-tagline { font-size: 0.85rem !important; margin-top: 4px !important; }
+  .logo-about { font-size: 0.82rem !important; padding: 10px 12px !important; line-height: 1.55 !important; margin-top: 8px !important; }
+
+  /* --- Dergi bölümü --- */
+  .edg-cover-btn { max-width: 240px; }
+  .edg-logotype { width: 200px; margin-bottom: 10px; }
+  .edg-btn { min-height: 48px; }
+
+  /* --- Ekip kartları: yatay ve kompakt --- */
+  .yazarlar-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .yazar-card { display: grid !important; grid-template-columns: 64px 1fr; column-gap: 14px; row-gap: 2px; align-items: start; text-align: left !important; padding: 14px !important; height: auto !important; }
+  .yazar-card:hover { transform: none; }
+  .yazar-avatar { grid-row: 1 / span 4; width: 64px !important; height: 64px !important; margin: 0 !important; border-width: 2px; }
+  .yazar-name { grid-column: 2; font-size: 1rem; margin: 2px 0 0; }
+  .yazar-role { grid-column: 2; margin: 0 !important; font-size: 0.72rem; }
+  .yazar-card > div:not(.yazar-latest) { grid-column: 2; margin-bottom: 2px !important; font-size: 0.68rem !important; }
+  .yazar-card > a { grid-column: 2; justify-self: start; align-self: start !important; margin: 4px 0 0 !important; min-height: 30px; }
+  .yazar-latest { grid-column: 1 / -1; margin-top: 10px !important; font-size: 0.8rem !important; text-align: left; }
+
+  /* --- Dergi okuyucu: tam ekran, sade araç çubuğu, büyük sayfa butonları --- */
+  .edergi-reader-container { max-width: 100% !important; width: 100% !important; height: 100% !important; max-height: 100% !important; border-radius: 0 !important; display: flex; flex-direction: column; }
+  .modal-backdrop:has(.edergi-reader-container) { padding: 0 !important; }
+  .edr-bar { display: flex !important; flex-direction: row !important; justify-content: space-between !important; align-items: center !important; padding: 8px 10px !important; gap: 8px; flex-wrap: nowrap !important; }
+  .edergi-page-sheet > div:last-child { display: none !important; }
+  .edr-title span:first-child { font-size: 0.8rem !important; }
+  .edr-title span:last-child { display: block; margin-left: 0 !important; font-size: 0.72rem !important; }
+  .edr-pager, .edr-zoom, .edr-dl-text { display: none !important; }
+  .edr-controls { gap: 8px !important; }
+  .edr-controls .top-search-btn { width: 40px; height: 40px; padding: 0 !important; justify-content: center; border-radius: 50% !important; }
+  .edergi-viewport { flex: 1 1 auto; overflow-y: auto; }
+  .edergi-page-sheet { min-height: 0 !important; padding: 8px !important; transform: none !important; }
+  .edergi-page-sheet img { max-height: calc(100vh - 170px) !important; }
+  .edr-mobile-pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: #0b132b; color: #e2e8f0; font-weight: 700; font-size: 0.9rem; }
+  .edr-mobile-pager button { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 16px; border-radius: 8px; border: none; background: #4760EB; color: #fff; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+  .edr-mobile-pager button:disabled { opacity: 0.35; }
+
+  /* --- Genel: dokunma hedefleri ve form alanları (iOS yakınlaştırmasın) --- */
+  input, select, textarea { font-size: 16px !important; }
+}

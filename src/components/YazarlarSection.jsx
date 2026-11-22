@@ -6,10 +6,12 @@ function AuthorCard({ author, fallbackAvatar, onSelectAuthor }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const avatarUrl = (author.avatar && !author.avatar.startsWith('blob:')) ? author.avatar : fallbackAvatar;
   const aboutText = author.latestArticle || author.bio || '';
-  const isLong = aboutText.length > 200;
+  // Telefonda önizleme daha kısa tutulur.
+  const previewLength = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches ? 110 : 200;
+  const isLong = aboutText.length > previewLength;
 
-  const displayText = (!isExpanded && isLong) 
-    ? `${aboutText.slice(0, 200)}...` 
+  const displayText = (!isExpanded && isLong)
+    ? `${aboutText.slice(0, previewLength).trimEnd()}...`
     : aboutText;
 
   return (

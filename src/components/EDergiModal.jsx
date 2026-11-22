@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, ChevronLeft, ChevronRight, Download, ZoomIn, BookOpen, Loader2 } from 'lucide-react';
 
 export default function EDergiModal({ issue, onClose }) {
@@ -8,6 +8,17 @@ export default function EDergiModal({ issue, onClose }) {
   const [isRenderingPage, setIsRenderingPage] = useState(false);
 
   const totalPages = issue?.pageCount || (issue?.pagesDataUrls ? issue.pagesDataUrls.length : 68);
+
+  const touchStartX = useRef(null);
+  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 50) return;
+    if (dx < 0) setCurrentPage((p) => Math.min(totalPages, p + 1));
+    else setCurrentPage((p) => Math.max(1, p - 1));
+  };
 
   const handleNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
@@ -123,8 +134,8 @@ export default function EDergiModal({ issue, onClose }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-container edergi-reader-container" onClick={(e) => e.stopPropagation()}>
         {/* READER TOPBAR */}
-        <div className="edergi-reader-bar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className="edergi-reader-bar edr-bar">
+          <div className="edr-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <BookOpen size={20} color="#38bdf8" />
             <div>
               <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>PİKAM DİJİTAL E-DERGİ</span>
@@ -134,8 +145,8 @@ export default function EDergiModal({ issue, onClose }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#334155', padding: '4px 10px', borderRadius: '4px', fontSize: '0.82rem' }}>
+          <div className="edr-controls" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div className="edr-pager" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#334155', padding: '4px 10px', borderRadius: '4px', fontSize: '0.82rem' }}>
               <button onClick={handlePrevPage} disabled={currentPage === 1} style={{ opacity: currentPage === 1 ? 0.4 : 1, color: 'white', background: 'none', border: 'none', cursor: 'pointer' }}>
                 <ChevronLeft size={16} />
               </button>
@@ -148,6 +159,7 @@ export default function EDergiModal({ issue, onClose }) {
             </div>
 
             <button 
+              className="edr-zoom"
               onClick={() => setZoomLevel(zoomLevel === 100 ? 125 : 100)} 
               style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#cbd5e1', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer' }}
               title="Sayfayı Yakınlaştır"
@@ -163,7 +175,7 @@ export default function EDergiModal({ issue, onClose }) {
               title="Tüm PDF Dergiyi İndir"
             >
               <Download size={15} />
-              <span>Tüm PDF'i İndir</span>
+              <span className="edr-dl-text">Tüm PDF'i İndir</span>
             </button>
 
             <button className="modal-close-btn" style={{ position: 'relative', top: 0, right: 0 }} onClick={onClose}>
@@ -173,7 +185,7 @@ export default function EDergiModal({ issue, onClose }) {
         </div>
 
         {/* READER VIEWPORT */}
-        <div className="edergi-viewport">
+        <div className="edergi-viewport" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <div 
             className="edergi-page-sheet" 
             style={{ 
@@ -239,6 +251,16 @@ export default function EDergiModal({ issue, onClose }) {
               <span>Sayfa {currentPage} / {totalPages}</span>
             </div>
           </div>
+        </div>
+
+        <div className="edr-mobile-pager">
+          <button type="button" onClick={handlePrevPage} disabled={currentPage === 1}>
+            <ChevronLeft size={18} /> Önceki
+          </button>
+          <span>{currentPage} / {totalPages}</span>
+          <button type="button" onClick={handleNextPage} disabled={currentPage === totalPages}>
+            Sonraki <ChevronRight size={18} />
+          </button>
         </div>
       </div>
     </div>
