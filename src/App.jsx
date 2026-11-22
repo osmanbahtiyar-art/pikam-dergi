@@ -17,7 +17,7 @@ import UserAuthModal from './components/UserAuthModal';
 import AdminPanel from './components/AdminPanel';
 
 import { SITE_DEFAULTS } from './data/defaults';
-import { supabase } from './lib/supabaseClient';
+import { supabase, authLinkType } from './lib/supabaseClient';
 import * as db from './lib/db';
 
 // TopBar şu an kullanılmıyor; import, ileride yeniden eklenebilmesi için duruyor.
@@ -40,12 +40,13 @@ function PasswordResetModal({ onDone }) {
     e.preventDefault();
     const { error } = await supabase.auth.updateUser({ password: pw });
     if (error) setMsg(error.message);
+    else if (authLinkType === 'invite') window.location.assign('/admin');
     else onDone();
   };
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(11,19,43,0.7)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <form onSubmit={submit} style={{ background: '#fff', borderRadius: 10, padding: 24, width: '100%', maxWidth: 380, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <h2 style={{ margin: 0, fontFamily: 'Playfair Display, serif', fontSize: '1.2rem' }}>Yeni Şifre Belirleyin</h2>
+        <h2 style={{ margin: 0, fontFamily: 'Playfair Display, serif', fontSize: '1.2rem' }}>{authLinkType === 'invite' ? 'Hoş geldiniz — şifrenizi belirleyin' : 'Yeni Şifre Belirleyin'}</h2>
         {msg && <div style={{ color: '#b91c1c', fontSize: '0.85rem' }}>{msg}</div>}
         <input type="password" minLength={6} required value={pw} onChange={(e) => setPw(e.target.value)} placeholder="En az 6 karakter" autoComplete="new-password" style={{ padding: 10, borderRadius: 6, border: '1px solid #cbd5e1' }} />
         <button type="submit" style={{ background: '#0b132b', color: '#fff', padding: 12, border: 'none', borderRadius: 6, fontWeight: 700, cursor: 'pointer' }}>Şifreyi Kaydet</button>
@@ -74,7 +75,7 @@ export default function App() {
   const [comments, setComments] = useState([]);
   const [profiles, setProfiles] = useState([]);
   const [subscribers, setSubscribers] = useState([]);
-  const [isRecovering, setIsRecovering] = useState(false);
+  const [isRecovering, setIsRecovering] = useState(Boolean(authLinkType));
 
   // ---------- İlk yükleme ----------
   useEffect(() => {
