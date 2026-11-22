@@ -4,7 +4,7 @@ import { PIKAM_DATA } from './pikamData.js';
 
 export const DEFAULT_SECTIONS = {
   showHero: false,
-  showEDergi: false,
+  showEDergi: true,
   showTicker: false,
   showYazarlar: true,
   showEditorialFeed: false,
@@ -12,7 +12,7 @@ export const DEFAULT_SECTIONS = {
 
 export const DEFAULT_NAV = {
   ANASAYFA: true,
-  'E-DERGİ': false,
+  'E-DERGİ': true,
   POLİTİKA: false,
   EKONOMİ: false,
   FİNANS: false,
@@ -41,7 +41,7 @@ export const DEFAULT_HEADER = {
   tagline: "Türkiye'nin politik ve iktisadi geleceğine yön veren düşünce merkezi.",
   aboutText:
     'PİKAM Dergi; Politik ve İktisadi Araştırmalar Merkezi bünyesinde yayınlanan, küresel jeopolitik, iktisadi stratejiler ve kamu politikaları alanında bağımsız ve akademik analizler sunan dijital yayın organıdır.',
-  issn: 'ISSN 2717-9842 | Yıl: 7 | Sayı: 74 | Temmuz 2026',
+  issn: 'ISSN 2717-9842 | Cilt: 1 | Sayı: 1 | Ekim 2026',
   portalUrl: 'https://www.pikamtr.com/',
   portalLabel: 'pikamtr.com',
 };

@@ -84,90 +84,111 @@ export const PIKAM_DATA = {
   }
 ],
   authors: [
-  {
-    "id": "auth-1786866647845",
-    "name": "Zeynep Sare Ağca",
-    "role": "GENEL YAYIN YÖNETMENİ",
-    "avatar": "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&w=200&q=80",
-    "affiliation": "PİKAM Genel Yayın Yönetimi",
-    "latestArticle": "Halkla İlişkiler bölümü lisans öğrencisidir. Medya ve iletişim alanlarına ilgi duymakta olup televizyon kanalı ve dijital platformlarda yayınlar yapmıştır. Bununla beraber lise yıllarından itibaren dergicilik faaliyetlerinde aktif rol oynamaktadır. Başlıca ilgi alanları arasında iletişim bilimi, siyasal iletişim, uluslararası ilişkiler ve siyaset bilimi yer almaktadır."
-  },
-  {
-    "id": "auth-1785333313380",
-    "name": "İrem Kumral",
-    "role": "SOSYAL MEDYA DİREKTÖRÜ",
-    "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-    "affiliation": "PİKAM Brand Designer",
-    "latestArticle": "İrem Kumral, lise eğitimini Güzel Sanatlar Lisesi Resim Bölümü'nde, lisans eğitimini ise Grafik Tasarım alanında tamamlamıştır. Yaklaşık altı yıldır profesyonel olarak grafik tasarım ve marka tasarımı alanında çalışmalarını sürdürmektedir. Kariyeri boyunca kurumsal kimlik tasarımı, marka stratejisi, ambalaj tasarımı, dijital iletişim ve editöryal tasarım gibi farklı disiplinlerde üretim yapmıştır. Kurucusu olduğu YALIM Candle markasında marka kimliği, ürün geliştirme, ambalaj tasarımı ve dijital iletişim süreçlerini yöneterek tasarımın stratejik yönü üzerine deneyim kazanmıştır. PİKAM Dergi'de Brand Designer olarak görev almaktadır. İlgi alanları arasında marka stratejisi, görsel kimlik sistemleri, tipografi, ambalaj tasarımı, editöryal tasarım ve yapay zekâ destekli yaratıcı üretim süreçleri yer almaktadır."
-  },
-  {
-    "id": "auth-12",
-    "name": "Nisa Bayır",
-    "role": "SOSYAL MEDYA DİREKTÖRÜ",
-    "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80",
-    "affiliation": "PİKAM Sosyal Medya Ekibi",
-    "latestArticle": "Pamukkale Üniversitesi Çalışma Ekonomisi ve Endüstri İlişkileri Bölümünde lisans eğitimini sürdürmektedir. PİKAM bünyesinde sosyal medya süreçleriyle ilgilenmekte olup içerik çalışmalarında yer almaktadır."
-  },
-  {
-    "id": "auth-1785449849542",
-    "name": "Eda Akpınar",
-    "role": "PİKAM ULUSLARARASI İLİŞKİLER EDİTÖRÜ",
-    "avatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80",
-    "affiliation": "PİKAM Dış Politika Masası",
-    "latestArticle": "Marmara Üniversitesi Siyaset Bilimi ve Uluslararası İlişkiler öğrencisidir. Temel çalışma ve ilgi alanları arasında Türk dış politikası, Türkiye siyasi tarihi, ekonomi politikaları, ekonomik entegrasyon ve uluslararası ilişkiler yer almaktadır."
-  },
-  {
-    "id": "auth-1785450479146",
-    "name": "Sılanur Gör",
-    "role": "PİKAM EKONOMİ EDİTÖRÜ",
-    "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-    "affiliation": "PİKAM Ekonomi Masası",
-    "latestArticle": "Süleyman Demirel Üniversitesi İktisat Bölümü öğrencisidir. Ekonomi politikaları, enflasyon, finans ve veri analizi alanlarıyla ilgilenmektedir."
-  },
-  {
-    "id": "auth-2",
-    "name": "Oğuzhan Kale",
-    "role": "PİKAM FİNANS EDİTÖRÜ",
-    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
-    "affiliation": "PİKAM Finans Masası",
-    "latestArticle": "Sakarya Üniversitesi İktisat Bölümü mezunudur. PİKAM bünyesinde Finans Editörü olarak görev yapmaktadır. Temel çalışma ve ilgi alanları arasında Türkiye'nin finans tarihi, sermaye piyasalarının evrimi ve finansal okuryazarlık yer almaktadır."
-  },
-  {
-    "id": "auth-test-1",
-    "name": "Doğancan Tekin",
-    "role": "PİKAM POLİTİKA EDİTÖRÜ",
-    "avatar": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80",
-    "affiliation": "PİKAM Politika Masası",
-    "latestArticle": "Bilkent Üniversitesi Uluslararası İlişkiler mezunudur. Başlıca ilgi alanları dış politika, enerji politikaları, sürdürülebilirlik, tarih ve şehirleşmedir. Bu alanlarda araştırmalar yapmakta ve yazılar kaleme almaktadır."
-  },
-  {
-    "id": "auth-4",
-    "name": "Emre Gürdağ",
-    "role": "PİKAM KÜLTÜR & SANAT EDİTÖRÜ",
-    "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80",
-    "affiliation": "PİKAM Kültür Sanat Masası",
-    "latestArticle": "Lisans eğitimini Boğaziçi Üniversitesi Moleküler Biyoloji ve Genetik bölümünde tamamlamıştır. Aynı üniversitede Türk Dili ve Edebiyatı bölümünde Eski Türk Edebiyatı alanında yüksek lisans eğitimine devam etmektedir. PİKAM Dergi Kültür-Sanat editörlüğünü üstlenmektedir. Akademik çalışma ve ilgi alanlarının başında Divan Edebiyatı, Osmanlı nesri, yazma kültürü, Osmanlı'da okült ve büyü, mitler ve mitolojiler, bilim tarihi, sözlü kültür gelmektedir."
-  },
-  {
-    "id": "auth-10",
-    "name": "Ayça Sude Kaya",
-    "role": "PİKAM STRATEJİ EDİTÖRÜ",
-    "avatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80",
-    "affiliation": "PİKAM Strateji Masası",
-    "latestArticle": "Sosyo-ekonomik trendler, gençlik istihdamı ve dijital ekonomi politikaları üzerine saha araştırmaları yürütmektedir."
-  }
-],
+    {
+      "id": "auth-1786866647845",
+      "name": "Zeynep Sare Ağca",
+      "role": "GENEL YAYIN YÖNETMENİ",
+      "avatar": "/ekip/zeynep-sare-agca.jpg",
+      "affiliation": "PİKAM Genel Yayın Yönetimi",
+      "latestArticle": "Halkla İlişkiler bölümü lisans öğrencisidir. Medya ve iletişim alanlarına ilgi duymakta olup televizyon kanalı ve dijital platformlarda yayınlar yapmıştır. Bununla beraber lise yıllarından itibaren dergicilik faaliyetlerinde aktif rol oynamaktadır. Başlıca ilgi alanları arasında iletişim bilimi, siyasal iletişim, uluslararası ilişkiler ve siyaset bilimi yer almaktadır.",
+      "linkedinUrl": "https://www.linkedin.com/in/sare-a%C4%9Fca/"
+    },
+    {
+      "id": "auth-1785333313380",
+      "name": "İrem Kumral",
+      "role": "SOSYAL MEDYA DİREKTÖRÜ",
+      "avatar": "/ekip/irem-kumral.jpg",
+      "affiliation": "PİKAM Brand Designer",
+      "latestArticle": "İrem Kumral, lise eğitimini Güzel Sanatlar Lisesi Resim Bölümü'nde, lisans eğitimini ise Grafik Tasarım alanında tamamlamıştır. Yaklaşık altı yıldır profesyonel olarak grafik tasarım ve marka tasarımı alanında çalışmalarını sürdürmektedir. Kariyeri boyunca kurumsal kimlik tasarımı, marka stratejisi, ambalaj tasarımı, dijital iletişim ve editöryal tasarım gibi farklı disiplinlerde üretim yapmıştır. Kurucusu olduğu YALIM Candle markasında marka kimliği, ürün geliştirme, ambalaj tasarımı ve dijital iletişim süreçlerini yöneterek tasarımın stratejik yönü üzerine deneyim kazanmıştır. PİKAM Dergi'de Brand Designer olarak görev almaktadır. İlgi alanları arasında marka stratejisi, görsel kimlik sistemleri, tipografi, ambalaj tasarımı, editöryal tasarım ve yapay zekâ destekli yaratıcı üretim süreçleri yer almaktadır.",
+      "linkedinUrl": "https://www.linkedin.com/in/iremkumral/"
+    },
+    {
+      "id": "auth-12",
+      "name": "Nisa Bayır",
+      "role": "SOSYAL MEDYA DİREKTÖRÜ",
+      "avatar": "/ekip/nisa-bayir.jpg",
+      "affiliation": "PİKAM Sosyal Medya Ekibi",
+      "latestArticle": "Pamukkale Üniversitesi Çalışma Ekonomisi ve Endüstri İlişkileri Bölümünde lisans eğitimini sürdürmektedir. PİKAM bünyesinde sosyal medya süreçleriyle ilgilenmekte olup içerik çalışmalarında yer almaktadır.",
+      "linkedinUrl": "https://www.linkedin.com/in/nisabayir/"
+    },
+    {
+      "id": "auth-4",
+      "name": "Emre Gürdağ",
+      "role": "KÜLTÜR & SANAT EDİTÖRÜ",
+      "avatar": "/ekip/emre-gurdag.jpg",
+      "affiliation": "PİKAM Kültür Sanat Masası",
+      "latestArticle": "Lisans eğitimini Boğaziçi Üniversitesi Moleküler Biyoloji ve Genetik bölümünde tamamlamıştır. Aynı üniversitede Türk Dili ve Edebiyatı bölümünde Eski Türk Edebiyatı alanında yüksek lisans eğitimine devam etmektedir. PİKAM Dergi Kültür-Sanat editörlüğünü üstlenmektedir. Akademik çalışma ve ilgi alanlarının başında Divan Edebiyatı, Osmanlı nesri, yazma kültürü, Osmanlı'da okült ve büyü, mitler ve mitolojiler, bilim tarihi, sözlü kültür gelmektedir.",
+      "linkedinUrl": "https://www.linkedin.com/in/emre-g%C3%BCrda%C4%9F-757b69256/"
+    },
+    {
+      "id": "auth-1785449849542",
+      "name": "Eda Akpınar",
+      "role": "ULUSLARARASI İLİŞKİLER EDİTÖRÜ",
+      "avatar": "/ekip/eda-akpinar.jpg",
+      "affiliation": "PİKAM Dış Politika Masası",
+      "latestArticle": "Marmara Üniversitesi Siyaset Bilimi ve Uluslararası İlişkiler öğrencisidir. Temel çalışma ve ilgi alanları arasında Türk dış politikası, Türkiye siyasi tarihi, ekonomi politikaları, ekonomik entegrasyon ve uluslararası ilişkiler yer almaktadır.",
+      "linkedinUrl": "https://www.linkedin.com/in/eda-akp%C4%B1nar-2529aa289/"
+    },
+    {
+      "id": "auth-test-1",
+      "name": "Doğancan Tekin",
+      "role": "POLİTİKA EDİTÖRÜ",
+      "avatar": "/ekip/dogancan-tekin.jpg",
+      "affiliation": "PİKAM Politika Masası",
+      "latestArticle": "Bilkent Üniversitesi Uluslararası İlişkiler mezunudur. Başlıca ilgi alanları dış politika, enerji politikaları, sürdürülebilirlik, tarih ve şehirleşmedir. Bu alanlarda araştırmalar yapmakta ve yazılar kaleme almaktadır.",
+      "linkedinUrl": "https://www.linkedin.com/in/do%C4%9Fancan-t-44b21a322/"
+    },
+    {
+      "id": "auth-10",
+      "name": "Ayça Sude Kaya",
+      "role": "SOSYOLOJİ EDİTÖRÜ",
+      "avatar": "/ekip/ayca-sude-kaya.jpg",
+      "affiliation": "PİKAM Sosyoloji Masası",
+      "latestArticle": "Sosyo-ekonomik trendler, gençlik istihdamı ve dijital ekonomi politikaları üzerine saha araştırmaları yürütmektedir.",
+      "linkedinUrl": "https://www.linkedin.com/in/aycakayaa/"
+    },
+    {
+      "id": "auth-2",
+      "name": "Oğuzhan Kale",
+      "role": "FİNANS EDİTÖRÜ",
+      "avatar": "/ekip/oguzhan-kale.jpg",
+      "affiliation": "PİKAM Finans Masası",
+      "latestArticle": "Sakarya Üniversitesi İktisat Bölümü mezunudur. PİKAM bünyesinde Finans Editörü olarak görev yapmaktadır. Temel çalışma ve ilgi alanları arasında Türkiye'nin finans tarihi, sermaye piyasalarının evrimi ve finansal okuryazarlık yer almaktadır.",
+      "linkedinUrl": "https://www.linkedin.com/in/o%C4%9Fuzhan-kale-a65b82379/"
+    },
+    {
+      "id": "auth-1785450479146",
+      "name": "Sılanur Gör",
+      "role": "PİKAM EKONOMİ EDİTÖRÜ",
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+      "affiliation": "PİKAM Ekonomi Masası",
+      "latestArticle": "Süleyman Demirel Üniversitesi İktisat Bölümü öğrencisidir. Ekonomi politikaları, enflasyon, finans ve veri analizi alanlarıyla ilgilenmektedir."
+    }
+  ],
   eDergiIssues: [
-  {
-    "id": "ed-1785448609582",
-    "issueNumber": "Sayı 2",
-    "monthYear": "Temmuz 2026",
-    "theme": "ALACA Dergi 10. Sayı",
-    "coverImage": "/kapak-sayi-2-temmuz-2026.jpg",
-    "pdfUrl": "https://drive.google.com/file/d/1ExoEqcmdKMHVF8-79Dv406dCNaFJ5kDd/view",
-    "pageCount": 83
-  }
-],
+    {
+      "id": "ed-sayi-1-ekim-2026",
+      "issueNumber": "Sayı 1",
+      "monthYear": "Ekim 2026",
+      "theme": "Cumhuriyetin 103. Yılı",
+      "coverImage": "/dergi/kapak-sayi-1-ekim-2026.jpg",
+      "pdfUrl": "/dergi/pikam-dergi-sayi-1-ekim-2026.pdf",
+      "pdfFileName": "PIKAM_Dergi_Sayi1_Ekim2026.pdf",
+      "pageCount": 33,
+      "hidden": false,
+      "editorNote": "Cumhuriyetin 103. yıldönümüne özel ilk sayımız çıktı!"
+    },
+    {
+      "id": "ed-1785448609582",
+      "theme": "ALACA Dergi 10. Sayı",
+      "pdfUrl": "https://drive.google.com/file/d/1ExoEqcmdKMHVF8-79Dv406dCNaFJ5kDd/view",
+      "monthYear": "Temmuz 2026",
+      "pageCount": 83,
+      "coverImage": "/kapak-sayi-2-temmuz-2026.jpg",
+      "issueNumber": "Sayı 2",
+      "hidden": true
+    }
+  ],
   kunye: {
   "iletisim": "iletisim@pikamtr.com | www.pikamtr.com",
   "yayinSahibi": "Politik ve İktisadi Araştırmalar Merkezi (PİKAM)",

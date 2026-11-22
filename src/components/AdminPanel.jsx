@@ -228,6 +228,7 @@ export default function AdminPanel({
   const [authorName, setAuthorName] = useState('');
   const [authorRole, setAuthorRole] = useState('');
   const [authorAffiliation, setAuthorAffiliation] = useState('');
+  const [authorLinkedin, setAuthorLinkedin] = useState('');
   const [authorAvatar, setAuthorAvatar] = useState('');
   const [authorLatest, setAuthorLatest] = useState('');
 
@@ -399,6 +400,7 @@ export default function AdminPanel({
     setAuthorName(author.name || '');
     setAuthorRole(author.role || '');
     setAuthorAffiliation(author.affiliation || '');
+    setAuthorLinkedin(author.linkedinUrl || '');
     setAuthorAvatar(author.avatar || '');
     setAuthorLatest(author.latestArticle || '');
   };
@@ -408,6 +410,7 @@ export default function AdminPanel({
     setAuthorName('');
     setAuthorRole('');
     setAuthorAffiliation('');
+    setAuthorLinkedin('');
     setAuthorAvatar('');
     setAuthorLatest('');
   };
@@ -465,6 +468,7 @@ export default function AdminPanel({
         name: authorName,
         role: authorRole,
         affiliation: authorAffiliation,
+        linkedinUrl: authorLinkedin.trim(),
         avatar: authorAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
         latestArticle: authorLatest || 'PİKAM Kıdemli Analisti'
       };
@@ -477,6 +481,7 @@ export default function AdminPanel({
         name: authorName,
         role: authorRole,
         affiliation: authorAffiliation,
+        linkedinUrl: authorLinkedin.trim(),
         avatar: authorAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
         latestArticle: authorLatest || 'PİKAM Kıdemli Analisti'
       };
@@ -2183,6 +2188,17 @@ export default function AdminPanel({
                     value={authorAffiliation} 
                     onChange={(e) => setAuthorAffiliation(e.target.value)} 
                     placeholder="Uluslararası İlişkiler ve Jeopolitik" 
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '6px' }}>LINKEDIN PROFİLİ</label>
+                  <input 
+                    type="url" 
+                    value={authorLinkedin} 
+                    onChange={(e) => setAuthorLinkedin(e.target.value)} 
+                    placeholder="https://www.linkedin.com/in/..." 
                     style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                   />
                 </div>

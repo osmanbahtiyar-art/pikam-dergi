@@ -33,6 +33,19 @@ function AuthorCard({ author, fallbackAvatar, onSelectAuthor }) {
         {author.affiliation || 'PİKAM Kıdemli Analisti'}
       </div>
 
+      {author.linkedinUrl && (
+        <a
+          href={author.linkedinUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          aria-label={`${author.name} LinkedIn profili`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', alignSelf: 'center', marginBottom: '8px', fontSize: '0.75rem', fontWeight: 700, color: '#38bdf8', textDecoration: 'none', border: '1px solid rgba(56,189,248,0.35)', borderRadius: '4px', padding: '3px 9px' }}
+        >
+          in · LinkedIn
+        </a>
+      )}
+
       {aboutText && (
         <div className="yazar-latest" style={{ flex: 1, fontSize: '0.84rem', color: '#cbd5e1', lineHeight: '1.6', fontStyle: 'normal', marginTop: '6px' }}>
           <span>{displayText}</span>
