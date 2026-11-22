@@ -182,11 +182,12 @@ export const PIKAM_DATA = {
     }
   ],
   kunye: {
-  "iletisim": "iletisim@pikamtr.com | www.pikamtr.com",
-  "yayinSahibi": "Politik ve İktisadi Araştırmalar Merkezi (PİKAM)",
-  "grafikTasarim": "PİKAM Dijital Yayıncılık Ekibi",
-  "yayinYonetmeni": "Osman Bahtiyar",
-  "sorumluYaziIsleri": "PİKAM Dergi Editör Kurulu",
-  "akademikDanismaKurulu": "Prof. Dr. Osman Bahtiyar, Miraç Çavuş, Sera Erdağı"
-}
+    "iletisim": "iletisim@pikamtr.com | www.pikamtr.com",
+    "yayinSahibi": "Politik ve İktisadi Araştırmalar Merkezi (PİKAM)",
+    "grafikTasarim": "PİKAM Dijital Yayıncılık Ekibi",
+    "yayinYonetmeni": "Zeynep Sare AĞCA",
+    "sorumluYaziIsleri": "PİKAM Dergi Editör Kurulu",
+    "akademikDanismaKurulu": "",
+    "showAkademikDanismaKurulu": false
+  }
 };

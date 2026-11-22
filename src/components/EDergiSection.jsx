@@ -1,117 +1,100 @@
 import React from 'react';
 import { PIKAM_DATA } from '../data/pikamData';
-import { BookOpen, Eye, Download } from 'lucide-react';
+import { BookOpen, Download } from 'lucide-react';
+
+const FALLBACK_COVER = '/pikam_kapak_temmuz_1784839785714.jpg';
+
+const coverOf = (issue) => issue.coverImage || issue.coverimage || FALLBACK_COVER;
+
+const fileNameOf = (issue) =>
+  issue.pdfFileName || `PIKAM-Dergi-${(issue.issueNumber || 'sayi').replace(/\s+/g, '-')}.pdf`;
+
+const hasPdf = (issue) => issue.pdfUrl && issue.pdfUrl !== '#';
+
+function DownloadButton({ issue, className }) {
+  if (!hasPdf(issue)) return null;
+  return (
+    <a
+      className={className}
+      href={issue.pdfUrl}
+      download={fileNameOf(issue)}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <Download size={16} />
+      <span>PDF İndir</span>
+    </a>
+  );
+}
 
 export default function EDergiSection({ id, eDergiList, onOpenEDergiModal }) {
-  const issuesToDisplay = (eDergiList || PIKAM_DATA.eDergiIssues).filter(i => !i.hidden);
-  const fallbackCover = '/pikam_kapak_temmuz_1784839785714.jpg';
+  const issues = (eDergiList || PIKAM_DATA.eDergiIssues).filter((i) => !i.hidden);
+  if (issues.length === 0) return null;
 
-  const handleDownloadPdf = (e, issue) => {
-    e.stopPropagation();
-    if (!issue.pdfUrl || issue.pdfUrl === '#') {
-      alert('Dergi PDF dosyası henüz yüklenmemiştir.');
-      return;
-    }
-
-    const fileName = issue.pdfFileName || `PIKAM-Dergi-${(issue.issueNumber || '').replace(' ', '-')}.pdf`;
-
-    if (issue.pdfUrl.startsWith('data:application/pdf;base64,')) {
-      try {
-        const base64Data = issue.pdfUrl.split(',')[1];
-        const binaryStr = atob(base64Data);
-        const len = binaryStr.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binaryStr.charCodeAt(i);
-        }
-        const blob = new Blob([bytes], { type: 'application/pdf' });
-        const blobUrl = URL.createObjectURL(blob);
-
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-      } catch (err) {
-        console.error('Download error:', err);
-        window.open(issue.pdfUrl, '_blank');
-      }
-    } else {
-      const a = document.createElement('a');
-      a.href = issue.pdfUrl;
-      a.target = '_blank';
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-  };
+  const [latest, ...older] = issues;
 
   return (
-    <section className="e-dergi-section" id={id}>
+    <section className="e-dergi-section edg" id={id}>
       <div className="container">
         <div className="section-header" style={{ flexWrap: 'wrap', gap: '8px' }}>
           <div className="section-title">
             <BookOpen size={22} color="#0b132b" />
-            <span style={{ wordBreak: 'keep-all', hyphens: 'none', whiteSpace: 'normal' }}>PİKAM DİJİTAL E-DERGİ ARŞİVİ</span>
+            <span>PİKAM DERGİ</span>
           </div>
-          <span style={{ fontSize: '0.85rem', color: '#64748b', wordBreak: 'keep-all' }}>
-            Aylık İktisat ve Politika Dergisi Sayıları ({issuesToDisplay.length} Sayı)
+          <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+            {issues.length} sayı yayımlandı
           </span>
         </div>
 
-        <p style={{ color: '#475569', fontSize: '0.95rem', marginBottom: '20px', lineHeight: '1.5' }}>
-          PİKAM Dergi'nin yayınlanan tüm dijital sayılarına interaktif flipbook formatında erişebilir, inceleyebilir veya PDF olarak indirebilirsiniz.
-        </p>
+        {/* Son sayı: pikamtr.com/dergi düzeni — solda tanıtım, sağda tam kapak */}
+        <div className="edg-feature">
+          <div className="edg-feature-text">
+            <img src="/pikam_blue_logotype.png" alt="PİKAM" className="edg-logotype" />
+            <div className="edg-kicker">
+              {[latest.issueNumber, latest.monthYear].filter(Boolean).join(' · ')}
+            </div>
+            <h3 className="edg-title">PİKAM Dergi</h3>
+            <p className="edg-lead">{latest.editorNote || latest.theme}</p>
+            {latest.editorNote && latest.theme && <p className="edg-theme">“{latest.theme}”</p>}
+            <div className="edg-actions">
+              <button type="button" className="edg-btn edg-btn-primary" onClick={() => onOpenEDergiModal(latest)}>
+                <BookOpen size={16} />
+                <span>Dergiyi Oku</span>
+              </button>
+              <DownloadButton issue={latest} className="edg-btn edg-btn-secondary" />
+            </div>
+            {latest.pageCount ? <div className="edg-meta">{latest.pageCount} sayfa · PDF</div> : null}
+          </div>
 
-        <div className="e-dergi-grid">
-          {issuesToDisplay.map((issue) => {
-            const coverUrl = issue.coverImage || issue.coverimage || fallbackCover;
-            return (
-              <div 
-                key={issue.id} 
-                className="e-dergi-card"
-                onClick={() => onOpenEDergiModal(issue)}
-                style={{ cursor: 'pointer' }}
-              >
-                <div className="e-dergi-cover-wrap">
-                  <img 
-                    src={coverUrl} 
-                    alt={issue.monthYear} 
-                    className="e-dergi-cover" 
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = fallbackCover;
-                    }}
-                  />
-                  <div className="e-dergi-overlay">
-                    <Eye size={28} />
-                    <span>DİJİTAL SAYIYI OKU</span>
-                    <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>({issue.pageCount} Sayfa PDF)</span>
-                  </div>
-                </div>
-
-                <div className="e-dergi-info" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                  <div>
-                    <div className="e-dergi-issue">{issue.issueNumber}</div>
-                    <div className="e-dergi-month">{issue.monthYear}</div>
-                    <div className="e-dergi-theme">"{issue.theme}"</div>
-                  </div>
-
-                  <button 
-                    onClick={(e) => handleDownloadPdf(e, issue)}
-                    style={{ marginTop: '12px', background: '#0f172a', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%' }}
-                  >
-                    <Download size={13} color="#38bdf8" />
-                    <span>PDF İndir</span>
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+          <button type="button" className="edg-cover-btn" onClick={() => onOpenEDergiModal(latest)} aria-label={`${latest.issueNumber} sayısını oku`}>
+            <img
+              src={coverOf(latest)}
+              alt={`PİKAM Dergi ${latest.issueNumber || ''} kapağı`}
+              className="edg-cover"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = FALLBACK_COVER;
+              }}
+            />
+          </button>
         </div>
+
+        {/* Önceki sayılar */}
+        {older.length > 0 && (
+          <>
+            <h4 className="edg-archive-title">Önceki Sayılar</h4>
+            <div className="edg-archive">
+              {older.map((issue) => (
+                <button type="button" key={issue.id} className="edg-archive-card" onClick={() => onOpenEDergiModal(issue)}>
+                  <img src={coverOf(issue)} alt={`${issue.issueNumber} kapağı`} className="edg-archive-cover" />
+                  <span className="edg-archive-issue">{issue.issueNumber}</span>
+                  <span className="edg-archive-month">{issue.monthYear}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
